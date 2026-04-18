@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vesak Lantern Project - Finance Dashboard</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              400: '#4ade80', // green-400
+              500: '#22c55e', // green-500
+              600: '#16a34a', // green-600
+              900: '#14532d', // green-900
+            },
+            dark: {
+              900: '#0f172a', // slate-900
+              950: '#020617'  // slate-950
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React & ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- PDF Libraries (jsPDF + autoTable) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+  <style>
+    /* Glassmorphism utilities */
+    .glass {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .neon-text {
+      text-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+    }
+    .neon-border {
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
+    }
+    
+    body {
+      background-color: #020617; /* Tailwind slate-950 */
+      color: #e2e8f0; /* slate-200 */
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+    
+    /* Custom Scrollbar for dark theme */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #020617; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-200 antialiased overflow-x-hidden selection:bg-brand-500 selection:text-white">
+  
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // --- SUPABASE INITIALIZATION ---
+    // Make sure to match the URL and ANON KEY provided
+    const supabaseUrl = 'https://yqpkgybmjdovdnmekpnw.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxcGtneWJtamRvdmRubWVrcG53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjUwMjAsImV4cCI6MjA5MjEwMTAyMH0.7C9jv1_zDRxSMCgs0tWfiNUGXGOkCLz5RE0CCDoc_yA';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    // --- ICONS ---
+    const IconDashboard = () => <svg className="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>;
+    const IconIncome = () => <svg className="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>;
+    const IconExpense = () => <svg className="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>;
+    const IconPledges = () => <svg className="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+    const IconWallet = () => <svg className="w-6 h-6 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>;
+    const IconTrendingUp = () => <svg className="w-6 h-6 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>;
+    const IconTrendingDown = () => <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" /></svg>;
+    const IconCheck = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>;
+    const IconDownload = () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>;
+
+    // --- UTILS ---
+    const formatCurrency = (amount) => {
+      if(!amount) return "Rs. 0.00";
+      return "Rs. " + parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+    
+    const formatDate = (dateString) => {
+      if(!dateString) return '';
+      const d = new Date(dateString);
+      return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    };
+
+    const exportToCSV = (filename, rows) => {
+      const csvContent = "\uFEFF" + rows.map(r => r.map(cell => {
+        if (cell === null || cell === undefined) return '""';
+        return `"${cell.toString().replace(/"/g, '""')}"`;
+      }).join(",")).join("\n");
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename + ".csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
+    const exportToPDF = (title, columns, dataRows, filename) => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(16);
+      doc.text(title, 14, 22);
+      
+      doc.autoTable({
+        startY: 30,
+        head: [columns],
+        body: dataRows,
+        theme: 'grid',
+        styles: { font: 'helvetica', fontSize: 9 },
+        headStyles: { fillColor: [34, 197, 94] }
+      });
+      doc.save(filename + ".pdf");
+    };
+
+    const REPORTERS = ["Nethusha Kaushika", "Isara Dilnuka", "Imesh Nilhan", "Kanchana Didulanga", "Other"];
+
+    // --- COMPONENTS ---
+    
+    function ExportButtons({ onCsv, onPdf }) {
+      return (
+        <div className="flex gap-2">
+          <button onClick={onCsv} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/50 rounded-lg transition text-xs font-semibold flex items-center gap-1.5">
+            <IconDownload /> CSV Download
+          </button>
+          <button onClick={onPdf} className="px-3 py-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50 rounded-lg transition text-xs font-semibold flex items-center gap-1.5">
+            <IconDownload /> PDF Download
+          </button>
+        </div>
+      );
+    }
+
+    function DashboardCard({ title, sTitle, amount, icon, isExpense }) {
+      return (
+        <div className="glass rounded-2xl p-6 transition transform hover:-translate-y-1 hover:shadow-xl duration-300 relative overflow-hidden group border border-slate-800">
+          <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-brand-500 opacity-10 blur-3xl group-hover:opacity-20 transition"></div>
+          <div className="flex items-start justify-between mb-4">
+            <h3 className="text-slate-400 font-medium tracking-wide uppercase flex flex-col gap-0.5">
+              <span className="text-sm tracking-widest">{title}</span>
+              <span className="text-[11px] font-normal normal-case opacity-80">{sTitle}</span>
+            </h3>
+            <div className={`p-2 rounded-lg shrink-0 ${isExpense ? 'bg-red-500/20' : 'bg-brand-500/20'}`}>
+              {icon}
+            </div>
+          </div>
+          <p className={`text-3xl font-bold tracking-tight ${isExpense ? 'text-slate-100' : 'neon-text text-white'}`}>
+            {formatCurrency(amount)}
+          </p>
+        </div>
+      );
+    }
+
+    function SimpleChart({ income, expense }) {
+      const max = Math.max(income, expense, 1);
+      const incomePct = (income / max) * 100;
+      const expensePct = (expense / max) * 100;
+
+      return (
+        <div className="glass p-6 rounded-2xl h-full flex flex-col justify-center border border-slate-800">
+          <h3 className="text-xl font-semibold mb-6 flex flex-col gap-1 text-white">
+            <span>Income vs Expenses</span>
+            <span className="text-sm text-slate-400 font-normal">ආදායම් සහ වියදම්</span>
+          </h3>
+          <div className="flex flex-col gap-6 w-full">
+            <div>
+              <div className="flex justify-between items-end mb-2">
+                <div className="flex flex-col">
+                  <span className="text-sm text-slate-300">Total Valid Income</span>
+                  <span className="text-[10px] text-slate-500">මුළු මුදල් ආදායම</span>
+                </div>
+                <span className="text-sm font-bold text-brand-400">{formatCurrency(income)}</span>
+              </div>
+              <div className="w-full bg-slate-800 rounded-full h-4 overflow-hidden relative">
+                <div className="bg-brand-500 h-4 rounded-full transition-all duration-1000" style={{width: `${incomePct}%`}}></div>
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between items-end mb-2">
+                <div className="flex flex-col">
+                  <span className="text-sm text-slate-300">Total Expenses</span>
+                  <span className="text-[10px] text-slate-500">මුළු වියදම්</span>
+                </div>
+                <span className="text-sm font-bold text-red-400">{formatCurrency(expense)}</span>
+              </div>
+              <div className="w-full bg-slate-800 rounded-full h-4 overflow-hidden relative">
+                <div className="bg-red-500 h-4 rounded-full transition-all duration-1000" style={{width: `${expensePct}%`}}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function DashboardView({ incomes, expenses, setActiveTab }) {
+      const totalIncome = useMemo(() => 
+        incomes.filter(i => i.status === 'Received Today' && i.donation_type === 'Cash').reduce((sum, item) => sum + Number(item.amount || 0), 0)
+      , [incomes]);
+
+      const totalExpense = useMemo(() => 
+        expenses.reduce((sum, item) => sum + Number(item.amount_taken || 0), 0)
+      , [expenses]);
+
+      const currentBalance = totalIncome - totalExpense;
+
+      const recentActivities = useMemo(() => {
+        const inc = incomes.map(i => ({ ...i, type: 'income', dateStr: i.created_at || i.date }));
+        const exp = expenses.map(e => ({ ...e, type: 'expense', dateStr: e.created_at || e.date }));
+        const combined = [...inc, ...exp].sort((a, b) => new Date(b.dateStr) - new Date(a.dateStr));
+        return combined.slice(0, 8);
+      }, [incomes, expenses]);
+
+      return (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-white mb-6 flex flex-col">
+            <span>Overview</span>
+            <span className="text-sm text-slate-400 font-normal">සාරාංශය</span>
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <DashboardCard title="Total Cash Income" sTitle="මුළු මුදල් ආදායම" amount={totalIncome} icon={<IconTrendingUp />} />
+            <DashboardCard title="Total Expenses" sTitle="මුළු වියදම්" amount={totalExpense} icon={<IconTrendingDown />} isExpense={true} />
+            <DashboardCard title="Current Balance" sTitle="ඉතිරි මුදල" amount={currentBalance} icon={<IconWallet />} />
+          </div>
+
+          {/* Quick List Navigation Buttons */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
+            <button onClick={() => { setActiveTab('income-page'); window.scrollTo(0, document.body.scrollHeight); }} className="glass rounded-xl p-4 flex items-center justify-center gap-4 hover:bg-slate-800 border border-slate-700/50 hover:border-brand-500/50 transition-all group">
+              <div className="p-3 rounded-full bg-brand-500/10 text-brand-400 group-hover:bg-brand-500 group-hover:text-white transition">
+                <IconIncome />
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="font-bold text-slate-200">Income List</span>
+                <span className="text-xs text-slate-400 group-hover:text-brand-300">ආදායම් ලැයිස්තුව</span>
+              </div>
+            </button>
+            
+            <button onClick={() => { setActiveTab('expense-page'); window.scrollTo(0, document.body.scrollHeight); }} className="glass rounded-xl p-4 flex items-center justify-center gap-4 hover:bg-slate-800 border border-slate-700/50 hover:border-red-500/50 transition-all group">
+              <div className="p-3 rounded-full bg-red-500/10 text-red-400 group-hover:bg-red-500 group-hover:text-white transition">
+                <IconExpense />
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="font-bold text-slate-200">Expense List</span>
+                <span className="text-xs text-slate-400 group-hover:text-red-300">වියදම් ලැයිස්තුව</span>
+              </div>
+            </button>
+
+            <button onClick={() => setActiveTab('pledges')} className="glass rounded-xl p-4 flex items-center justify-center gap-4 hover:bg-slate-800 border border-slate-700/50 hover:border-yellow-500/50 transition-all group relative">
+              <div className="p-3 rounded-full bg-yellow-500/10 text-yellow-500 group-hover:bg-yellow-500 group-hover:text-white transition">
+                <IconPledges />
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="font-bold text-slate-200">Pledges List</span>
+                <span className="text-xs text-slate-400 group-hover:text-yellow-300">පොරොන්දු ලැයිස්තුව</span>
+              </div>
+              {incomes.filter(i => i.status === 'Promised').length > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 text-[9px] flex items-center justify-center rounded-full bg-yellow-500 text-slate-900 font-bold border-2 border-slate-900 shadow-[0_0_8px_rgba(234,179,8,0.8)]">
+                  {incomes.filter(i => i.status === 'Promised').length}
+                </span>
+              )}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            <div className="lg:col-span-1 h-64 md:h-full">
+              <SimpleChart income={totalIncome} expense={totalExpense} />
+            </div>
+            
+            <div className="lg:col-span-2 glass rounded-2xl p-6 border border-slate-800">
+              <h3 className="text-xl font-semibold mb-4 text-white flex flex-col">
+                <span>Recent Activities</span>
+                <span className="text-sm text-slate-400 font-normal mt-0.5">මෑත කාලීන ක්‍රියාකාරකම්</span>
+              </h3>
+              
+              {recentActivities.length === 0 ? (
+                <div className="text-center text-slate-400 py-8 flex flex-col">
+                  <span>No activities recorded yet.</span>
+                  <span className="text-xs mt-1">ක්‍රියාකාරකම් කිසිවක් වාර්තා වී නොමැත.</span>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {recentActivities.map((act, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-4 rounded-xl bg-slate-800/50 hover:bg-slate-800 transition">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-2 h-10 rounded-full shrink-0 ${act.type === 'income' ? (act.status === 'Promised' ? 'bg-yellow-500' : 'bg-brand-500') : 'bg-red-500'}`}></div>
+                        <div className="flex flex-col">
+                          <h4 className="font-medium text-slate-200 text-sm md:text-base">
+                            {act.type === 'income' ? `${act.name} (Donation)` : `${act.reason} (Expense)`}
+                          </h4>
+                          <p className="text-xs text-slate-400 mt-1">
+                            {formatDate(act.dateStr)} • {act.type === 'income' ? (act.donation_type === 'Goods' ? act.item_description : act.status) : `By ${act.withdrawer_name}`}
+                          </p>
+                        </div>
+                      </div>
+                      <div className={`font-semibold shrink-0 text-right ${act.type === 'income' ? 'text-brand-400' : 'text-red-400'} text-sm md:text-base`}>
+                        {act.type === 'income' ? (act.donation_type === 'Goods' ? 'Goods' : '+' + formatCurrency(act.amount)) : '-' + formatCurrency(act.amount_taken)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function InputField({ label, sLabel, type="text", name, value, onChange, required, options }) {
+      return (
+        <div className="flex flex-col gap-1.5 mb-4">
+          <label className="text-sm font-medium text-slate-300 flex flex-col gap-0.5 leading-tight">
+            <span>{label} {required && <span className="text-brand-500">*</span>}</span>
+            {sLabel && <span className="text-[10.5px] text-brand-400 opacity-90">{sLabel}</span>}
+          </label>
+
+          {type === 'select' ? (
+            <select name={name} value={value} onChange={onChange} required={required} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block w-full p-2.5 transition outline-none">
+              <option value="">Select Option / තෝරන්න</option>
+              {options.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+          ) : type === 'textarea' ? (
+            <textarea name={name} value={value} onChange={onChange} required={required} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block w-full p-2.5 transition min-h-[100px] outline-none"></textarea>
+          ) : (
+            <input type={type} name={name} value={value} onChange={onChange} required={required} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block w-full p-2.5 transition outline-none" />
+          )}
+        </div>
+      );
+    }
+
+    function IncomeList({ incomes }) {
+      const validIncomes = incomes.filter(i => i.status === 'Received Today');
+
+      const handleCSV = () => {
+        const headers = ["Date", "Name", "Phone", "Type", "Details", "Reported By", "Amount"];
+        const rows = [headers, ...validIncomes.map(i => [
+          formatDate(i.date), i.name, i.phone_number || '-', i.donation_type, 
+          i.donation_type === 'Goods' ? i.item_description : i.donor_category, 
+          i.reported_by, i.donation_type === 'Cash' ? i.amount : 'Goods'
+        ])];
+        exportToCSV("Income_Records_Vesak", rows);
+      };
+
+      const handlePDF = () => {
+        const headers = ["Date", "Name", "Details", "Type", "Reported By", "Amount"];
+        const rows = validIncomes.map(i => [
+          formatDate(i.date), i.name, 
+          i.donation_type === 'Goods' ? i.item_description : i.donor_category, 
+          i.donation_type, i.reported_by, 
+          i.donation_type === 'Cash' ? formatCurrency(i.amount) : 'Goods'
+        ]);
+        exportToPDF("Total Income Records", headers, rows, "Income_Records_Vesak");
+      };
+
+      return (
+        <div className="glass rounded-2xl p-6 overflow-x-auto border border-slate-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+            <h2 className="text-xl font-bold text-white flex flex-col">
+              <span>All Income Records</span>
+              <span className="text-sm text-slate-400 font-normal mt-0.5">සියලුම ආදායම් වාර්තා</span>
+            </h2>
+            <ExportButtons onCsv={handleCSV} onPdf={handlePDF} />
+          </div>
+
+          {validIncomes.length === 0 ? (
+             <div className="text-center py-10 text-slate-400 border border-dashed border-slate-700 rounded-xl">
+               No income records found. / ආදායම් වාර්තා නොමැත.
+             </div>
+          ) : (
+            <div className="overflow-x-auto min-w-full">
+              <table className="w-full text-left text-sm text-slate-300 min-w-[700px]">
+                <thead className="text-xs text-slate-400 uppercase bg-slate-900/50">
+                  <tr>
+                    <th className="px-4 py-3 rounded-tl-lg">Date</th>
+                    <th className="px-4 py-3">Details</th>
+                    <th className="px-4 py-3">Reporter</th>
+                    <th className="px-4 py-3 text-right rounded-tr-lg">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {validIncomes.map(p => (
+                    <tr key={p.id} className="border-b border-slate-800 hover:bg-slate-800/30 transition">
+                      <td className="px-4 py-4 whitespace-nowrap">{formatDate(p.date)}</td>
+                      <td className="px-4 py-4">
+                        <span className="font-medium text-slate-200">{p.name}</span>
+                        <span className="block text-xs text-slate-500 font-normal mt-1">{p.donation_type === 'Goods' ? p.item_description + ` (x${p.quantity})` : p.donor_category}</span>
+                      </td>
+                      <td className="px-4 py-4">{p.reported_by}</td>
+                      <td className="px-4 py-4 text-right font-semibold text-brand-400 whitespace-nowrap">
+                        {p.donation_type === 'Cash' ? formatCurrency(p.amount) : 'Goods'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function ExpenseList({ expenses }) {
+      const handleCSV = () => {
+        const headers = ["Date", "Time", "Reason", "Withdrawer", "Amount"];
+        const rows = [headers, ...expenses.map(e => [
+          formatDate(e.date), e.time, e.reason, e.withdrawer_name, e.amount_taken
+        ])];
+        exportToCSV("Expense_Records_Vesak", rows);
+      };
+
+      const handlePDF = () => {
+        const headers = ["Date", "Reason", "Withdrawer", "Amount"];
+        const rows = expenses.map(e => [
+          formatDate(e.date), e.reason, e.withdrawer_name, formatCurrency(e.amount_taken)
+        ]);
+        exportToPDF("Total Expense Records", headers, rows, "Expense_Records_Vesak");
+      };
+
+      return (
+        <div className="glass rounded-2xl p-6 overflow-x-auto border border-slate-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+            <h2 className="text-xl font-bold text-white flex flex-col">
+              <span>All Expense Records</span>
+              <span className="text-sm text-slate-400 font-normal mt-0.5">සියලුම වියදම් වාර්තා</span>
+            </h2>
+            <ExportButtons onCsv={handleCSV} onPdf={handlePDF} />
+          </div>
+
+          {expenses.length === 0 ? (
+             <div className="text-center py-10 text-slate-400 border border-dashed border-slate-700 rounded-xl">
+               No expense records found. / වියදම් වාර්තා නොමැත.
+             </div>
+          ) : (
+            <div className="overflow-x-auto min-w-full">
+              <table className="w-full text-left text-sm text-slate-300 min-w-[700px]">
+                <thead className="text-xs text-slate-400 uppercase bg-slate-900/50">
+                  <tr>
+                    <th className="px-4 py-3 rounded-tl-lg">Date / Time</th>
+                    <th className="px-4 py-3">Reason</th>
+                    <th className="px-4 py-3">Withdrawer</th>
+                    <th className="px-4 py-3 text-right rounded-tr-lg">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {expenses.map(e => (
+                    <tr key={e.id} className="border-b border-slate-800 hover:bg-slate-800/30 transition">
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        {formatDate(e.date)}
+                        <span className="block text-xs text-slate-500 font-normal mt-1">{e.time}</span>
+                      </td>
+                      <td className="px-4 py-4 font-medium text-slate-200">{e.reason}</td>
+                      <td className="px-4 py-4">{e.withdrawer_name}</td>
+                      <td className="px-4 py-4 text-right font-semibold text-red-400 whitespace-nowrap">
+                        {formatCurrency(e.amount_taken)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function IncomeForm({ onComplete }) {
+      const [formData, setFormData] = useState({
+        name: '', address: '', phone_number: '', date: new Date().toISOString().split('T')[0],
+        donation_type: 'Cash', amount: '', donor_category: 'Regular Donor',
+        item_description: '', quantity: '', description: '',
+        reported_by: '', custom_reported_by: '', status: 'Received Today'
+      });
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState('');
+
+      const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true); setError('');
+        
+        try {
+          const payload = {
+            name: formData.name, date: formData.date, donation_type: formData.donation_type, description: formData.description, status: formData.status,
+            address: formData.address || null, phone_number: formData.phone_number || null,
+            reported_by: formData.reported_by === 'Other' ? formData.custom_reported_by : formData.reported_by
+          };
+          if(formData.donation_type === 'Cash') {
+            payload.amount = parseFloat(formData.amount);
+            payload.donor_category = formData.donor_category;
+          } else {
+            payload.item_description = formData.item_description;
+            payload.quantity = parseFloat(formData.quantity);
+          }
+
+          const { error: dbErr } = await supabase.from('incomes').insert([payload]);
+          if (dbErr) throw dbErr;
+          
+          alert("Donation added successfully! / ආධාර වාර්තාව සාර්ථකව එකතු කරන ලදි!");
+          onComplete();
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return (
+        <div className="max-w-3xl mx-auto glass rounded-2xl p-8 border border-slate-800">
+          <h2 className="text-2xl font-bold text-white mb-6 flex flex-col">
+            <span>Add New Donation</span>
+            <span className="text-sm text-slate-400 font-normal mt-0.5">නව ආධාරයක් එකතු කරන්න</span>
+          </h2>
+          {error && <div className="bg-red-500/20 text-red-300 p-3 rounded-lg mb-4 text-sm">{error}</div>}
+          
+          <form onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+              <InputField label="Name" sLabel="නම" name="name" value={formData.name} onChange={handleChange} required />
+              <InputField label="Phone Number" sLabel="දුරකථන අංකය (අත්‍යවශ්‍ය නොවේ)" name="phone_number" value={formData.phone_number} onChange={handleChange} />
+              
+              <div className="md:col-span-2">
+                <InputField label="Address" sLabel="ලිපිනය (අත්‍යවශ්‍ය නොවේ)" name="address" value={formData.address} onChange={handleChange} />
+              </div>
+              
+              <InputField label="Date" sLabel="දිනය" type="date" name="date" value={formData.date} onChange={handleChange} required />
+              
+              <div className="flex flex-col gap-1.5 mb-4">
+                <label className="text-sm font-medium text-slate-300 flex flex-col gap-0.5 leading-tight">
+                  <span>Donation Type *</span>
+                  <span className="text-[10.5px] text-brand-400 opacity-90">ආධාර වර්ගය</span>
+                </label>
+                <div className="flex gap-4 mt-2">
+                  <label className="flex items-center gap-2 cursor-pointer flex-col sm:flex-row bg-slate-900/50 p-2 px-4 rounded-lg border border-slate-800 hover:border-slate-700 transition">
+                    <input type="radio" name="donation_type" value="Cash" checked={formData.donation_type === 'Cash'} onChange={handleChange} className="text-brand-500 focus:ring-brand-500" /> 
+                    <div className="flex flex-col text-center sm:text-left">
+                      <span className="text-sm">Cash</span>
+                      <span className="text-[10px] text-slate-400">මුදල්</span>
+                    </div>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer flex-col sm:flex-row bg-slate-900/50 p-2 px-4 rounded-lg border border-slate-800 hover:border-slate-700 transition">
+                    <input type="radio" name="donation_type" value="Goods" checked={formData.donation_type === 'Goods'} onChange={handleChange} className="text-brand-500 focus:ring-brand-500" /> 
+                    <div className="flex flex-col text-center sm:text-left">
+                      <span className="text-sm">Goods</span>
+                      <span className="text-[10px] text-slate-400">ද්‍රව්‍ය</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {formData.donation_type === 'Cash' && (
+                <>
+                  <InputField label="Amount (Rs)" sLabel="ප්‍රමාණය (රු)" type="number" name="amount" value={formData.amount} onChange={handleChange} required />
+                  <div className="flex flex-col gap-1.5 mb-4">
+                    <label className="text-sm font-medium text-slate-300 flex flex-col gap-0.5 leading-tight">
+                      <span>Donor Category *</span>
+                      <span className="text-[10.5px] text-brand-400 opacity-90">ආධාරකරුගේ වර්ගය</span>
+                    </label>
+                    <div className="flex gap-4 mt-2">
+                      <label className="flex items-center gap-2 cursor-pointer flex-col sm:flex-row bg-slate-900/50 p-2 px-4 rounded-lg border border-slate-800 hover:border-slate-700 transition">
+                        <input type="radio" name="donor_category" value="Main Donor" checked={formData.donor_category === 'Main Donor'} onChange={handleChange} className="text-brand-500 focus:ring-brand-500" /> 
+                        <div className="flex flex-col text-center sm:text-left">
+                          <span className="text-sm">Main Donor</span>
+                          <span className="text-[10px] text-slate-400">ප්‍රධාන ආධාරකරු</span>
+                        </div>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer flex-col sm:flex-row bg-slate-900/50 p-2 px-4 rounded-lg border border-slate-800 hover:border-slate-700 transition">
+                        <input type="radio" name="donor_category" value="Regular Donor" checked={formData.donor_category === 'Regular Donor'} onChange={handleChange} className="text-brand-500 focus:ring-brand-500" /> 
+                        <div className="flex flex-col text-center sm:text-left">
+                          <span className="text-sm">Regular Donor</span>
+                          <span className="text-[10px] text-slate-400">සාමාන්‍ය ආධාරකරු</span>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {formData.donation_type === 'Goods' && (
+                <>
+                  <div className="md:col-span-2">
+                    <InputField label="Item Description" sLabel="ද්‍රව්‍ය විස්තරය" name="item_description" value={formData.item_description} onChange={handleChange} required />
+                  </div>
+                  <InputField label="Quantity" sLabel="ප්‍රමාණය" type="number" name="quantity" value={formData.quantity} onChange={handleChange} required />
+                </>
+              )}
+
+              <InputField label="Reported By" sLabel="වාර්තා කළේ" type="select" options={REPORTERS} name="reported_by" value={formData.reported_by} onChange={handleChange} required />
+              {formData.reported_by === 'Other' && (
+                <InputField label="Type Reporter Name" sLabel="නම ඇතුලත් කරන්න" name="custom_reported_by" value={formData.custom_reported_by} onChange={handleChange} required />
+              )}
+
+              <div className="flex flex-col gap-1.5 mb-4 md:col-span-2">
+                <label className="text-sm font-medium text-slate-300 flex flex-col gap-0.5 leading-tight">
+                  <span>Record Status *</span>
+                  <span className="text-[10.5px] text-brand-400 opacity-90">තත්වය</span>
+                </label>
+                <div className="flex gap-4 mt-2">
+                  <label className="flex items-center gap-2 cursor-pointer flex-col sm:flex-row bg-slate-900/50 p-2 px-4 rounded-lg border border-slate-800 hover:border-slate-700 transition">
+                    <input type="radio" name="status" value="Received Today" checked={formData.status === 'Received Today'} onChange={handleChange} className="text-brand-500 focus:ring-brand-500" /> 
+                    <div className="flex flex-col text-center sm:text-left">
+                      <span className="text-sm text-brand-400 font-medium">Received Today</span>
+                      <span className="text-[10px] text-slate-400">අද දිනයේ ලැබුණි</span>
+                    </div>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer flex-col sm:flex-row bg-slate-900/50 p-2 px-4 rounded-lg border border-slate-800 hover:border-slate-700 transition">
+                    <input type="radio" name="status" value="Promised" checked={formData.status === 'Promised'} onChange={handleChange} className="text-yellow-500 focus:ring-yellow-500" /> 
+                    <div className="flex flex-col text-center sm:text-left">
+                      <span className="text-sm text-yellow-400 font-medium">Promised (Pending)</span>
+                      <span className="text-[10px] text-slate-400">පොරොන්දු වූ</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <InputField label="Notes / Description" sLabel="සටහන් / විස්තර (අත්‍යවශ්‍ය නොවේ)" type="textarea" name="description" value={formData.description} onChange={handleChange} />
+              </div>
+            </div>
+
+            <button type="submit" disabled={loading} className="w-full mt-6 bg-brand-600 hover:bg-brand-500 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 shadow-[0_0_15px_rgba(34,197,94,0.4)] disabled:opacity-50 flex flex-col items-center justify-center">
+              <span>{loading ? 'Saving...' : 'Save Income Record'}</span>
+              {!loading && <span className="text-xs font-normal opacity-80 mt-1">ආදායම් වාර්තාව සුරකින්න</span>}
+            </button>
+          </form>
+        </div>
+      );
+    }
+
+    function ExpenseForm({ onComplete }) {
+      const [formData, setFormData] = useState({
+        reason: '', withdrawer_name: '', custom_withdrawer: '',
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+        amount_taken: ''
+      });
+      const [receiptFile, setReceiptFile] = useState(null);
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState('');
+
+      const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true); setError('');
+        
+        try {
+          let receipt_url = null;
+          
+          if (receiptFile) {
+            const fileExt = receiptFile.name.split('.').pop();
+            const fileName = `${Math.random()}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            const { error: uploadError } = await supabase.storage.from('receipts').upload(filePath, receiptFile);
+            if (uploadError) throw uploadError;
+
+            const { data } = supabase.storage.from('receipts').getPublicUrl(filePath);
+            receipt_url = data.publicUrl;
+          }
+
+          const payload = {
+            reason: formData.reason,
+            date: formData.date,
+            time: formData.time,
+            amount_taken: parseFloat(formData.amount_taken),
+            withdrawer_name: formData.withdrawer_name === 'Other' ? formData.custom_withdrawer : formData.withdrawer_name,
+            receipt_url
+          };
+
+          const { error: dbErr } = await supabase.from('expenses').insert([payload]);
+          if (dbErr) throw dbErr;
+          
+          alert("Expense added successfully! / වියදම් වාර්තාව සාර්ථකව එකතු කරන ලදි!");
+          onComplete();
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return (
+        <div className="max-w-3xl mx-auto glass rounded-2xl p-8 border border-slate-800">
+          <h2 className="text-2xl font-bold text-white mb-6 flex flex-col">
+            <span>Add New Expense</span>
+            <span className="text-sm text-slate-400 font-normal mt-0.5">නව වියදමක් එකතු කරන්න</span>
+          </h2>
+          {error && <div className="bg-red-500/20 text-red-300 p-3 rounded-lg mb-4 text-sm">{error}</div>}
+          
+          <form onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+              <div className="md:col-span-2">
+                <InputField label="Reason for Expense" sLabel="වියදමට හේතුව" name="reason" value={formData.reason} onChange={handleChange} required />
+              </div>
+
+              <InputField label="Withdrawer Name" sLabel="මුදල් ලබාගන්නාගේ නම" type="select" options={REPORTERS} name="withdrawer_name" value={formData.withdrawer_name} onChange={handleChange} required />
+              {formData.withdrawer_name === 'Other' && (
+                <InputField label="Type Name" sLabel="නම ඇතුලත් කරන්න" name="custom_withdrawer" value={formData.custom_withdrawer} onChange={handleChange} required />
+              )}
+              
+              <InputField label="Date" sLabel="දිනය" type="date" name="date" value={formData.date} onChange={handleChange} required />
+              <InputField label="Time" sLabel="වේලාව" type="time" name="time" value={formData.time} onChange={handleChange} required />
+              
+              <InputField label="Amount Taken (Rs)" sLabel="ලබාගත් මුදල (රු)" type="number" name="amount_taken" value={formData.amount_taken} onChange={handleChange} required />
+
+              <div className="flex flex-col gap-1.5 mb-4 md:col-span-2">
+                <label className="text-sm font-medium text-slate-300 flex flex-col gap-0.5 leading-tight">
+                  <span>Receipt / Bill Photo (Optional)</span>
+                  <span className="text-[10.5px] text-brand-400 opacity-90">රිසිට් / බිල්පත් ඡායාරූපය</span>
+                </label>
+                <input type="file" accept="image/*" onChange={(e) => setReceiptFile(e.target.files[0])} className="block w-full text-sm text-slate-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-slate-800 file:text-brand-400 hover:file:bg-slate-700 transition mt-2" />
+              </div>
+            </div>
+
+            <button type="submit" disabled={loading} className="w-full mt-6 bg-red-600 hover:bg-red-500 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 shadow-[0_0_15px_rgba(239,68,68,0.4)] disabled:opacity-50 flex flex-col items-center justify-center">
+              <span>{loading ? 'Saving...' : 'Record Expense'}</span>
+              {!loading && <span className="text-xs font-normal opacity-80 mt-1">වියදම වාර්තා කරන්න</span>}
+            </button>
+          </form>
+        </div>
+      );
+    }
+
+    function PromisedList({ incomes, onRefresh }) {
+      const promised = incomes.filter(i => i.status === 'Promised');
+      const [loadingId, setLoadingId] = useState(null);
+
+      const confirmReceipt = async (id) => {
+        if(!window.confirm("Are you sure you received this donation? This will add it to the total balance.\nමෙම ආධාරය ලැබුණු බව තහවුරු කරනවාද?")) return;
+        
+        setLoadingId(id);
+        try {
+          const { error } = await supabase.from('incomes').update({ status: 'Received Today' }).eq('id', id);
+          if (error) throw error;
+          
+          alert("Pledge confirmed! Funds added to total Income.\nආධාරය තහවුරු කළා. මෙම මුදල මුළු ආදායමට එක්වී ඇත.");
+          onRefresh();
+        } catch (err) {
+          alert("Error: " + err.message);
+        } finally {
+          setLoadingId(null);
+        }
+      };
+
+      const handleCSV = () => {
+        const headers = ["Date", "Name", "Phone", "Type", "Details", "Amount"];
+        const rows = [headers, ...promised.map(p => [
+          formatDate(p.date), p.name, p.phone_number || '-', p.donation_type, 
+          p.donation_type === 'Goods' ? p.item_description : p.donor_category, 
+          p.donation_type === 'Cash' ? p.amount : 'Goods'
+        ])];
+        exportToCSV("Pending_Pledges_Vesak", rows);
+      };
+
+      const handlePDF = () => {
+        const headers = ["Date", "Name", "Details", "Type", "Amount"];
+        const rows = promised.map(p => [
+          formatDate(p.date), p.name, 
+          p.donation_type === 'Goods' ? p.item_description : p.donor_category, 
+          p.donation_type, p.donation_type === 'Cash' ? formatCurrency(p.amount) : 'Goods'
+        ]);
+        exportToPDF("Pending Pledges", headers, rows, "Pending_Pledges_Vesak");
+      };
+
+      return (
+        <div className="glass rounded-2xl p-6 overflow-x-auto border border-slate-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+            <h2 className="text-xl font-bold text-white flex flex-col">
+              <span>Pending Pledges (Promised Donations)</span>
+              <span className="text-sm text-slate-400 font-normal mt-0.5">පොරොන්දු වූ පරිත්‍යාග</span>
+            </h2>
+            <ExportButtons onCsv={handleCSV} onPdf={handlePDF} />
+          </div>
+          
+          {promised.length === 0 ? (
+            <div className="text-center py-10 text-slate-400 border border-dashed border-slate-700 rounded-xl flex flex-col">
+              <span>No pending pledges found.</span>
+              <span className="text-xs mt-1">පොරොන්දු වූ ආධාර කිසිවක් නොමැත</span>
+            </div>
+          ) : (
+            <div className="overflow-x-auto min-w-full">
+              <table className="w-full text-left text-sm text-slate-300 min-w-[700px]">
+                <thead className="text-xs text-slate-400 uppercase bg-slate-900/50">
+                  <tr>
+                    <th className="px-4 py-3 rounded-tl-lg">Date <br/><span className="text-[9px] font-normal tracking-wide text-brand-400">දිනය</span></th>
+                    <th className="px-4 py-3">Donor Name <br/><span className="text-[9px] font-normal tracking-wide text-brand-400">ආධාරකරුගේ නම</span></th>
+                    <th className="px-4 py-3">Details <br/><span className="text-[9px] font-normal tracking-wide text-brand-400">විස්තර</span></th>
+                    <th className="px-4 py-3 text-right">Amount <br/><span className="text-[9px] font-normal tracking-wide text-brand-400">මුදල / ද්‍රව්‍ය</span></th>
+                    <th className="px-4 py-3 rounded-tr-lg text-center">Action <br/><span className="text-[9px] font-normal tracking-wide text-brand-400">ක්‍රියාව</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {promised.map(p => (
+                    <tr key={p.id} className="border-b border-slate-800 hover:bg-slate-800/30 transition">
+                      <td className="px-4 py-4 whitespace-nowrap">{formatDate(p.date)}</td>
+                      <td className="px-4 py-4 font-medium text-slate-200">
+                        {p.name} 
+                        {p.phone_number && <span className="block text-xs text-slate-500 font-normal mt-0.5">{p.phone_number}</span>}
+                      </td>
+                      <td className="px-4 py-4 truncate max-w-xs">{p.donation_type === 'Goods' ? p.item_description + ` (x${p.quantity})` : p.donor_category}</td>
+                      <td className="px-4 py-4 text-right font-semibold text-yellow-400 whitespace-nowrap">
+                        {p.donation_type === 'Cash' ? formatCurrency(p.amount) : 'Goods'}
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <button onClick={() => confirmReceipt(p.id)} disabled={loadingId === p.id} className="inline-flex items-center gap-1.5 px-3 py-2 bg-brand-500/20 text-brand-400 hover:bg-brand-500/30 border border-brand-500/50 rounded-lg transition text-xs font-semibold disabled:opacity-50">
+                          <IconCheck /> 
+                          <div className="flex flex-col text-left">
+                            <span>{loadingId === p.id ? 'Confirming...' : 'Confirm'}</span>
+                            {!loadingId && <span className="text-[9px] font-normal opacity-80">තහවුරු කරන්න</span>}
+                          </div>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // --- MAIN APP COMPONENT ---
+    function App() {
+      const [activeTab, setActiveTab] = useState('dashboard');
+      const [incomes, setIncomes] = useState([]);
+      const [expenses, setExpenses] = useState([]);
+      const [loading, setLoading] = useState(true);
+
+      const fetchData = async () => {
+        setLoading(true);
+        try {
+          const [incRes, expRes] = await Promise.all([
+            supabase.from('incomes').select('*').order('created_at', { ascending: false }),
+            supabase.from('expenses').select('*').order('created_at', { ascending: false })
+          ]);
+          
+          if(incRes.error) console.error(incRes.error);
+          else setIncomes(incRes.data || []);
+
+          if(expRes.error) console.error(expRes.error);
+          else setExpenses(expRes.data || []);
+          
+        } catch(err) {
+          console.error("Fetch error:", err);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      useEffect(() => {
+        fetchData();
+      }, []);
+
+      // Desktop Top Navigation Button
+      const NavigationButton = ({ id, label, sLabel, icon }) => (
+        <button
+          onClick={() => setActiveTab(id)}
+          className={`flex items-start gap-2.5 px-4 py-3 rounded-xl transition-all duration-300 w-auto ${
+            activeTab === id 
+            ? 'bg-brand-600/20 text-brand-400 shadow-[inset_0_0_12px_rgba(34,197,94,0.2)] border border-brand-500/30' 
+            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+          }`}
+        >
+          <div className="mt-0.5">{icon}</div>
+          <div className="flex flex-col text-left">
+            <span className="font-semibold text-sm leading-tight">{label}</span>
+            <span className="text-[10px] font-medium opacity-80 mt-0.5">{sLabel}</span>
+          </div>
+          {id === 'pledges' && incomes.filter(i => i.status === 'Promised').length > 0 && (
+            <span className="ml-1 self-center px-1.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-500 text-xs font-bold border border-yellow-500/30">
+              {incomes.filter(i => i.status === 'Promised').length}
+            </span>
+          )}
+        </button>
+      );
+
+      // Mobile Bottom Fixed Navigation Button
+      const MobileNavButton = ({ id, label, sLabel, icon }) => (
+        <button
+          onClick={() => setActiveTab(id)}
+          className={`flex flex-col items-center justify-center flex-1 py-1.5 rounded-xl transition-all duration-300 relative ${
+            activeTab === id 
+            ? 'text-brand-400 font-bold bg-brand-500/10' 
+            : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <div className={`mb-1 transition-transform duration-300 ${activeTab === id ? 'scale-110 drop-shadow-[0_0_8px_rgba(34,197,94,0.5)]' : ''}`}>
+            {icon}
+          </div>
+          <span className="text-[10px] uppercase tracking-wide leading-none">{label}</span>
+          <span className="text-[8px] font-normal opacity-80 mt-1">{sLabel}</span>
+          
+          {id === 'pledges' && incomes.filter(i => i.status === 'Promised').length > 0 && (
+            <span className="absolute top-1 right-3 sm:right-6 w-2.5 h-2.5 rounded-full bg-yellow-500 border-2 border-slate-900 shadow-[0_0_8px_rgba(234,179,8,0.8)]"></span>
+          )}
+        </button>
+      );
+
+      return (
+        <div className="flex flex-col min-h-screen pb-20 md:pb-0">
+          <header className="glass sticky top-0 z-50 border-b border-slate-800">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between h-20 md:h-24">
+                <div className="flex items-center gap-3 md:gap-4">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-brand-500 flex items-center justify-center neon-border shrink-0">
+                    <span className="text-white font-bold text-xl md:text-2xl">V</span>
+                  </div>
+                  <div className="flex flex-col justify-center">
+                    <h1 className="text-lg md:text-xl font-bold tracking-tight text-white m-0 leading-tight">Vesak Lantern Project</h1>
+                    <p className="text-brand-400 text-[10px] md:text-[11px] font-medium tracking-wide mt-0.5">වෙසක් කූඩු ව්‍යාපෘතිය</p>
+                    <p className="text-slate-300 text-[10px] md:text-xs font-medium uppercase tracking-widest mt-0.5 md:mt-1">
+                      Financial Dashboard <span className="text-[9px] md:text-[10px] opacity-70 ml-1">මූල්‍ය පාලක පුවරුව</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Desktop Navigation */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4 hidden md:block">
+              <nav className="flex flex-wrap gap-2">
+                <NavigationButton id="dashboard" label="Dashboard" sLabel="පාලක පුවරුව" icon={<IconDashboard />} />
+                <NavigationButton id="income-page" label="Income" sLabel="ආදායම්" icon={<IconIncome />} />
+                <NavigationButton id="expense-page" label="Expense" sLabel="වියදම්" icon={<IconExpense />} />
+                <NavigationButton id="pledges" label="Pending Pledges" sLabel="පොරොන්දු" icon={<IconPledges />} />
+              </nav>
+            </div>
+          </header>
+
+          <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 w-full z-10 relative">
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-500/10 blur-[120px] rounded-full pointer-events-none"></div>
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-blue-500/10 blur-[120px] pointer-events-none"></div>
+            
+            <div className="relative z-10 animate-fade-in">
+                {activeTab === 'dashboard' && <DashboardView incomes={incomes} expenses={expenses} setActiveTab={setActiveTab} />}
+                
+                {activeTab === 'income-page' && (
+                  <div className="space-y-8 animate-fade-in">
+                    <IncomeForm onComplete={() => fetchData()} />
+                    <IncomeList incomes={incomes} />
+                  </div>
+                )}
+                
+                {activeTab === 'expense-page' && (
+                  <div className="space-y-8 animate-fade-in">
+                    <ExpenseForm onComplete={() => fetchData()} />
+                    <ExpenseList expenses={expenses} />
+                  </div>
+                )}
+
+                {activeTab === 'pledges' && <PromisedList incomes={incomes} onRefresh={fetchData} />}
+            </div>
+          </main>
+
+          {/* Mobile Footer Navigation */}
+          <div className="md:hidden fixed bottom-0 left-0 right-0 glass border-t border-slate-800/80 z-50 flex justify-between px-2 pt-2 pb-3 bg-slate-950/90 backdrop-blur-xl">
+            <MobileNavButton id="dashboard" label="Dashboard" sLabel="ආරම්භය" icon={<IconDashboard />} />
+            <MobileNavButton id="income-page" label="Income" sLabel="ආදායම්" icon={<IconIncome />} />
+            <MobileNavButton id="expense-page" label="Expense" sLabel="වියදම්" icon={<IconExpense />} />
+            <MobileNavButton id="pledges" label="Pledges" sLabel="පොරොන්දු" icon={<IconPledges />} />
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
