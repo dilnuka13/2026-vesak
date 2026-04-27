@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Vesak System - Admin Panel</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              400: '#4ade80',
+              500: '#22c55e',
+              600: '#16a34a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React & ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    .glass {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    body {
+      background-color: #020617;
+      color: #e2e8f0;
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+    /* Simple custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="min-h-screen">
+  
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const supabaseUrl = 'https://yqpkgybmjdovdnmekpnw.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxcGtneWJtamRvdmRubWVrcG53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjUwMjAsImV4cCI6MjA5MjEwMTAyMH0.7C9jv1_zDRxSMCgs0tWfiNUGXGOkCLz5RE0CCDoc_yA';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    const InputField = ({ label, type="text", name, value, onChange }) => (
+      <div className="flex flex-col gap-1 mb-4 w-full">
+        <label className="text-sm font-medium text-slate-300">{label}</label>
+        {type === 'textarea' ? (
+          <textarea name={name} value={value || ''} onChange={onChange} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2 outline-none h-20 focus:border-brand-500"></textarea>
+        ) : (
+          <input type={type} name={name} value={value || ''} onChange={onChange} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2 outline-none focus:border-brand-500" />
+        )}
+      </div>
+    );
+
+    const Modal = ({ title, children, onClose }) => (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto relative">
+          <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">&times;</button>
+          <h2 className="text-xl font-bold mb-4">{title}</h2>
+          {children}
+        </div>
+      </div>
+    );
+
+    const AdminApp = () => {
+      const [loggedIn, setLoggedIn] = useState(false);
+      const [creds, setCreds] = useState({ user: '', pass: '' });
+      const [error, setError] = useState('');
+
+      const [incomes, setIncomes] = useState([]);
+      const [expenses, setExpenses] = useState([]);
+      const [loading, setLoading] = useState(false);
+      const [activeTab, setActiveTab] = useState('incomes');
+      
+      const [editIncome, setEditIncome] = useState(null);
+      const [editExpense, setEditExpense] = useState(null);
+
+      const fetchData = async () => {
+        setLoading(true);
+        const [inc, exp] = await Promise.all([
+          supabase.from('incomes').select('*').order('created_at', { ascending: false }),
+          supabase.from('expenses').select('*').order('created_at', { ascending: false })
+        ]);
+        if (inc.data) setIncomes(inc.data);
+        if (exp.data) setExpenses(exp.data);
+        setLoading(false);
+      };
+
+      const handleLogin = (e) => {
+        e.preventDefault();
+        if (creds.user === 'dilnuka' && creds.pass === '20052005') {
+          setLoggedIn(true);
+          fetchData();
+        } else {
+          setError('Invalid username or password');
+        }
+      };
+
+      const handleDeleteIncome = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this income record?")) return;
+        await supabase.from('incomes').delete().eq('id', id);
+        fetchData();
+      };
+
+      const handleDeleteExpense = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this expense record?")) return;
+        await supabase.from('expenses').delete().eq('id', id);
+        fetchData();
+      };
+
+      if (!loggedIn) {
+        return (
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="glass p-8 rounded-2xl w-full max-w-md">
+              <div className="text-center mb-8">
+                <h1 className="text-3xl font-bold text-white tracking-tight">Admin Login</h1>
+                <p className="text-slate-400 text-sm mt-2">Vesak Lantern System 2026</p>
+              </div>
+              <form onSubmit={handleLogin} className="flex flex-col gap-4">
+                {error && <div className="text-red-400 bg-red-500/10 p-3 rounded-lg text-sm text-center border border-red-500/20">{error}</div>}
+                <InputField label="Username (පරිශීලක නාමය)" name="user" value={creds.user} onChange={e => setCreds({...creds, user: e.target.value})} />
+                <InputField label="Password (මුරපදය)" type="password" name="pass" value={creds.pass} onChange={e => setCreds({...creds, pass: e.target.value})} />
+                <button type="submit" className="mt-4 bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-lg transition shadow-lg">Login / පිවිසෙන්න</button>
+              </form>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+          <header className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4 glass p-6 rounded-2xl">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Administrator Dashboard</h1>
+              <p className="text-brand-400 text-sm">Manage & Edit System Records</p>
+            </div>
+            <div className="flex gap-4">
+              <button onClick={fetchData} className="px-4 py-2 bg-slate-800 rounded-lg hover:bg-slate-700 transition">Refresh</button>
+              <button onClick={() => setLoggedIn(false)} className="px-4 py-2 bg-red-600/20 text-red-500 rounded-lg hover:bg-red-600/30 transition">Logout</button>
+            </div>
+          </header>
+
+          <div className="flex gap-2 mb-6">
+            <button onClick={() => setActiveTab('incomes')} className={`px-6 py-2 rounded-lg font-medium transition ${activeTab === 'incomes' ? 'bg-brand-500 text-white' : 'glass text-slate-400 hover:text-white'}`}>Income Records</button>
+            <button onClick={() => setActiveTab('expenses')} className={`px-6 py-2 rounded-lg font-medium transition ${activeTab === 'expenses' ? 'bg-brand-500 text-white' : 'glass text-slate-400 hover:text-white'}`}>Expense Records</button>
+          </div>
+
+          <div className="glass rounded-2xl overflow-x-auto">
+            {loading ? <div className="p-8 text-center text-slate-400">Loading records...</div> : (
+              <table className="w-full text-left text-sm whitespace-nowrap">
+                <thead className="bg-slate-900/50 text-slate-400 text-xs uppercase">
+                  {activeTab === 'incomes' ? (
+                    <tr>
+                      <th className="p-4">Date</th>
+                      <th className="p-4">Name / ID</th>
+                      <th className="p-4">Type</th>
+                      <th className="p-4">Details</th>
+                      <th className="p-4">Amount</th>
+                      <th className="p-4">Status</th>
+                      <th className="p-4 rounded-tr-lg text-right">Actions</th>
+                    </tr>
+                  ) : (
+                    <tr>
+                      <th className="p-4">Date</th>
+                      <th className="p-4">Withdrawer</th>
+                      <th className="p-4">Reason</th>
+                      <th className="p-4">Amount Taken</th>
+                      <th className="p-4 rounded-tr-lg text-right">Actions</th>
+                    </tr>
+                  )}
+                </thead>
+                <tbody>
+                  {activeTab === 'incomes' && incomes.map(inc => (
+                    <tr key={inc.id} className="border-b border-slate-800 hover:bg-slate-800/40 transition">
+                      <td className="p-4 text-slate-400">{inc.date}</td>
+                      <td className="p-4 font-medium">{inc.name} <span className="text-[10px] text-slate-500 ml-1">#{inc.id}</span></td>
+                      <td className="p-4">{inc.donation_type}</td>
+                      <td className="p-4 max-w-[150px] truncate">{inc.donation_type === 'Cash' ? inc.donor_category : `${inc.item_description} (x${inc.quantity})`}</td>
+                      <td className="p-4 text-brand-400 font-semibold">{inc.amount ? `Rs.${inc.amount}` : '-'}</td>
+                      <td className="p-4">
+                        <span className={`px-2 py-1 rounded text-xs ${inc.status === 'Received Today' ? 'bg-brand-500/20 text-brand-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                          {inc.status}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right">
+                        <button onClick={() => setEditIncome(inc)} className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded mr-2 hover:bg-blue-500/30 transition">Edit</button>
+                        <button onClick={() => handleDeleteIncome(inc.id)} className="px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition">Delete</button>
+                      </td>
+                    </tr>
+                  ))}
+                  
+                  {activeTab === 'expenses' && expenses.map(exp => (
+                    <tr key={exp.id} className="border-b border-slate-800 hover:bg-slate-800/40 transition">
+                      <td className="p-4 text-slate-400">{exp.date} <span className="text-xs ml-1">{exp.time}</span></td>
+                      <td className="p-4 font-medium">{exp.withdrawer_name} <span className="text-[10px] text-slate-500 ml-1">#{exp.id}</span></td>
+                      <td className="p-4 max-w-[200px] truncate">{exp.reason}</td>
+                      <td className="p-4 text-red-400 font-semibold">Rs.{exp.amount_taken}</td>
+                      <td className="p-4 text-right">
+                        <button onClick={() => setEditExpense(exp)} className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded mr-2 hover:bg-blue-500/30 transition">Edit</button>
+                        <button onClick={() => handleDeleteExpense(exp.id)} className="px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition">Delete</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* Edit Income Modal */}
+          {editIncome && (
+            <Modal title="Edit Income Record" onClose={() => setEditIncome(null)}>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                await supabase.from('incomes').update(editIncome).eq('id', editIncome.id);
+                setEditIncome(null);
+                fetchData();
+              }}>
+                <div className="grid grid-cols-2 gap-x-4">
+                  <InputField label="Name" value={editIncome.name} onChange={e => setEditIncome({...editIncome, name: e.target.value})} />
+                  <InputField label="Date" type="date" value={editIncome.date} onChange={e => setEditIncome({...editIncome, date: e.target.value})} />
+                  <InputField label="Amount" type="number" value={editIncome.amount} onChange={e => setEditIncome({...editIncome, amount: e.target.value})} />
+                  <InputField label="Donation Type" value={editIncome.donation_type} onChange={e => setEditIncome({...editIncome, donation_type: e.target.value})} />
+                  <InputField label="Status" value={editIncome.status} onChange={e => setEditIncome({...editIncome, status: e.target.value})} />
+                  <InputField label="Phone Number" value={editIncome.phone_number} onChange={e => setEditIncome({...editIncome, phone_number: e.target.value})} />
+                  <div className="col-span-2">
+                    <InputField label="Item Description (If Goods)" value={editIncome.item_description} onChange={e => setEditIncome({...editIncome, item_description: e.target.value})} />
+                  </div>
+                </div>
+                <button type="submit" className="w-full mt-4 bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-lg transition">Save Changes</button>
+              </form>
+            </Modal>
+          )}
+
+          {/* Edit Expense Modal */}
+          {editExpense && (
+            <Modal title="Edit Expense Record" onClose={() => setEditExpense(null)}>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                await supabase.from('expenses').update(editExpense).eq('id', editExpense.id);
+                setEditExpense(null);
+                fetchData();
+              }}>
+                <div className="grid grid-cols-2 gap-x-4">
+                  <div className="col-span-2">
+                    <InputField label="Reason" value={editExpense.reason} onChange={e => setEditExpense({...editExpense, reason: e.target.value})} />
+                  </div>
+                  <InputField label="Withdrawer Name" value={editExpense.withdrawer_name} onChange={e => setEditExpense({...editExpense, withdrawer_name: e.target.value})} />
+                  <InputField label="Amount Taken" type="number" value={editExpense.amount_taken} onChange={e => setEditExpense({...editExpense, amount_taken: e.target.value})} />
+                  <InputField label="Date" type="date" value={editExpense.date} onChange={e => setEditExpense({...editExpense, date: e.target.value})} />
+                  <InputField label="Time" value={editExpense.time} onChange={e => setEditExpense({...editExpense, time: e.target.value})} />
+                </div>
+                <button type="submit" className="w-full mt-4 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-lg transition">Save Changes</button>
+              </form>
+            </Modal>
+          )}
+
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<AdminApp />);
+  </script>
+</body>
+</html>
