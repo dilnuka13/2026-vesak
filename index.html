@@ -65,6 +65,8 @@
       background-color: #020617; /* Tailwind slate-950 */
       color: #e2e8f0; /* slate-200 */
       font-family: 'Inter', system-ui, sans-serif;
+      /* Mobile safe areas handling for body scrolling */
+      padding-bottom: env(safe-area-inset-bottom);
     }
     
     /* Custom Scrollbar for dark theme */
@@ -90,7 +92,6 @@
     const { useState, useEffect, useMemo } = React;
 
     // --- SUPABASE INITIALIZATION ---
-    // Make sure to match the URL and ANON KEY provided
     const supabaseUrl = 'https://yqpkgybmjdovdnmekpnw.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxcGtneWJtamRvdmRubWVrcG53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjUwMjAsImV4cCI6MjA5MjEwMTAyMH0.7C9jv1_zDRxSMCgs0tWfiNUGXGOkCLz5RE0CCDoc_yA';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -166,117 +167,159 @@
       ctx.fillRect(0, 0, width, height);
 
       const drawContent = () => {
-        // Decorative Borders
-        ctx.strokeStyle = '#22c55e';
-        ctx.lineWidth = 14;
-        ctx.strokeRect(20, 20, width - 40, height - 40);
-        ctx.strokeStyle = '#020617';
-        ctx.lineWidth = 4;
-        ctx.strokeRect(27, 27, width - 54, height - 54);
-        
+        // Aesthetic Top Bar
+        ctx.fillStyle = '#22c55e';
+        ctx.fillRect(0, 0, width, 15);
+
+        // Outer Double Border Effect
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 6;
+        ctx.strokeRect(20, 35, width - 40, height - 55);
+
+        // Inner Dashed Border
+        ctx.setLineDash([8, 8]);
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(32, 47, width - 64, height - 79);
+        ctx.setLineDash([]); // Reset line dash
+
+        // Watermark Logo
+        ctx.globalAlpha = 0.04;
+        const logoSize = 500;
+        ctx.drawImage(img, (width - logoSize) / 2, (height - logoSize) / 2, logoSize, logoSize);
+        ctx.globalAlpha = 1.0;
+
+        // Header Section
         ctx.textAlign = 'center';
-        
-        // Header
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 45px sans-serif';
-        ctx.fillText('VESAK LANTERN 2026', width/2, 100);
+        ctx.font = 'bold 42px sans-serif';
+        ctx.fillText('VESAK LANTERN 2026', width/2, 110);
         
         ctx.fillStyle = '#22c55e';
-        ctx.font = '30px sans-serif';
-        ctx.fillText('OFFICIAL DONATION RECEIPT', width/2, 150);
-        ctx.font = '24px sans-serif';
+        ctx.font = 'bold 26px sans-serif';
+        ctx.letterSpacing = '2px';
+        ctx.fillText('OFFICIAL DONATION RECEIPT', width/2, 155);
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '22px sans-serif';
+        ctx.letterSpacing = '0px';
         ctx.fillText('මහා වෙසක් කූඩු ව්‍යාපෘතිය', width/2, 190);
 
-        // Divider
-        ctx.strokeStyle = '#334155';
-        ctx.lineWidth = 3;
+        // Divider Line
         ctx.beginPath();
-        ctx.moveTo(80, 230);
-        ctx.lineTo(width-80, 230);
+        ctx.moveTo(100, 230);
+        ctx.lineTo(width-100, 230);
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Data Rows
-        let currentY = 300;
-        const drawRow = (label, value) => {
-          ctx.textAlign = 'left';
-          ctx.fillStyle = '#94a3b8';
-          ctx.font = '26px sans-serif';
-          ctx.fillText(label, 100, currentY);
-          
+        // Details Section (Tabular alignment)
+        let currentY = 310;
+        const rowSpacing = 65;
+        const leftColX = width / 2 - 20;
+        const rightColX = width / 2 + 20;
+
+        const drawRow = (label, value, isHighlight = false) => {
+          // Label
           ctx.textAlign = 'right';
-          ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 28px sans-serif';
-          ctx.fillText(value, width - 100, currentY);
-          currentY += 65;
+          ctx.fillStyle = '#64748b';
+          ctx.font = '22px sans-serif';
+          ctx.fillText(label, leftColX, currentY);
+          
+          // Value
+          ctx.textAlign = 'left';
+          ctx.fillStyle = isHighlight ? '#22c55e' : '#e2e8f0';
+          
+          // --- FIX: Dynamic Font Sizing to prevent overflowing ---
+          let displayValue = String(value || '-');
+          if(displayValue.length > 35) {
+             ctx.font = isHighlight ? 'bold 16px sans-serif' : 'bold 15px sans-serif';
+          } else if(displayValue.length > 20) {
+             ctx.font = isHighlight ? 'bold 20px sans-serif' : 'bold 18px sans-serif';
+          } else {
+             ctx.font = isHighlight ? 'bold 24px sans-serif' : 'bold 22px sans-serif';
+          }
+          
+          ctx.fillText(displayValue, rightColX, currentY);
+          currentY += rowSpacing;
         };
 
-        drawRow('Receipt ID:', 'VLP-' + (donation.id || Math.floor(Math.random()*10000)).toString().padStart(4, '0'));
-        drawRow('Date / දිනය:', donation.date);
-        drawRow('Donor / නම:', donation.name || '-');
-        drawRow('Contact / දුරකථන:', donation.phone_number || '-');
-        drawRow('Received By / සටහන් කළේ:', donation.reported_by || '-');
+        // --- FIX: Shorten UUIDs safely so they don't jump out of the page ---
+        const rawId = donation.id ? String(donation.id) : String(Math.floor(Math.random() * 10000));
+        const shortId = rawId.includes('-') ? rawId.split('-')[0].toUpperCase() : rawId.padStart(4, '0');
+        const receiptId = 'VLP-' + shortId;
+        
+        drawRow('Receipt ID :', receiptId, true);
+        drawRow('Date / දිනය :', donation.date);
+        drawRow('Donor Name / නම :', donation.name);
+        drawRow('Contact / දුරකථන :', donation.phone_number);
+        drawRow('Received By / සටහන් කළේ :', donation.reported_by);
         
         if (donation.donation_type === 'Cash') {
-          drawRow('Category:', donation.donor_category);
+          drawRow('Category / වර්ගය :', donation.donor_category);
         } else {
-          drawRow('Item / ද්‍රව්‍ය:', donation.item_description);
-          drawRow('Quantity / ප්‍රමාණය:', donation.quantity.toString());
+          drawRow('Item / ද්‍රව්‍ය :', donation.item_description);
+          drawRow('Quantity / ප්‍රමාණය :', donation.quantity.toString());
         }
 
-        // Space and heavy divider
+        // Amount Box
         currentY += 20;
-        ctx.strokeStyle = '#334155';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(80, currentY);
-        ctx.lineTo(width-80, currentY);
+        
+        // Highlight Box Background
+        ctx.fillStyle = '#020617';
+        ctx.strokeStyle = '#22c55e';
+        ctx.lineWidth = 2;
+        ctx.roundRect ? ctx.roundRect(80, currentY, width - 160, 140, 15) : ctx.strokeRect(80, currentY, width - 160, 140);
+        ctx.fill();
         ctx.stroke();
-        currentY += 80;
 
-        // Total
-        ctx.textAlign = 'left';
-        ctx.fillStyle = '#22c55e';
-        ctx.font = 'bold 36px sans-serif';
-        ctx.fillText(donation.donation_type === 'Cash' ? 'DONATION AMOUNT :' : 'DONATION VALUE :', 100, currentY);
-
-        ctx.textAlign = 'right';
-        ctx.fillStyle = '#22c55e';
-        ctx.font = 'bold 50px monospace';
-        const amountStr = donation.donation_type === 'Cash' ? `Rs. ${Number(donation.amount).toLocaleString()}` : 'GOODS';
-        ctx.fillText(amountStr, width - 100, currentY);
-
-        // Footer Divider
-        currentY += 60;
-        ctx.beginPath();
-        ctx.moveTo(150, currentY);
-        ctx.lineTo(width-150, currentY);
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = '#1e293b';
-        ctx.stroke();
-        currentY += 50;
-
-        // Footer info (Contact)
+        // Box Content
         ctx.textAlign = 'center';
-        ctx.fillStyle = '#94a3b8';
+        ctx.fillStyle = '#4ade80';
+        ctx.font = '20px sans-serif';
+        ctx.fillText(donation.donation_type === 'Cash' ? 'TOTAL DONATION AMOUNT' : 'TOTAL DONATION VALUE', width/2, currentY + 45);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 55px monospace';
+        const amountStr = donation.donation_type === 'Cash' ? `Rs. ${Number(donation.amount).toLocaleString()}` : 'GOODS / ද්‍රව්‍ය';
+        ctx.fillText(amountStr, width/2, currentY + 105);
+
+        currentY += 200;
+
+        // System Generated Stamp
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#334155';
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillText('★ SYSTEM GENERATED DIGITAL RECEIPT ★', width/2, currentY);
+
+        currentY += 60;
+
+        // Footer Contact Details
+        ctx.fillStyle = '#64748b';
         ctx.font = '18px sans-serif';
         ctx.fillText('විමසීම් : දික්හේනපුර නව බුදුමැදුර අසල', width/2, currentY);
         
-        currentY += 35;
-        ctx.font = 'bold 18px sans-serif';
-        ctx.fillStyle = '#cbd5e1';
-        ctx.fillText('0716155666 - ඉසර දිල්නුක | 0710846810 - ඉමේශ් නිල්හාන්', width/2, currentY);
-        
         currentY += 30;
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = 'bold 18px sans-serif';
+        ctx.fillText('0716155666 - ඉසර දිල්නුක  |  0710846810 - ඉමේශ් නිල්හාන්', width/2, currentY);
+        
+        currentY += 25;
+        ctx.fillStyle = '#475569';
         ctx.font = '16px sans-serif';
-        ctx.fillStyle = '#64748b';
-        ctx.fillText('in.fo.dilnuka@outlook.com | imeshnilhan21@gmail.com', width/2, currentY);
+        ctx.fillText('isaradilnuka2005@gmail.com', width/2, currentY);
 
         // Final Thank you
         currentY += 60;
-        ctx.fillStyle = '#4ade80';
+        ctx.fillStyle = '#22c55e';
         ctx.font = 'italic 22px sans-serif';
         ctx.fillText('Thank you for your generous contribution!', width/2, currentY);
+        ctx.font = '20px sans-serif';
         ctx.fillText('ඔබගේ වටිනා පරිත්‍යාගයට බොහෝ පින්.', width/2, currentY + 30);
+
+        // Top Logos (Drawn last to be on top)
+        ctx.drawImage(img, width - 130, 60, 80, 80);
+        ctx.drawImage(img, 50, 60, 80, 80);
 
         // Trigger Download
         const dataUrl = canvas.toDataURL('image/png');
@@ -288,25 +331,10 @@
 
       // Load logo
       const img = new Image();
-      // Ensure crossOrigin doesn't block local relative data
       img.crossOrigin = "anonymous";
       img.src = 'logo.png';
-      img.onload = () => {
-         // Create watermark
-         ctx.globalAlpha = 0.04;
-         ctx.drawImage(img, width/2 - 300, height/2 - 300, 600, 600);
-         ctx.globalAlpha = 1.0;
-         
-         // Create top logos
-         ctx.drawImage(img, width - 140, 50, 90, 90);
-         ctx.drawImage(img, 50, 50, 90, 90);
-         
-         drawContent();
-      };
-      img.onerror = () => {
-         // Fallback if logo fails
-         drawContent();
-      };
+      img.onload = drawContent;
+      img.onerror = drawContent; // Fallback if logo fails
     };
 
     // --- COMPONENTS ---
@@ -314,10 +342,10 @@
     function ExportButtons({ onCsv, onPdf }) {
       return (
         <div className="flex gap-2">
-          <button onClick={onCsv} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/50 rounded-lg transition text-xs font-semibold flex items-center gap-1.5">
+          <button onClick={onCsv} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/50 rounded-lg transition text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap">
             <IconDownload /> CSV Download
           </button>
-          <button onClick={onPdf} className="px-3 py-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50 rounded-lg transition text-xs font-semibold flex items-center gap-1.5">
+          <button onClick={onPdf} className="px-3 py-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50 rounded-lg transition text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap">
             <IconDownload /> PDF Download
           </button>
         </div>
@@ -881,9 +909,9 @@
           </div>
 
           <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <input type="text" placeholder="Search keyword..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2.5 outline-none flex-1" />
-            <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2.5 outline-none" />
-            <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2.5 outline-none">
+            <input type="text" placeholder="Search keyword..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2.5 outline-none flex-1 focus:border-brand-500" />
+            <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2.5 outline-none focus:border-brand-500" />
+            <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2.5 outline-none focus:border-brand-500">
               <option value="date-desc">Newest Date / අලුත්ම දිනය</option>
               <option value="date-asc">Oldest Date / පැරණිතම දිනය</option>
               <option value="name-asc">Alphabetical (A-Z) / අකුරු පිළිවෙළට</option>
@@ -992,9 +1020,9 @@
           </div>
 
           <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <input type="text" placeholder="Search keyword..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2.5 outline-none flex-1" />
-            <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2.5 outline-none" />
-            <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2.5 outline-none">
+            <input type="text" placeholder="Search keyword..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2.5 outline-none flex-1 focus:border-brand-500" />
+            <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2.5 outline-none focus:border-brand-500" />
+            <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2.5 outline-none focus:border-brand-500">
               <option value="date-desc">Newest Date / අලුත්ම දිනය</option>
               <option value="date-asc">Oldest Date / පැරණිතම දිනය</option>
               <option value="name-asc">Alphabetical (A-Z) / අකුරු පිළිවෙළට</option>
@@ -1056,7 +1084,7 @@
         const file = e.target.files[0];
         if (!file) return;
 
-        // Compress image client side by resizing if too large using canvas to keep strictly under Supabase Text limits
+        // Compress image client side
         setUploadingId(recordId);
         
         try {
@@ -1078,7 +1106,6 @@
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
-                // Heavy compression jpeg
                 const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
 
                 try {
@@ -1146,9 +1173,9 @@
           </div>
 
           <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <input type="text" placeholder="Search keyword..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2.5 outline-none flex-1" />
-            <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2.5 outline-none" />
-            <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2.5 outline-none">
+            <input type="text" placeholder="Search keyword..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2.5 outline-none flex-1 focus:border-brand-500" />
+            <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2.5 outline-none focus:border-brand-500" />
+            <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2.5 outline-none focus:border-brand-500">
               <option value="date-desc">Newest Date / අලුත්ම දිනය</option>
               <option value="date-asc">Oldest Date / පැරණිතම දිනය</option>
               <option value="name-asc">Alphabetical (A-Z) / අකුරු පිළිවෙළට</option>
@@ -1666,7 +1693,7 @@
       const isSuccess = data.type === 'success';
 
       return (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] animate-fade-in w-[90%] max-w-sm">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] animate-fade-in w-[90%] max-w-sm" style={{ marginTop: 'env(safe-area-inset-top)' }}>
           <div className="glass flex flex-col gap-2 p-4 rounded-xl border border-slate-700/50 shadow-[0_10px_40px_rgba(0,0,0,0.5)] relative overflow-hidden bg-slate-900/95 backdrop-blur-2xl">
             <div className={`absolute top-0 left-0 h-1 w-full ${isSuccess ? 'bg-brand-500' : 'bg-red-500'}`}></div>
             <button onClick={onClose} className="absolute top-3 right-3 text-slate-400 hover:text-white transition">
@@ -1783,7 +1810,9 @@
       return (
         <div className="flex flex-col min-h-screen pb-20 md:pb-0 relative">
           <NotificationToast show={!!notification} data={notification} onClose={() => setNotification(null)} />
-          <header className="glass sticky top-0 z-50 border-b border-slate-800">
+          
+          {/* Top Navigation with Safe Area (env) for Notch / Dynamic Island */}
+          <header className="glass sticky top-0 z-50 border-b border-slate-800" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex items-center justify-between h-20 md:h-24">
                 <div className="flex items-center gap-3 md:gap-4">
@@ -1812,7 +1841,8 @@
             </div>
           </header>
 
-          <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 w-full z-10 relative">
+          {/* Main Area with Safe Area Bottom Padding to prevent overlapping with bottom bar */}
+          <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 w-full z-10 relative" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6rem)' }}>
             <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-500/10 blur-[120px] rounded-full pointer-events-none"></div>
             <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-blue-500/10 blur-[120px] pointer-events-none"></div>
             
@@ -1884,8 +1914,8 @@
             </div>
           </main>
 
-          {/* Mobile Footer Navigation */}
-          <div className="md:hidden fixed bottom-0 left-0 right-0 glass border-t border-slate-800/80 z-50 flex justify-between px-2 pt-2 pb-3 bg-slate-950/90 backdrop-blur-xl">
+          {/* Mobile Footer Navigation with Bottom Safe Area for iPhone Home Indicator */}
+          <div className="md:hidden fixed bottom-0 left-0 right-0 glass border-t border-slate-800/80 z-50 flex justify-between px-2 pt-2 bg-slate-950/90 backdrop-blur-xl" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)' }}>
             <MobileNavButton id="dashboard" label="Dashboard" sLabel="ආරම්භය" icon={<IconDashboard />} />
             <MobileNavButton id="income-page" label="Income" sLabel="ආදායම්" icon={<IconIncome />} />
             <MobileNavButton id="expense-page" label="Expense" sLabel="වියදම්" icon={<IconExpense />} />

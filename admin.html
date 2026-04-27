@@ -31,6 +31,9 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- PDF Libraries (jsPDF + autoTable) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
   <style>
     .glass {
@@ -61,11 +64,49 @@
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxcGtneWJtamRvdmRubWVrcG53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjUwMjAsImV4cCI6MjA5MjEwMTAyMH0.7C9jv1_zDRxSMCgs0tWfiNUGXGOkCLz5RE0CCDoc_yA';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-    const InputField = ({ label, type="text", name, value, onChange }) => (
+    // Utilities
+    const exportToCSV = (filename, rows) => {
+      const csvContent = "\uFEFF" + rows.map(r => r.map(cell => {
+        if (cell === null || cell === undefined) return '""';
+        return `"${cell.toString().replace(/"/g, '""')}"`;
+      }).join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename + ".csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
+    const exportToPDF = (title, columns, dataRows, filename) => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(16);
+      doc.text(title, 14, 22);
+      doc.autoTable({
+        startY: 30,
+        head: [columns],
+        body: dataRows,
+        theme: 'grid',
+        styles: { font: 'helvetica', fontSize: 9 },
+        headStyles: { fillColor: [34, 197, 94] }
+      });
+      doc.save(filename + ".pdf");
+    };
+
+    // Components
+    const InputField = ({ label, type="text", name, value, onChange, options }) => (
       <div className="flex flex-col gap-1 mb-4 w-full">
         <label className="text-sm font-medium text-slate-300">{label}</label>
         {type === 'textarea' ? (
           <textarea name={name} value={value || ''} onChange={onChange} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2 outline-none h-20 focus:border-brand-500"></textarea>
+        ) : type === 'select' ? (
+          <select name={name} value={value || ''} onChange={onChange} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2 outline-none focus:border-brand-500">
+             <option value="">Select Option</option>
+             {options && options.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
         ) : (
           <input type={type} name={name} value={value || ''} onChange={onChange} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2 outline-none focus:border-brand-500" />
         )}
@@ -74,9 +115,9 @@
 
     const Modal = ({ title, children, onClose }) => (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-        <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto relative">
-          <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">&times;</button>
-          <h2 className="text-xl font-bold mb-4">{title}</h2>
+        <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto relative shadow-2xl">
+          <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-white text-2xl leading-none">&times;</button>
+          <h2 className="text-xl font-bold mb-6 text-brand-400 border-b border-slate-800 pb-2">{title}</h2>
           {children}
         </div>
       </div>
@@ -94,6 +135,11 @@
       
       const [editIncome, setEditIncome] = useState(null);
       const [editExpense, setEditExpense] = useState(null);
+      const [actionLoading, setActionLoading] = useState(false);
+
+      // Filters
+      const [searchTerm, setSearchTerm] = useState('');
+      const [filterDate, setFilterDate] = useState('');
 
       const fetchData = async () => {
         setLoading(true);
@@ -117,15 +163,115 @@
       };
 
       const handleDeleteIncome = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this income record?")) return;
-        await supabase.from('incomes').delete().eq('id', id);
-        fetchData();
+        if (!window.confirm("Are you sure you want to delete this income record? / මේ වාර්තාව මකන්න අවශ්‍යද?")) return;
+        setActionLoading(true);
+        try {
+          const { error } = await supabase.from('incomes').delete().eq('id', id);
+          if (error) throw error;
+          fetchData();
+        } catch (err) {
+          alert("Error deleting record: " + err.message);
+        } finally {
+          setActionLoading(false);
+        }
       };
 
       const handleDeleteExpense = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this expense record?")) return;
-        await supabase.from('expenses').delete().eq('id', id);
-        fetchData();
+        if (!window.confirm("Are you sure you want to delete this expense record? / මේ වාර්තාව මකන්න අවශ්‍යද?")) return;
+        setActionLoading(true);
+        try {
+          const { error } = await supabase.from('expenses').delete().eq('id', id);
+          if (error) throw error;
+          fetchData();
+        } catch (err) {
+          alert("Error deleting record: " + err.message);
+        } finally {
+          setActionLoading(false);
+        }
+      };
+
+      const handleSaveIncome = async (e) => {
+        e.preventDefault();
+        setActionLoading(true);
+        try {
+          const { error } = await supabase.from('incomes').update(editIncome).eq('id', editIncome.id);
+          if(error) throw error;
+          setEditIncome(null);
+          fetchData();
+        } catch(err) {
+          alert("Error saving record: " + err.message);
+        } finally {
+          setActionLoading(false);
+        }
+      };
+
+      const handleSaveExpense = async (e) => {
+        e.preventDefault();
+        setActionLoading(true);
+        try {
+          const { error } = await supabase.from('expenses').update(editExpense).eq('id', editExpense.id);
+          if(error) throw error;
+          setEditExpense(null);
+          fetchData();
+        } catch(err) {
+          alert("Error saving record: " + err.message);
+        } finally {
+          setActionLoading(false);
+        }
+      };
+
+      // Filtering Logic
+      const filteredIncomes = incomes.filter(inc => {
+        if(filterDate && inc.date !== filterDate) return false;
+        if(searchTerm) {
+          const s = searchTerm.toLowerCase();
+          return (inc.name?.toLowerCase().includes(s) || inc.id?.toString().includes(s) || inc.item_description?.toLowerCase().includes(s));
+        }
+        return true;
+      });
+
+      const filteredExpenses = expenses.filter(exp => {
+        if(filterDate && exp.date !== filterDate) return false;
+        if(searchTerm) {
+          const s = searchTerm.toLowerCase();
+          return (exp.reason?.toLowerCase().includes(s) || exp.withdrawer_name?.toLowerCase().includes(s));
+        }
+        return true;
+      });
+
+      // Export Handlers
+      const exportIncomesCSV = () => {
+        const headers = ["ID", "Date", "Name", "Phone", "Type", "Status", "Amount", "Reported By", "Donor Category", "Item Description"];
+        const rows = [headers, ...filteredIncomes.map(i => [
+          i.id, i.date, i.name, i.phone_number || '-', i.donation_type, i.status, 
+          i.amount || 0, i.reported_by || '-', i.donor_category || '-', i.item_description || '-'
+        ])];
+        exportToCSV("Admin_Incomes_Report", rows);
+      };
+
+      const exportIncomesPDF = () => {
+        const headers = ["ID", "Date", "Name", "Type", "Status", "Amount/Details"];
+        const rows = filteredIncomes.map(i => [
+          i.id, i.date, i.name, i.donation_type, i.status, 
+          i.donation_type === 'Cash' ? `Rs.${i.amount}` : `${i.item_description} (x${i.quantity})`
+        ]);
+        exportToPDF("Income Records (Admin Report)", headers, rows, "Admin_Incomes_Report");
+      };
+
+      const exportExpensesCSV = () => {
+        const headers = ["ID", "Date", "Time", "Reason", "Withdrawer", "Amount"];
+        const rows = [headers, ...filteredExpenses.map(e => [
+          e.id, e.date, e.time, e.reason, e.withdrawer_name, e.amount_taken
+        ])];
+        exportToCSV("Admin_Expenses_Report", rows);
+      };
+
+      const exportExpensesPDF = () => {
+        const headers = ["ID", "Date", "Reason", "Withdrawer", "Amount"];
+        const rows = filteredExpenses.map(e => [
+          e.id, e.date, e.reason, e.withdrawer_name, `Rs.${e.amount_taken}`
+        ]);
+        exportToPDF("Expense Records (Admin Report)", headers, rows, "Admin_Expenses_Report");
       };
 
       if (!loggedIn) {
@@ -155,24 +301,37 @@
               <p className="text-brand-400 text-sm">Manage & Edit System Records</p>
             </div>
             <div className="flex gap-4">
-              <button onClick={fetchData} className="px-4 py-2 bg-slate-800 rounded-lg hover:bg-slate-700 transition">Refresh</button>
-              <button onClick={() => setLoggedIn(false)} className="px-4 py-2 bg-red-600/20 text-red-500 rounded-lg hover:bg-red-600/30 transition">Logout</button>
+              <a href="index.html" className="px-4 py-2 bg-slate-800 rounded-lg hover:bg-slate-700 transition flex items-center text-sm font-medium">Home</a>
+              <button onClick={fetchData} className="px-4 py-2 bg-brand-600 rounded-lg hover:bg-brand-500 transition text-sm font-medium shadow-[0_0_10px_rgba(34,197,94,0.3)]">Refresh DB</button>
+              <button onClick={() => setLoggedIn(false)} className="px-4 py-2 bg-red-600/20 text-red-500 rounded-lg hover:bg-red-600/30 transition text-sm font-medium">Logout</button>
             </div>
           </header>
 
-          <div className="flex gap-2 mb-6">
-            <button onClick={() => setActiveTab('incomes')} className={`px-6 py-2 rounded-lg font-medium transition ${activeTab === 'incomes' ? 'bg-brand-500 text-white' : 'glass text-slate-400 hover:text-white'}`}>Income Records</button>
-            <button onClick={() => setActiveTab('expenses')} className={`px-6 py-2 rounded-lg font-medium transition ${activeTab === 'expenses' ? 'bg-brand-500 text-white' : 'glass text-slate-400 hover:text-white'}`}>Expense Records</button>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+            <div className="flex gap-2">
+              <button onClick={() => {setActiveTab('incomes'); setSearchTerm(''); setFilterDate('');}} className={`px-6 py-2 rounded-lg font-medium transition ${activeTab === 'incomes' ? 'bg-brand-500 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Income Records</button>
+              <button onClick={() => {setActiveTab('expenses'); setSearchTerm(''); setFilterDate('');}} className={`px-6 py-2 rounded-lg font-medium transition ${activeTab === 'expenses' ? 'bg-red-500 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Expense Records</button>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+              <input type="date" value={filterDate} onChange={e=>setFilterDate(e.target.value)} className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500 outline-none" />
+              <input type="text" placeholder="Search by name, ID..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500 outline-none" />
+              <div className="flex gap-2">
+                <button onClick={activeTab === 'incomes' ? exportIncomesCSV : exportExpensesCSV} className="px-3 py-2 bg-slate-800 rounded-lg hover:bg-slate-700 text-sm font-medium transition border border-slate-700">CSV</button>
+                <button onClick={activeTab === 'incomes' ? exportIncomesPDF : exportExpensesPDF} className="px-3 py-2 bg-slate-800 rounded-lg hover:bg-slate-700 text-sm font-medium transition border border-slate-700">PDF</button>
+              </div>
+            </div>
           </div>
 
-          <div className="glass rounded-2xl overflow-x-auto">
-            {loading ? <div className="p-8 text-center text-slate-400">Loading records...</div> : (
+          <div className="glass rounded-2xl overflow-x-auto min-h-[400px]">
+            {loading ? <div className="p-8 text-center text-slate-400">Fetching records from database...</div> : (
               <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead className="bg-slate-900/50 text-slate-400 text-xs uppercase">
+                <thead className="bg-slate-900/80 text-slate-400 text-xs uppercase border-b border-slate-800">
                   {activeTab === 'incomes' ? (
                     <tr>
+                      <th className="p-4 rounded-tl-lg">ID</th>
                       <th className="p-4">Date</th>
-                      <th className="p-4">Name / ID</th>
+                      <th className="p-4">Name / Contact</th>
                       <th className="p-4">Type</th>
                       <th className="p-4">Details</th>
                       <th className="p-4">Amount</th>
@@ -181,7 +340,8 @@
                     </tr>
                   ) : (
                     <tr>
-                      <th className="p-4">Date</th>
+                      <th className="p-4 rounded-tl-lg">ID</th>
+                      <th className="p-4">Date & Time</th>
                       <th className="p-4">Withdrawer</th>
                       <th className="p-4">Reason</th>
                       <th className="p-4">Amount Taken</th>
@@ -190,12 +350,19 @@
                   )}
                 </thead>
                 <tbody>
-                  {activeTab === 'incomes' && incomes.map(inc => (
-                    <tr key={inc.id} className="border-b border-slate-800 hover:bg-slate-800/40 transition">
-                      <td className="p-4 text-slate-400">{inc.date}</td>
-                      <td className="p-4 font-medium">{inc.name} <span className="text-[10px] text-slate-500 ml-1">#{inc.id}</span></td>
-                      <td className="p-4">{inc.donation_type}</td>
-                      <td className="p-4 max-w-[150px] truncate">{inc.donation_type === 'Cash' ? inc.donor_category : `${inc.item_description} (x${inc.quantity})`}</td>
+                  {activeTab === 'incomes' && filteredIncomes.map(inc => (
+                    <tr key={inc.id} className="border-b border-slate-800/50 hover:bg-slate-800/40 transition">
+                      <td className="p-4 font-mono text-xs text-slate-500">#{inc.id}</td>
+                      <td className="p-4 text-slate-300">{inc.date}</td>
+                      <td className="p-4">
+                        <div className="font-medium text-white">{inc.name}</div>
+                        <div className="text-[10px] text-slate-500 mt-0.5">{inc.phone_number || '-'}</div>
+                      </td>
+                      <td className="p-4"><span className={`px-2 py-1 rounded text-[10px] ${inc.donation_type === 'Cash' ? 'bg-brand-500/10 text-brand-400' : 'bg-purple-500/10 text-purple-400'}`}>{inc.donation_type}</span></td>
+                      <td className="p-4 max-w-[150px] truncate text-slate-300">
+                        {inc.donation_type === 'Cash' ? inc.donor_category : `${inc.item_description} (x${inc.quantity})`}
+                        <div className="text-[9px] text-slate-500 mt-1">Rep: {inc.reported_by}</div>
+                      </td>
                       <td className="p-4 text-brand-400 font-semibold">{inc.amount ? `Rs.${inc.amount}` : '-'}</td>
                       <td className="p-4">
                         <span className={`px-2 py-1 rounded text-xs ${inc.status === 'Received Today' ? 'bg-brand-500/20 text-brand-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
@@ -203,24 +370,32 @@
                         </span>
                       </td>
                       <td className="p-4 text-right">
-                        <button onClick={() => setEditIncome(inc)} className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded mr-2 hover:bg-blue-500/30 transition">Edit</button>
-                        <button onClick={() => handleDeleteIncome(inc.id)} className="px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition">Delete</button>
+                        <button onClick={() => setEditIncome(inc)} disabled={actionLoading} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 rounded-md mr-2 hover:bg-blue-500/30 transition text-xs font-semibold disabled:opacity-50">Edit</button>
+                        <button onClick={() => handleDeleteIncome(inc.id)} disabled={actionLoading} className="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-md hover:bg-red-500/30 transition text-xs font-semibold disabled:opacity-50">Delete</button>
                       </td>
                     </tr>
                   ))}
                   
-                  {activeTab === 'expenses' && expenses.map(exp => (
-                    <tr key={exp.id} className="border-b border-slate-800 hover:bg-slate-800/40 transition">
-                      <td className="p-4 text-slate-400">{exp.date} <span className="text-xs ml-1">{exp.time}</span></td>
-                      <td className="p-4 font-medium">{exp.withdrawer_name} <span className="text-[10px] text-slate-500 ml-1">#{exp.id}</span></td>
-                      <td className="p-4 max-w-[200px] truncate">{exp.reason}</td>
+                  {activeTab === 'expenses' && filteredExpenses.map(exp => (
+                    <tr key={exp.id} className="border-b border-slate-800/50 hover:bg-slate-800/40 transition">
+                      <td className="p-4 font-mono text-xs text-slate-500">#{exp.id}</td>
+                      <td className="p-4 text-slate-300">{exp.date} <span className="text-xs ml-1 opacity-70">{exp.time}</span></td>
+                      <td className="p-4 font-medium text-white">{exp.withdrawer_name}</td>
+                      <td className="p-4 max-w-[200px] truncate text-slate-300">{exp.reason}</td>
                       <td className="p-4 text-red-400 font-semibold">Rs.{exp.amount_taken}</td>
                       <td className="p-4 text-right">
-                        <button onClick={() => setEditExpense(exp)} className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded mr-2 hover:bg-blue-500/30 transition">Edit</button>
-                        <button onClick={() => handleDeleteExpense(exp.id)} className="px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition">Delete</button>
+                        <button onClick={() => setEditExpense(exp)} disabled={actionLoading} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 rounded-md mr-2 hover:bg-blue-500/30 transition text-xs font-semibold disabled:opacity-50">Edit</button>
+                        <button onClick={() => handleDeleteExpense(exp.id)} disabled={actionLoading} className="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-md hover:bg-red-500/30 transition text-xs font-semibold disabled:opacity-50">Delete</button>
                       </td>
                     </tr>
                   ))}
+
+                  {(activeTab === 'incomes' && filteredIncomes.length === 0) && (
+                    <tr><td colSpan="8" className="p-8 text-center text-slate-500">No income records found.</td></tr>
+                  )}
+                  {(activeTab === 'expenses' && filteredExpenses.length === 0) && (
+                    <tr><td colSpan="6" className="p-8 text-center text-slate-500">No expense records found.</td></tr>
+                  )}
                 </tbody>
               </table>
             )}
@@ -228,48 +403,58 @@
 
           {/* Edit Income Modal */}
           {editIncome && (
-            <Modal title="Edit Income Record" onClose={() => setEditIncome(null)}>
-              <form onSubmit={async (e) => {
-                e.preventDefault();
-                await supabase.from('incomes').update(editIncome).eq('id', editIncome.id);
-                setEditIncome(null);
-                fetchData();
-              }}>
-                <div className="grid grid-cols-2 gap-x-4">
+            <Modal title={`Edit Income Record (#${editIncome.id})`} onClose={() => setEditIncome(null)}>
+              <form onSubmit={handleSaveIncome}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
                   <InputField label="Name" value={editIncome.name} onChange={e => setEditIncome({...editIncome, name: e.target.value})} />
-                  <InputField label="Date" type="date" value={editIncome.date} onChange={e => setEditIncome({...editIncome, date: e.target.value})} />
-                  <InputField label="Amount" type="number" value={editIncome.amount} onChange={e => setEditIncome({...editIncome, amount: e.target.value})} />
-                  <InputField label="Donation Type" value={editIncome.donation_type} onChange={e => setEditIncome({...editIncome, donation_type: e.target.value})} />
-                  <InputField label="Status" value={editIncome.status} onChange={e => setEditIncome({...editIncome, status: e.target.value})} />
                   <InputField label="Phone Number" value={editIncome.phone_number} onChange={e => setEditIncome({...editIncome, phone_number: e.target.value})} />
-                  <div className="col-span-2">
-                    <InputField label="Item Description (If Goods)" value={editIncome.item_description} onChange={e => setEditIncome({...editIncome, item_description: e.target.value})} />
+                  <InputField label="Date" type="date" value={editIncome.date} onChange={e => setEditIncome({...editIncome, date: e.target.value})} />
+                  <InputField label="Donation Type" type="select" options={['Cash', 'Goods']} value={editIncome.donation_type} onChange={e => setEditIncome({...editIncome, donation_type: e.target.value})} />
+                  
+                  {editIncome.donation_type === 'Cash' ? (
+                    <>
+                      <InputField label="Amount (Rs)" type="number" value={editIncome.amount} onChange={e => setEditIncome({...editIncome, amount: e.target.value})} />
+                      <InputField label="Donor Category" type="select" options={['Main Donor', 'Regular Donor']} value={editIncome.donor_category} onChange={e => setEditIncome({...editIncome, donor_category: e.target.value})} />
+                    </>
+                  ) : (
+                    <>
+                      <InputField label="Item Description" value={editIncome.item_description} onChange={e => setEditIncome({...editIncome, item_description: e.target.value})} />
+                      <InputField label="Quantity" type="number" value={editIncome.quantity} onChange={e => setEditIncome({...editIncome, quantity: e.target.value})} />
+                    </>
+                  )}
+                  
+                  <InputField label="Status" type="select" options={['Received Today', 'Promised']} value={editIncome.status} onChange={e => setEditIncome({...editIncome, status: e.target.value})} />
+                  <InputField label="Reported By" value={editIncome.reported_by} onChange={e => setEditIncome({...editIncome, reported_by: e.target.value})} />
+                  
+                  <div className="md:col-span-2">
+                    <InputField label="Description / Notes" type="textarea" value={editIncome.description} onChange={e => setEditIncome({...editIncome, description: e.target.value})} />
                   </div>
                 </div>
-                <button type="submit" className="w-full mt-4 bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-lg transition">Save Changes</button>
+                <div className="flex gap-3 mt-4">
+                  <button type="button" onClick={() => setEditIncome(null)} className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-white font-bold transition">Cancel</button>
+                  <button type="submit" disabled={actionLoading} className="flex-1 bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-lg transition disabled:opacity-50">Save Changes</button>
+                </div>
               </form>
             </Modal>
           )}
 
           {/* Edit Expense Modal */}
           {editExpense && (
-            <Modal title="Edit Expense Record" onClose={() => setEditExpense(null)}>
-              <form onSubmit={async (e) => {
-                e.preventDefault();
-                await supabase.from('expenses').update(editExpense).eq('id', editExpense.id);
-                setEditExpense(null);
-                fetchData();
-              }}>
-                <div className="grid grid-cols-2 gap-x-4">
-                  <div className="col-span-2">
+            <Modal title={`Edit Expense Record (#${editExpense.id})`} onClose={() => setEditExpense(null)}>
+              <form onSubmit={handleSaveExpense}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+                  <div className="md:col-span-2">
                     <InputField label="Reason" value={editExpense.reason} onChange={e => setEditExpense({...editExpense, reason: e.target.value})} />
                   </div>
                   <InputField label="Withdrawer Name" value={editExpense.withdrawer_name} onChange={e => setEditExpense({...editExpense, withdrawer_name: e.target.value})} />
                   <InputField label="Amount Taken" type="number" value={editExpense.amount_taken} onChange={e => setEditExpense({...editExpense, amount_taken: e.target.value})} />
                   <InputField label="Date" type="date" value={editExpense.date} onChange={e => setEditExpense({...editExpense, date: e.target.value})} />
-                  <InputField label="Time" value={editExpense.time} onChange={e => setEditExpense({...editExpense, time: e.target.value})} />
+                  <InputField label="Time" type="time" value={editExpense.time} onChange={e => setEditExpense({...editExpense, time: e.target.value})} />
                 </div>
-                <button type="submit" className="w-full mt-4 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-lg transition">Save Changes</button>
+                <div className="flex gap-3 mt-6">
+                  <button type="button" onClick={() => setEditExpense(null)} className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-white font-bold transition">Cancel</button>
+                  <button type="submit" disabled={actionLoading} className="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-lg transition disabled:opacity-50">Save Changes</button>
+                </div>
               </form>
             </Modal>
           )}
