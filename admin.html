@@ -51,6 +51,65 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    
+    /* Toast Animations */
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+    /* Toast Styles */
+    #toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 90vw;
+    }
+    @media (max-width: 640px) {
+      #toast-container {
+        right: 50%;
+        transform: translateX(50%);
+        top: 20px;
+        width: calc(100% - 40px);
+      }
+      .toast {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+      }
+    }
+    .toast {
+      padding: 12px 20px;
+      border-radius: 12px;
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+      animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(12px);
+      gap: 12px;
+    }
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+    .toast.success { background: rgba(22, 163, 74, 0.9); border: 1px solid rgba(34, 197, 94, 0.4); }
+    .toast.error { background: rgba(220, 38, 38, 0.9); border: 1px solid rgba(239, 68, 68, 0.4); }
+    .toast-close {
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+      font-size: 18px;
+    }
+    .toast-close:hover { opacity: 1; }
   </style>
 </head>
 <body class="min-h-screen">
@@ -63,6 +122,29 @@
     const supabaseUrl = 'https://yqpkgybmjdovdnmekpnw.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxcGtneWJtamRvdmRubWVrcG53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjUwMjAsImV4cCI6MjA5MjEwMTAyMH0.7C9jv1_zDRxSMCgs0tWfiNUGXGOkCLz5RE0CCDoc_yA';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    window.showToast = (message, type = 'success') => {
+      let container = document.getElementById('toast-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+      }
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `
+        <div style="display:flex; align-items:center; gap:12px;">
+          ${type === 'success' ? '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' : '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>'}
+          <span>${message.replace('\n', '<br/>')}</span>
+        </div>
+        <span class="toast-close" onclick="this.parentElement.remove()">&times;</span>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.3s ease-out forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    };
 
     // Utilities
     const exportToCSV = (filename, rows) => {
@@ -97,7 +179,7 @@
     };
 
     // Components
-    const InputField = ({ label, type="text", name, value, onChange, options }) => (
+    const InputField = ({ label, type="text", name, value, onChange, options, autoComplete, prefix }) => (
       <div className="flex flex-col gap-1 mb-4 w-full">
         <label className="text-sm font-medium text-slate-300">{label}</label>
         {type === 'textarea' ? (
@@ -108,7 +190,14 @@
              {options && options.map(o => <option key={o} value={o}>{o}</option>)}
           </select>
         ) : (
-          <input type={type} name={name} value={value || ''} onChange={onChange} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2 outline-none focus:border-brand-500" />
+          <div className="relative">
+            {prefix && (
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span className="text-slate-400 sm:text-sm text-xs font-semibold">{prefix}</span>
+              </div>
+            )}
+            <input type={type} name={name} value={value || ''} onChange={onChange} autoComplete={autoComplete} className={`bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2 outline-none focus:border-brand-500 w-full ${prefix ? 'pl-[2.2rem]' : ''}`} />
+          </div>
         )}
       </div>
     );
@@ -125,8 +214,11 @@
 
     const AdminApp = () => {
       const [loggedIn, setLoggedIn] = useState(false);
-      const [creds, setCreds] = useState({ user: '', pass: '' });
+      const [authMode, setAuthMode] = useState('login'); // 'login', 'forgot', 'reset'
+      const [creds, setCreds] = useState({ email: '', pass: '' });
       const [error, setError] = useState('');
+      const [authLoading, setAuthLoading] = useState(false);
+      const [showBackupNotice, setShowBackupNotice] = useState(false);
 
       const [incomes, setIncomes] = useState([]);
       const [expenses, setExpenses] = useState([]);
@@ -137,9 +229,21 @@
       const [editExpense, setEditExpense] = useState(null);
       const [actionLoading, setActionLoading] = useState(false);
 
+      useEffect(() => {
+        const hour = new Date().getHours();
+        if (hour >= 22 || hour < 5) {
+          setShowBackupNotice(true);
+        }
+      }, [loggedIn]);
+
       // Filters
       const [searchTerm, setSearchTerm] = useState('');
       const [filterDate, setFilterDate] = useState('');
+
+      const formatCurrency = (amount) => {
+        if(!amount) return "LKR. 0.00";
+        return "LKR. " + parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      };
 
       const fetchData = async () => {
         setLoading(true);
@@ -152,25 +256,95 @@
         setLoading(false);
       };
 
-      const handleLogin = (e) => {
+      useEffect(() => {
+        // Check current session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session?.user?.id === 'ce705686-2466-45a0-af35-23cba7651343') {
+            setLoggedIn(true);
+            fetchData();
+          }
+        });
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          if (event === 'PASSWORD_RECOVERY') {
+            setAuthMode('reset');
+            setLoggedIn(false);
+          } else if (event === 'SIGNED_IN') {
+            // Check if we are currently in recovery mode (hash contains type=recovery)
+            if (window.location.hash.includes('type=recovery') || window.location.search.includes('type=recovery')) {
+              setAuthMode('reset');
+              setLoggedIn(false);
+            } else if (session?.user?.id === 'ce705686-2466-45a0-af35-23cba7651343') {
+              setLoggedIn(true);
+              fetchData();
+            } else {
+              supabase.auth.signOut();
+              setError('Unauthorized: You do not have admin access.');
+            }
+          } else if (event === 'SIGNED_OUT') {
+            setLoggedIn(false);
+          }
+        });
+
+        return () => subscription.unsubscribe();
+      }, []);
+
+      const handleLogin = async (e) => {
         e.preventDefault();
-        if (creds.user === 'dilnuka' && creds.pass === '20052005') {
-          setLoggedIn(true);
-          fetchData();
-        } else {
-          setError('Invalid username or password');
+        setAuthLoading(true); setError('');
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: creds.email,
+          password: creds.pass
+        });
+        if (error) setError(error.message);
+        setAuthLoading(false);
+      };
+
+      const handleForgotPassword = async (e) => {
+        e.preventDefault();
+        setAuthLoading(true); setError('');
+        const { error } = await supabase.auth.resetPasswordForEmail(creds.email, {
+          redirectTo: window.location.origin + window.location.pathname
+        });
+        if (error) setError(error.message);
+        else {
+           window.showToast("Password reset email sent!", "success");
+           setAuthMode('login');
         }
+        setAuthLoading(false);
+      };
+
+      const handleResetPassword = async (e) => {
+        e.preventDefault();
+        setAuthLoading(true); setError('');
+        const { error } = await supabase.auth.updateUser({ password: creds.pass });
+        if (error) setError(error.message);
+        else {
+           window.showToast("Password updated successfully! Please login with your new password.", "success");
+           await supabase.auth.signOut();
+           window.location.hash = '';
+           setAuthMode('login');
+           setLoggedIn(false);
+           setCreds({...creds, pass: ''});
+        }
+        setAuthLoading(false);
+      };
+
+      const handleLogout = async () => {
+        await supabase.auth.signOut();
       };
 
       const handleDeleteIncome = async (id) => {
         if (!window.confirm("Are you sure you want to delete this income record? / මේ වාර්තාව මකන්න අවශ්‍යද?")) return;
         setActionLoading(true);
         try {
-          const { error } = await supabase.from('incomes').delete().eq('id', id);
+          const { data, error } = await supabase.from('incomes').delete().eq('id', id).select();
           if (error) throw error;
+          if (!data || data.length === 0) throw new Error("Access Denied: Record could not be deleted (Check Supabase RLS policies).");
+          window.showToast("Record deleted successfully!", "success");
           fetchData();
         } catch (err) {
-          alert("Error deleting record: " + err.message);
+          window.showToast("Error deleting record: " + err.message, "error");
         } finally {
           setActionLoading(false);
         }
@@ -180,11 +354,29 @@
         if (!window.confirm("Are you sure you want to delete this expense record? / මේ වාර්තාව මකන්න අවශ්‍යද?")) return;
         setActionLoading(true);
         try {
-          const { error } = await supabase.from('expenses').delete().eq('id', id);
+          const { data, error } = await supabase.from('expenses').delete().eq('id', id).select();
           if (error) throw error;
+          if (!data || data.length === 0) throw new Error("Access Denied: Record could not be deleted (Check Supabase RLS policies).");
+          window.showToast("Record deleted successfully!", "success");
           fetchData();
         } catch (err) {
-          alert("Error deleting record: " + err.message);
+          window.showToast("Error deleting record: " + err.message, "error");
+        } finally {
+          setActionLoading(false);
+        }
+      };
+
+      const handleToggleStatus = async (inc) => {
+        setActionLoading(true);
+        const newStatus = inc.status === 'Received Today' ? 'Promised' : 'Received Today';
+        try {
+          const { data, error } = await supabase.from('incomes').update({ status: newStatus }).eq('id', inc.id).select();
+          if(error) throw error;
+          if (!data || data.length === 0) throw new Error("Access Denied: Status could not be updated (Check Supabase RLS policies).");
+          window.showToast(`Record marked as ${newStatus}!`, "success");
+          fetchData();
+        } catch(err) {
+          window.showToast("Error updating status: " + err.message, "error");
         } finally {
           setActionLoading(false);
         }
@@ -194,12 +386,14 @@
         e.preventDefault();
         setActionLoading(true);
         try {
-          const { error } = await supabase.from('incomes').update(editIncome).eq('id', editIncome.id);
+          const { data, error } = await supabase.from('incomes').update(editIncome).eq('id', editIncome.id).select();
           if(error) throw error;
+          if (!data || data.length === 0) throw new Error("Access Denied: Record could not be saved (Check Supabase RLS policies).");
+          window.showToast("Record saved successfully!", "success");
           setEditIncome(null);
           fetchData();
         } catch(err) {
-          alert("Error saving record: " + err.message);
+          window.showToast("Error saving record: " + err.message, "error");
         } finally {
           setActionLoading(false);
         }
@@ -209,12 +403,14 @@
         e.preventDefault();
         setActionLoading(true);
         try {
-          const { error } = await supabase.from('expenses').update(editExpense).eq('id', editExpense.id);
+          const { data, error } = await supabase.from('expenses').update(editExpense).eq('id', editExpense.id).select();
           if(error) throw error;
+          if (!data || data.length === 0) throw new Error("Access Denied: Record could not be saved (Check Supabase RLS policies).");
+          window.showToast("Record saved successfully!", "success");
           setEditExpense(null);
           fetchData();
         } catch(err) {
-          alert("Error saving record: " + err.message);
+          window.showToast("Error saving record: " + err.message, "error");
         } finally {
           setActionLoading(false);
         }
@@ -239,6 +435,32 @@
         return true;
       });
 
+      // Shares logic
+      const totalCashIncome = incomes.filter(i => i.status === 'Received Today' && i.donation_type === 'Cash').reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      const totalExpense = expenses.reduce((sum, item) => sum + Number(item.amount_taken || 0), 0);
+      const currentBalance = totalCashIncome - totalExpense;
+
+      const mainContributors = incomes.filter(i => i.donation_type === 'Cash' && i.donor_category === 'Main Donor' && i.status === 'Received Today');
+      const sponsorTotals = {};
+      const sponsorNames = {};
+      mainContributors.forEach(i => {
+        const rawName = i.name?.trim() || 'Unknown';
+        const key = rawName.toLowerCase().replace(/\s+/g, ' ');
+        if(!sponsorTotals[key]) {
+          sponsorTotals[key] = 0;
+          sponsorNames[key] = rawName;
+        }
+        sponsorTotals[key] += Number(i.amount || 0);
+      });
+      const totalMainContribution = Object.values(sponsorTotals).reduce((sum, amt) => sum + amt, 0);
+      
+      const sponsorShares = Object.entries(sponsorTotals).map(([key, amount]) => {
+        const name = sponsorNames[key];
+        const percentage = totalMainContribution > 0 ? (amount / totalMainContribution) * 100 : 0;
+        const shareAmount = (percentage / 100) * Math.max(0, currentBalance); // Only share positive balance
+        return { name, amount, percentage, shareAmount };
+      }).sort((a, b) => b.percentage - a.percentage);
+
       // Export Handlers
       const exportIncomesCSV = () => {
         const headers = ["ID", "Date", "Name", "Phone", "Type", "Status", "Amount", "Reported By", "Donor Category", "Item Description"];
@@ -253,7 +475,7 @@
         const headers = ["ID", "Date", "Name", "Type", "Status", "Amount/Details"];
         const rows = filteredIncomes.map(i => [
           i.id, i.date, i.name, i.donation_type, i.status, 
-          i.donation_type === 'Cash' ? `Rs.${i.amount}` : `${i.item_description} (x${i.quantity})`
+          i.donation_type === 'Cash' ? `LKR.${i.amount}` : `${i.item_description} (x${i.quantity})`
         ]);
         exportToPDF("Income Records (Admin Report)", headers, rows, "Admin_Incomes_Report");
       };
@@ -269,25 +491,90 @@
       const exportExpensesPDF = () => {
         const headers = ["ID", "Date", "Reason", "Withdrawer", "Amount"];
         const rows = filteredExpenses.map(e => [
-          e.id, e.date, e.reason, e.withdrawer_name, `Rs.${e.amount_taken}`
+          e.id, e.date, e.reason, e.withdrawer_name, `LKR.${e.amount_taken}`
         ]);
         exportToPDF("Expense Records (Admin Report)", headers, rows, "Admin_Expenses_Report");
       };
 
-      if (!loggedIn) {
+      // Backup Logic
+      const generateSQLBackup = () => {
+        let sql = `-- Vesak System Database Backup\n-- Generated on: ${new Date().toLocaleString()}\n\n`;
+        
+        // Incomes SQL
+        sql += `-- Table: incomes\n`;
+        incomes.forEach(i => {
+          const values = [
+            i.id, i.date, i.name, i.phone_number, i.address, i.donation_type, 
+            i.amount, i.donor_category, i.item_description, i.quantity, i.status, i.reported_by, i.description
+          ].map(v => v === null || v === undefined ? 'NULL' : `'${String(v).replace(/'/g, "''")}'`);
+          sql += `INSERT INTO incomes (id, date, name, phone_number, address, donation_type, amount, donor_category, item_description, quantity, status, reported_by, description) VALUES (${values.join(', ')});\n`;
+        });
+
+        sql += `\n-- Table: expenses\n`;
+        // Expenses SQL
+        expenses.forEach(e => {
+          const values = [
+            e.id, e.reason, e.withdrawer_name, e.date, e.time, e.amount_taken, e.receipt_url
+          ].map(v => v === null || v === undefined ? 'NULL' : `'${String(v).replace(/'/g, "''")}'`);
+          sql += `INSERT INTO expenses (id, reason, withdrawer_name, date, time, amount_taken, receipt_url) VALUES (${values.join(', ')});\n`;
+        });
+
+        const blob = new Blob([sql], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Vesak_Backup_${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.showToast("SQL Backup file generated successfully!", "success");
+      };
+
+      if (!loggedIn || authMode === 'reset') {
         return (
           <div className="min-h-screen flex items-center justify-center p-4">
-            <div className="glass p-8 rounded-2xl w-full max-w-md">
+            <div className="glass p-8 rounded-2xl w-full max-w-md animate-fade-in">
               <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold text-white tracking-tight">Admin Login</h1>
+                <h1 className="text-3xl font-bold text-white tracking-tight">
+                  {authMode === 'login' ? 'Admin Login' : authMode === 'forgot' ? 'Reset Password' : 'New Password'}
+                </h1>
                 <p className="text-slate-400 text-sm mt-2">Vesak Lantern System 2026</p>
               </div>
-              <form onSubmit={handleLogin} className="flex flex-col gap-4">
-                {error && <div className="text-red-400 bg-red-500/10 p-3 rounded-lg text-sm text-center border border-red-500/20">{error}</div>}
-                <InputField label="Username (පරිශීලක නාමය)" name="user" value={creds.user} onChange={e => setCreds({...creds, user: e.target.value})} />
-                <InputField label="Password (මුරපදය)" type="password" name="pass" value={creds.pass} onChange={e => setCreds({...creds, pass: e.target.value})} />
-                <button type="submit" className="mt-4 bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-lg transition shadow-lg">Login / පිවිසෙන්න</button>
-              </form>
+              
+              {authMode === 'login' && (
+                <form onSubmit={handleLogin} className="flex flex-col gap-4 animate-fade-in">
+                  {error && <div className="text-red-400 bg-red-500/10 p-3 rounded-lg text-sm text-center border border-red-500/20">{error}</div>}
+                  <InputField label="Email Address" type="email" name="email" autoComplete="email" value={creds.email} onChange={e => setCreds({...creds, email: e.target.value})} />
+                  <InputField label="Password" type="password" name="password" autoComplete="current-password" value={creds.pass} onChange={e => setCreds({...creds, pass: e.target.value})} />
+                  <button type="button" onClick={() => {setAuthMode('forgot'); setError('');}} className="text-xs text-brand-400 hover:text-brand-300 self-end -mt-2 transition">Forgot Password?</button>
+                  <button type="submit" disabled={authLoading} className="mt-2 bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-lg transition shadow-[0_0_15px_rgba(34,197,94,0.3)] disabled:opacity-50">
+                    {authLoading ? 'Signing in...' : 'Login / පිවිසෙන්න'}
+                  </button>
+                </form>
+              )}
+
+              {authMode === 'forgot' && (
+                <form onSubmit={handleForgotPassword} className="flex flex-col gap-4 animate-fade-in">
+                  <p className="text-sm text-slate-300 mb-2">Enter your email address to receive a password reset link.</p>
+                  {error && <div className="text-red-400 bg-red-500/10 p-3 rounded-lg text-sm text-center border border-red-500/20">{error}</div>}
+                  <InputField label="Email Address" type="email" name="email" value={creds.email} onChange={e => setCreds({...creds, email: e.target.value})} />
+                  <button type="submit" disabled={authLoading} className="mt-2 bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-lg transition shadow-[0_0_15px_rgba(34,197,94,0.3)] disabled:opacity-50">
+                    {authLoading ? 'Sending...' : 'Send Reset Link'}
+                  </button>
+                  <button type="button" onClick={() => {setAuthMode('login'); setError('');}} className="text-sm text-slate-400 hover:text-white mt-2 transition">Back to Login</button>
+                </form>
+              )}
+
+              {authMode === 'reset' && (
+                <form onSubmit={handleResetPassword} className="flex flex-col gap-4 animate-fade-in">
+                  <p className="text-sm text-slate-300 mb-2">Please enter your new password.</p>
+                  {error && <div className="text-red-400 bg-red-500/10 p-3 rounded-lg text-sm text-center border border-red-500/20">{error}</div>}
+                  <InputField label="New Password" type="password" name="new-password" value={creds.pass} onChange={e => setCreds({...creds, pass: e.target.value})} />
+                  <button type="submit" disabled={authLoading} className="mt-2 bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-lg transition shadow-[0_0_15px_rgba(34,197,94,0.3)] disabled:opacity-50">
+                    {authLoading ? 'Saving...' : 'Save New Password'}
+                  </button>
+                </form>
+              )}
             </div>
           </div>
         );
@@ -295,31 +582,55 @@
 
       return (
         <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+          {showBackupNotice && (
+            <div className="mb-6 bg-brand-500/10 border border-brand-500/30 p-4 rounded-2xl flex items-center justify-between animate-fade-in">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-brand-500/20 rounded-lg text-brand-400">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">Daily Backup Reminder</p>
+                  <p className="text-xs text-slate-400">එදිනෙදා දත්ත වල ආරක්ෂාව සඳහා දිනපතා රාත්‍රී කාලයේදී බැකප් එකක් ලබා ගැනීමට අමතක නොකරන්න.</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={generateSQLBackup} className="px-3 py-1.5 bg-brand-500 text-white text-xs font-bold rounded-lg hover:bg-brand-600 transition">Download SQL Backup</button>
+                <button onClick={() => setShowBackupNotice(false)} className="text-slate-500 hover:text-white transition text-xl leading-none">&times;</button>
+              </div>
+            </div>
+          )}
+
           <header className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4 glass p-6 rounded-2xl">
-            <div>
+            <div className="text-center sm:text-left">
               <h1 className="text-2xl font-bold text-white">Administrator Dashboard</h1>
               <p className="text-brand-400 text-sm">Manage & Edit System Records</p>
             </div>
-            <div className="flex gap-4">
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-4">
               <a href="index.html" className="px-4 py-2 bg-slate-800 rounded-lg hover:bg-slate-700 transition flex items-center text-sm font-medium">Home</a>
-              <button onClick={fetchData} className="px-4 py-2 bg-brand-600 rounded-lg hover:bg-brand-500 transition text-sm font-medium shadow-[0_0_10px_rgba(34,197,94,0.3)]">Refresh DB</button>
-              <button onClick={() => setLoggedIn(false)} className="px-4 py-2 bg-red-600/20 text-red-500 rounded-lg hover:bg-red-600/30 transition text-sm font-medium">Logout</button>
+              <button onClick={fetchData} className="px-4 py-2 bg-brand-600 rounded-lg hover:bg-brand-500 transition text-sm font-medium shadow-[0_0_10px_rgba(34,197,94,0.3)]">Refresh</button>
+              <button onClick={generateSQLBackup} className="px-4 py-2 bg-blue-600/20 text-blue-400 border border-blue-600/30 rounded-lg hover:bg-blue-600/30 transition text-sm font-medium">SQL Backup</button>
+              <button onClick={handleLogout} className="px-4 py-2 bg-red-600/20 text-red-500 rounded-lg hover:bg-red-600/30 transition text-sm font-medium">Logout</button>
             </div>
           </header>
 
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-            <div className="flex gap-2">
-              <button onClick={() => {setActiveTab('incomes'); setSearchTerm(''); setFilterDate('');}} className={`px-6 py-2 rounded-lg font-medium transition ${activeTab === 'incomes' ? 'bg-brand-500 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Income Records</button>
-              <button onClick={() => {setActiveTab('expenses'); setSearchTerm(''); setFilterDate('');}} className={`px-6 py-2 rounded-lg font-medium transition ${activeTab === 'expenses' ? 'bg-red-500 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Expense Records</button>
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
+            <div className="flex flex-wrap gap-2 w-full lg:w-auto">
+              <button onClick={() => {setActiveTab('incomes'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-6 py-2 rounded-lg font-medium transition text-sm sm:text-base ${activeTab === 'incomes' ? 'bg-brand-500 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Incomes</button>
+              <button onClick={() => {setActiveTab('expenses'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-6 py-2 rounded-lg font-medium transition text-sm sm:text-base ${activeTab === 'expenses' ? 'bg-red-500 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Expenses</button>
+              <button onClick={() => {setActiveTab('shares'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-6 py-2 rounded-lg font-medium transition text-sm sm:text-base ${activeTab === 'shares' ? 'bg-blue-600 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Shares</button>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <input type="date" value={filterDate} onChange={e=>setFilterDate(e.target.value)} className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500 outline-none" />
-              <input type="text" placeholder="Search by name, ID..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500 outline-none" />
-              <div className="flex gap-2">
-                <button onClick={activeTab === 'incomes' ? exportIncomesCSV : exportExpensesCSV} className="px-3 py-2 bg-slate-800 rounded-lg hover:bg-slate-700 text-sm font-medium transition border border-slate-700">CSV</button>
-                <button onClick={activeTab === 'incomes' ? exportIncomesPDF : exportExpensesPDF} className="px-3 py-2 bg-slate-800 rounded-lg hover:bg-slate-700 text-sm font-medium transition border border-slate-700">PDF</button>
-              </div>
+            <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+              {activeTab !== 'shares' && (
+                <>
+                  <input type="date" value={filterDate} onChange={e=>setFilterDate(e.target.value)} className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500 outline-none w-full sm:w-auto" />
+                  <input type="text" placeholder="Search..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500 outline-none w-full sm:w-48" />
+                  <div className="flex gap-2">
+                    <button onClick={activeTab === 'incomes' ? exportIncomesCSV : exportExpensesCSV} className="flex-1 px-3 py-2 bg-slate-800 rounded-lg hover:bg-slate-700 text-sm font-medium transition border border-slate-700">CSV</button>
+                    <button onClick={activeTab === 'incomes' ? exportIncomesPDF : exportExpensesPDF} className="flex-1 px-3 py-2 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 text-sm font-medium transition border border-red-500/20">PDF</button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -327,24 +638,31 @@
             {loading ? <div className="p-8 text-center text-slate-400">Fetching records from database...</div> : (
               <table className="w-full text-left text-sm whitespace-nowrap">
                 <thead className="bg-slate-900/80 text-slate-400 text-xs uppercase border-b border-slate-800">
-                  {activeTab === 'incomes' ? (
+                  {activeTab === 'shares' ? (
                     <tr>
-                      <th className="p-4 rounded-tl-lg">ID</th>
-                      <th className="p-4">Date</th>
-                      <th className="p-4">Name / Contact</th>
-                      <th className="p-4">Type</th>
-                      <th className="p-4">Details</th>
+                      <th className="p-4 rounded-tl-lg">Sponsor Name / දායකයා</th>
+                      <th className="p-4">Contribution / මුදල</th>
+                      <th className="p-4">Percentage / ප්‍රතිශතය</th>
+                      <th className="p-4 rounded-tr-lg">Share Amount / බෙදිය යුතු මුදල</th>
+                    </tr>
+                  ) : activeTab === 'incomes' ? (
+                    <tr>
+                      <th className="p-4 rounded-tl-lg hidden md:table-cell">ID</th>
+                      <th className="p-4 hidden sm:table-cell">Date</th>
+                      <th className="p-4">Name</th>
+                      <th className="p-4 hidden md:table-cell">Type</th>
+                      <th className="p-4 hidden lg:table-cell">Details</th>
                       <th className="p-4">Amount</th>
-                      <th className="p-4">Status</th>
+                      <th className="p-4 hidden sm:table-cell">Status</th>
                       <th className="p-4 rounded-tr-lg text-right">Actions</th>
                     </tr>
                   ) : (
                     <tr>
-                      <th className="p-4 rounded-tl-lg">ID</th>
-                      <th className="p-4">Date & Time</th>
-                      <th className="p-4">Withdrawer</th>
+                      <th className="p-4 rounded-tl-lg hidden md:table-cell">ID</th>
+                      <th className="p-4 hidden sm:table-cell">Date & Time</th>
+                      <th className="p-4 hidden sm:table-cell">Withdrawer</th>
                       <th className="p-4">Reason</th>
-                      <th className="p-4">Amount Taken</th>
+                      <th className="p-4">Amount</th>
                       <th className="p-4 rounded-tr-lg text-right">Actions</th>
                     </tr>
                   )}
@@ -352,49 +670,88 @@
                 <tbody>
                   {activeTab === 'incomes' && filteredIncomes.map(inc => (
                     <tr key={inc.id} className="border-b border-slate-800/50 hover:bg-slate-800/40 transition">
-                      <td className="p-4 font-mono text-xs text-slate-500">#{inc.id}</td>
-                      <td className="p-4 text-slate-300">{inc.date}</td>
+                      <td className="p-4 font-mono text-xs text-slate-500 hidden md:table-cell">#{inc.id}</td>
+                      <td className="p-4 text-slate-300 hidden sm:table-cell text-xs">{inc.date}</td>
                       <td className="p-4">
-                        <div className="font-medium text-white">{inc.name}</div>
-                        <div className="text-[10px] text-slate-500 mt-0.5">{inc.phone_number || '-'}</div>
+                        <div className="font-medium text-white text-xs sm:text-sm">{inc.name}</div>
+                        <div className="text-[9px] text-slate-500 mt-0.5 sm:hidden">{inc.status} • {inc.donation_type}</div>
                       </td>
-                      <td className="p-4"><span className={`px-2 py-1 rounded text-[10px] ${inc.donation_type === 'Cash' ? 'bg-brand-500/10 text-brand-400' : 'bg-purple-500/10 text-purple-400'}`}>{inc.donation_type}</span></td>
-                      <td className="p-4 max-w-[150px] truncate text-slate-300">
+                      <td className="p-4 hidden md:table-cell"><span className={`px-2 py-1 rounded text-[10px] ${inc.donation_type === 'Cash' ? 'bg-brand-500/10 text-brand-400' : 'bg-purple-500/10 text-purple-400'}`}>{inc.donation_type}</span></td>
+                      <td className="p-4 max-w-[150px] truncate text-slate-300 hidden lg:table-cell">
                         {inc.donation_type === 'Cash' ? inc.donor_category : `${inc.item_description} (x${inc.quantity})`}
-                        <div className="text-[9px] text-slate-500 mt-1">Rep: {inc.reported_by}</div>
                       </td>
-                      <td className="p-4 text-brand-400 font-semibold">{inc.amount ? `Rs.${inc.amount}` : '-'}</td>
-                      <td className="p-4">
-                        <span className={`px-2 py-1 rounded text-xs ${inc.status === 'Received Today' ? 'bg-brand-500/20 text-brand-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                      <td className="p-4 text-brand-400 font-bold text-xs sm:text-sm">{inc.amount ? `Rs.${inc.amount}` : '-'}</td>
+                      <td className="p-4 hidden sm:table-cell">
+                        <span className={`px-2 py-1 rounded text-[10px] ${inc.status === 'Received Today' ? 'bg-brand-500/20 text-brand-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
                           {inc.status}
                         </span>
                       </td>
-                      <td className="p-4 text-right">
-                        <button onClick={() => setEditIncome(inc)} disabled={actionLoading} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 rounded-md mr-2 hover:bg-blue-500/30 transition text-xs font-semibold disabled:opacity-50">Edit</button>
-                        <button onClick={() => handleDeleteIncome(inc.id)} disabled={actionLoading} className="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-md hover:bg-red-500/30 transition text-xs font-semibold disabled:opacity-50">Delete</button>
+                      <td className="p-4 text-right whitespace-nowrap">
+                        <button onClick={() => handleToggleStatus(inc)} disabled={actionLoading} className={`p-1.5 rounded-md mr-1.5 transition text-[10px] font-bold disabled:opacity-50 ${inc.status === 'Received Today' ? 'bg-yellow-500/20 text-yellow-500' : 'bg-brand-500/20 text-brand-400'}`} title="Toggle Status">
+                          {inc.status === 'Received Today' ? 'Pledge' : 'Receive'}
+                        </button>
+                        <button onClick={() => setEditIncome(inc)} disabled={actionLoading} className="p-1.5 bg-blue-500/20 text-blue-400 rounded-md mr-1.5 hover:bg-blue-500/30 transition text-[10px] font-bold disabled:opacity-50">Edit</button>
+                        <button onClick={() => handleDeleteIncome(inc.id)} disabled={actionLoading} className="p-1.5 bg-red-500/20 text-red-400 rounded-md hover:bg-red-500/30 transition text-[10px] font-bold disabled:opacity-50">Del</button>
                       </td>
                     </tr>
                   ))}
                   
                   {activeTab === 'expenses' && filteredExpenses.map(exp => (
                     <tr key={exp.id} className="border-b border-slate-800/50 hover:bg-slate-800/40 transition">
-                      <td className="p-4 font-mono text-xs text-slate-500">#{exp.id}</td>
-                      <td className="p-4 text-slate-300">{exp.date} <span className="text-xs ml-1 opacity-70">{exp.time}</span></td>
-                      <td className="p-4 font-medium text-white">{exp.withdrawer_name}</td>
-                      <td className="p-4 max-w-[200px] truncate text-slate-300">{exp.reason}</td>
-                      <td className="p-4 text-red-400 font-semibold">Rs.{exp.amount_taken}</td>
-                      <td className="p-4 text-right">
-                        <button onClick={() => setEditExpense(exp)} disabled={actionLoading} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 rounded-md mr-2 hover:bg-blue-500/30 transition text-xs font-semibold disabled:opacity-50">Edit</button>
-                        <button onClick={() => handleDeleteExpense(exp.id)} disabled={actionLoading} className="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-md hover:bg-red-500/30 transition text-xs font-semibold disabled:opacity-50">Delete</button>
+                      <td className="p-4 font-mono text-xs text-slate-500 hidden md:table-cell">#{exp.id}</td>
+                      <td className="p-4 text-slate-300 hidden sm:table-cell text-xs">{exp.date}</td>
+                      <td className="p-4 font-medium text-white hidden sm:table-cell text-xs">{exp.withdrawer_name}</td>
+                      <td className="p-4 max-w-[200px] truncate text-slate-300 text-xs sm:text-sm">{exp.reason}</td>
+                      <td className="p-4 text-red-400 font-bold text-xs sm:text-sm">Rs.{exp.amount_taken}</td>
+                      <td className="p-4 text-right whitespace-nowrap">
+                        <button onClick={() => setEditExpense(exp)} disabled={actionLoading} className="p-1.5 bg-blue-500/20 text-blue-400 rounded-md mr-1.5 hover:bg-blue-500/30 transition text-[10px] font-bold disabled:opacity-50">Edit</button>
+                        <button onClick={() => handleDeleteExpense(exp.id)} disabled={actionLoading} className="p-1.5 bg-red-500/20 text-red-400 rounded-md hover:bg-red-500/30 transition text-[10px] font-bold disabled:opacity-50">Del</button>
                       </td>
                     </tr>
                   ))}
+
+                  {activeTab === 'shares' && (
+                    <>
+                      <tr className="bg-slate-900/50">
+                        <td colSpan="4" className="p-4 border-b border-slate-800">
+                          <div className="flex justify-between items-center bg-blue-500/10 p-4 rounded-lg border border-blue-500/20">
+                            <div className="flex flex-col">
+                              <span className="text-sm text-slate-300">Current Balance / ඉතිරි මුදල</span>
+                              <span className="text-2xl font-bold text-blue-400">Rs. {currentBalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            </div>
+                            <div className="flex flex-col text-right">
+                              <span className="text-sm text-slate-300">Total Main Contributions</span>
+                              <span className="text-lg font-semibold text-brand-400">{formatCurrency(totalMainContribution)}</span>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                      {sponsorShares.map((s, idx) => (
+                        <tr key={idx} className="border-b border-slate-800/50 hover:bg-slate-800/40 transition">
+                          <td className="p-4 font-medium text-white">{s.name}</td>
+                          <td className="p-4 text-slate-300">{formatCurrency(s.amount)}</td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-brand-400 font-semibold">{s.percentage.toFixed(2)}%</span>
+                              <div className="w-24 bg-slate-800 rounded-full h-1.5">
+                                <div className="bg-brand-500 h-1.5 rounded-full" style={{width: `${s.percentage}%`}}></div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-4 text-blue-400 font-bold text-lg">{formatCurrency(s.shareAmount)}</td>
+                        </tr>
+                      ))}
+                    </>
+                  )}
 
                   {(activeTab === 'incomes' && filteredIncomes.length === 0) && (
                     <tr><td colSpan="8" className="p-8 text-center text-slate-500">No income records found.</td></tr>
                   )}
                   {(activeTab === 'expenses' && filteredExpenses.length === 0) && (
                     <tr><td colSpan="6" className="p-8 text-center text-slate-500">No expense records found.</td></tr>
+                  )}
+                  {(activeTab === 'shares' && sponsorShares.length === 0) && (
+                    <tr><td colSpan="4" className="p-8 text-center text-slate-500">No main contributors found.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -413,7 +770,7 @@
                   
                   {editIncome.donation_type === 'Cash' ? (
                     <>
-                      <InputField label="Amount (Rs)" type="number" value={editIncome.amount} onChange={e => setEditIncome({...editIncome, amount: e.target.value})} />
+                      <InputField label="Amount (Rs)" type="number" value={editIncome.amount} onChange={e => setEditIncome({...editIncome, amount: e.target.value})} prefix="Rs." />
                       <InputField label="Donor Category" type="select" options={['Main Donor', 'Regular Donor']} value={editIncome.donor_category} onChange={e => setEditIncome({...editIncome, donor_category: e.target.value})} />
                     </>
                   ) : (
@@ -447,7 +804,7 @@
                     <InputField label="Reason" value={editExpense.reason} onChange={e => setEditExpense({...editExpense, reason: e.target.value})} />
                   </div>
                   <InputField label="Withdrawer Name" value={editExpense.withdrawer_name} onChange={e => setEditExpense({...editExpense, withdrawer_name: e.target.value})} />
-                  <InputField label="Amount Taken" type="number" value={editExpense.amount_taken} onChange={e => setEditExpense({...editExpense, amount_taken: e.target.value})} />
+                  <InputField label="Amount Taken" type="number" value={editExpense.amount_taken} onChange={e => setEditExpense({...editExpense, amount_taken: e.target.value})} prefix="Rs." />
                   <InputField label="Date" type="date" value={editExpense.date} onChange={e => setEditExpense({...editExpense, date: e.target.value})} />
                   <InputField label="Time" type="time" value={editExpense.time} onChange={e => setEditExpense({...editExpense, time: e.target.value})} />
                 </div>

@@ -13,6 +13,8 @@
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -109,8 +111,8 @@
 
     // --- UTILS ---
     const formatCurrency = (amount) => {
-      if(!amount) return "Rs. 0.00";
-      return "Rs. " + parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if(!amount) return "LKR. 0.00";
+      return "LKR. " + parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
     
     const formatDate = (dateString) => {
@@ -352,6 +354,43 @@
       );
     }
 
+    const formatNumber = (amount) => {
+      if(!amount) return "0.00";
+      return parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+
+    const NumberCounter = ({ value, prefix = "LKR." }) => {
+      const [count, setCount] = React.useState(0);
+      
+      React.useEffect(() => {
+        let start = 0;
+        const end = parseFloat(value);
+        if(isNaN(end)) {
+           setCount(value);
+           return;
+        }
+        const duration = 1500;
+        const increment = end / (duration / 16);
+        const timer = setInterval(() => {
+          start += increment;
+          if (start >= end) {
+            clearInterval(timer);
+            setCount(end);
+          } else {
+            setCount(start);
+          }
+        }, 16);
+        return () => clearInterval(timer);
+      }, [value]);
+      
+      return (
+        <span className="inline-flex items-baseline gap-1.5">
+          <span className="text-base font-semibold opacity-60 tracking-normal">{prefix}</span>
+          <span>{formatNumber(count)}</span>
+        </span>
+      );
+    };
+
     function DashboardCard({ title, sTitle, amount, icon, isExpense }) {
       return (
         <div className="glass rounded-2xl p-6 transition transform hover:-translate-y-1 hover:shadow-xl duration-300 relative overflow-hidden group border border-slate-800">
@@ -366,7 +405,7 @@
             </div>
           </div>
           <p className={`text-3xl font-bold tracking-tight ${isExpense ? 'text-slate-100' : 'neon-text text-white'}`}>
-            {formatCurrency(amount)}
+            {amount}
           </p>
         </div>
       );
@@ -683,25 +722,25 @@
             <span className="text-xs font-medium text-slate-400 mt-1">මහා වෙසක් කූඩු ප්‍රදර්ශනයට තව...</span>
           </div>
           
-          <div className="flex gap-2 sm:gap-4 z-10 text-center text-white justify-center w-full sm:w-auto">
-            <div className="bg-slate-900/80 border border-slate-700 rounded-xl px-2 py-3 min-w-[60px] sm:min-w-[70px] shadow-lg flex flex-col items-center">
-              <span className="text-2xl font-bold text-brand-400 font-mono tracking-tight">{timeLeft.d}</span>
-              <span className="text-[9px] text-slate-400 uppercase tracking-widest mt-1">Days</span>
+          <div className="flex gap-1.5 sm:gap-4 z-10 text-center text-white justify-center w-full sm:w-auto overflow-x-auto py-2">
+            <div className="bg-slate-900/80 border border-slate-700 rounded-xl px-1.5 py-3 min-w-[55px] sm:min-w-[70px] shadow-lg flex flex-col items-center">
+              <span className="text-xl sm:text-2xl font-bold text-brand-400 font-mono tracking-tight">{timeLeft.d}</span>
+              <span className="text-[8px] sm:text-[9px] text-slate-400 uppercase tracking-widest mt-1">Days</span>
             </div>
-            <div className="text-2xl font-bold text-slate-600 mt-2">:</div>
-            <div className="bg-slate-900/80 border border-slate-700 rounded-xl px-2 py-3 min-w-[60px] sm:min-w-[70px] shadow-lg flex flex-col items-center">
-              <span className="text-2xl font-bold text-brand-400 font-mono tracking-tight">{String(timeLeft.h).padStart(2, '0')}</span>
-              <span className="text-[9px] text-slate-400 uppercase tracking-widest mt-1">Hrs</span>
+            <div className="text-xl sm:text-2xl font-bold text-slate-600 mt-2">:</div>
+            <div className="bg-slate-900/80 border border-slate-700 rounded-xl px-1.5 py-3 min-w-[55px] sm:min-w-[70px] shadow-lg flex flex-col items-center">
+              <span className="text-xl sm:text-2xl font-bold text-brand-400 font-mono tracking-tight">{String(timeLeft.h).padStart(2, '0')}</span>
+              <span className="text-[8px] sm:text-[9px] text-slate-400 uppercase tracking-widest mt-1">Hrs</span>
             </div>
-            <div className="text-2xl font-bold text-slate-600 mt-2">:</div>
-            <div className="bg-slate-900/80 border border-slate-700 rounded-xl px-2 py-3 min-w-[60px] sm:min-w-[70px] shadow-lg flex flex-col items-center">
-              <span className="text-2xl font-bold text-brand-400 font-mono tracking-tight">{String(timeLeft.m).padStart(2, '0')}</span>
-              <span className="text-[9px] text-slate-400 uppercase tracking-widest mt-1">Mins</span>
+            <div className="text-xl sm:text-2xl font-bold text-slate-600 mt-2">:</div>
+            <div className="bg-slate-900/80 border border-slate-700 rounded-xl px-1.5 py-3 min-w-[55px] sm:min-w-[70px] shadow-lg flex flex-col items-center">
+              <span className="text-xl sm:text-2xl font-bold text-brand-400 font-mono tracking-tight">{String(timeLeft.m).padStart(2, '0')}</span>
+              <span className="text-[8px] sm:text-[9px] text-slate-400 uppercase tracking-widest mt-1">Mins</span>
             </div>
-            <div className="text-2xl font-bold text-slate-600 mt-2 hidden sm:block">:</div>
-            <div className="bg-slate-900/80 border border-slate-700 rounded-xl px-2 py-3 min-w-[60px] sm:min-w-[70px] shadow-lg hidden sm:flex flex-col items-center">
-              <span className="text-2xl font-bold text-amber-500 font-mono tracking-tight">{String(timeLeft.s).padStart(2, '0')}</span>
-              <span className="text-[9px] text-slate-400 uppercase tracking-widest mt-1">Secs</span>
+            <div className="text-xl sm:text-2xl font-bold text-slate-600 mt-2">:</div>
+            <div className="bg-slate-900/80 border border-slate-700 rounded-xl px-1.5 py-3 min-w-[55px] sm:min-w-[70px] shadow-lg flex flex-col items-center">
+              <span className="text-xl sm:text-2xl font-bold text-amber-500 font-mono tracking-tight">{String(timeLeft.s).padStart(2, '0')}</span>
+              <span className="text-[8px] sm:text-[9px] text-slate-400 uppercase tracking-widest mt-1">Secs</span>
             </div>
           </div>
         </div>
@@ -734,6 +773,76 @@
           </h2>
           
           <VesakCountdown />
+
+          {/* Target Goal Tracker */}
+          {(() => {
+            const targetGoal = 80000;
+            const rawPercent = targetGoal > 0 ? (totalIncome / targetGoal) * 100 : 0;
+            const progressPercent = Math.min(rawPercent, 100);
+            const isSuccess = totalIncome >= targetGoal;
+
+            React.useEffect(() => {
+              if (isSuccess) {
+                const script = document.createElement('script');
+                script.src = "https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js";
+                script.onload = () => {
+                  window.confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                };
+                document.body.appendChild(script);
+              }
+            }, [isSuccess]);
+
+            return (
+              <div className={`glass rounded-2xl p-6 border animate-fade-in relative overflow-hidden ${isSuccess ? 'border-brand-500/50 shadow-[0_0_30px_rgba(34,197,94,0.15)]' : 'border-slate-800'}`}>
+                 <div className="absolute top-0 left-0 w-full h-1 bg-slate-800"></div>
+                 <div className="absolute top-0 left-0 h-1 bg-brand-500 shadow-[0_0_10px_rgba(34,197,94,0.8)] transition-all duration-1000" style={{ width: `${progressPercent}%` }}></div>
+                 
+                 {isSuccess && (
+                   <div className="absolute -right-6 -top-6 w-24 h-24 bg-brand-500/20 blur-2xl rounded-full"></div>
+                 )}
+
+                 <div className="flex justify-between items-end mb-4 relative z-10">
+                   <div className="flex flex-col">
+                     <div className="flex items-center gap-2">
+                       <h3 className="text-lg font-bold text-white">Project Financial Goal</h3>
+                       {isSuccess && <span className="bg-brand-500 text-white text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shadow-[0_0_10px_rgba(34,197,94,0.5)]">Most Success</span>}
+                     </div>
+                     <span className="text-xs text-brand-400">වෙසක් ව්‍යාපෘතියේ මූල්‍ය ඉලක්කය</span>
+                   </div>
+                   <div className="text-right flex flex-col">
+                     <span className={`text-2xl font-bold ${isSuccess ? 'text-white drop-shadow-[0_0_10px_rgba(34,197,94,0.8)]' : 'text-brand-400'}`}>
+                        {(() => {
+                          const [pct, setPct] = React.useState(0);
+                          React.useEffect(() => {
+                            let start = 0;
+                            const duration = 1500;
+                            const inc = rawPercent / (duration / 16);
+                            const timer = setInterval(() => {
+                              start += inc;
+                              if (start >= rawPercent) { clearInterval(timer); setPct(rawPercent); }
+                              else setPct(start);
+                            }, 16);
+                            return () => clearInterval(timer);
+                          }, [rawPercent]);
+                          return pct.toFixed(1) + '%';
+                        })()}
+                     </span>
+                   </div>
+                 </div>
+                 
+                 <div className="w-full bg-slate-900 rounded-full h-4 mb-2 border border-slate-700/50 p-0.5 overflow-hidden relative z-10">
+                   <div className={`h-full rounded-full transition-all duration-1000 relative ${isSuccess ? 'bg-gradient-to-r from-yellow-400 via-brand-400 to-brand-500' : 'bg-gradient-to-r from-brand-600 to-brand-400'}`} style={{ width: `${progressPercent}%` }}>
+                     <div className="absolute inset-0 bg-white/20 w-full animate-pulse rounded-full"></div>
+                   </div>
+                 </div>
+                 
+                 <div className="flex justify-between text-xs text-slate-400 font-medium relative z-10">
+                   <span>Collected: <NumberCounter value={totalIncome} /></span>
+                   <span>Target: {formatCurrency(targetGoal)}</span>
+                 </div>
+              </div>
+            );
+          })()}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <DashboardCard title="Total Cash Income" sTitle="මුළු මුදල් ආදායම" amount={totalIncome} icon={<IconTrendingUp />} />
@@ -836,7 +945,7 @@
       );
     }
 
-    function InputField({ label, sLabel, type="text", name, value, onChange, required, options }) {
+    function InputField({ label, sLabel, type="text", name, value, onChange, required, options, prefix }) {
       return (
         <div className="flex flex-col gap-1.5 mb-4">
           <label className="text-sm font-medium text-slate-300 flex flex-col gap-0.5 leading-tight">
@@ -852,7 +961,14 @@
           ) : type === 'textarea' ? (
             <textarea name={name} value={value} onChange={onChange} required={required} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block w-full p-2.5 transition min-h-[100px] outline-none"></textarea>
           ) : (
-            <input type={type} name={name} value={value} onChange={onChange} required={required} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block w-full p-2.5 transition outline-none" />
+            <div className="relative">
+              {prefix && (
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-slate-400 sm:text-sm text-xs font-semibold">{prefix}</span>
+                </div>
+              )}
+              <input type={type} name={name} value={value} onChange={onChange} required={required} className={`bg-slate-900 border border-slate-700 text-white text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block w-full p-2.5 transition outline-none ${prefix ? 'pl-[2.2rem]' : ''}`} />
+            </div>
           )}
         </div>
       );
@@ -1352,7 +1468,7 @@
 
                  {formData.donation_type === 'Cash' && (
                    <>
-                     <InputField label="Amount (Rs)" sLabel="ප්‍රමාණය (රු)" type="number" name="amount" value={formData.amount} onChange={handleChange} required />
+                     <InputField label="Amount (Rs)" sLabel="ප්‍රමාණය (රු)" type="number" name="amount" value={formData.amount} onChange={handleChange} required prefix="Rs." />
                      <div className="flex flex-col gap-1.5 mb-4">
                        <label className="text-sm font-medium text-slate-300 flex flex-col gap-0.5 leading-tight">
                          <span>Donor Category *</span>
@@ -1542,7 +1658,7 @@
                  <div className="md:col-span-2">
                    <InputField label="Reason for Expense" sLabel="වියදමට හේතුව" name="reason" value={formData.reason} onChange={handleChange} required />
                  </div>
-                 <InputField label="Amount Taken (Rs)" sLabel="ලබාගත් මුදල (රු)" type="number" name="amount_taken" value={formData.amount_taken} onChange={handleChange} required />
+                 <InputField label="Amount Taken (Rs)" sLabel="ලබාගත් මුදල (රු)" type="number" name="amount_taken" value={formData.amount_taken} onChange={handleChange} required prefix="Rs." />
                  <div className="md:col-span-2 grid grid-cols-2 gap-x-6">
                    <InputField label="Date" sLabel="දිනය" type="date" name="date" value={formData.date} onChange={handleChange} required />
                    <InputField label="Time" sLabel="වේලාව" type="time" name="time" value={formData.time} onChange={handleChange} required />
@@ -1588,8 +1704,9 @@
       );
     }
 
-    function PromisedList({ incomes, onRefresh }) {
+    function PromisedList({ incomes, onRefresh, showNotification }) {
       const promised = incomes.filter(i => i.status === 'Promised');
+      const totalPromisedCash = promised.filter(i => i.donation_type === 'Cash').reduce((sum, item) => sum + Number(item.amount || 0), 0);
       const [loadingId, setLoadingId] = useState(null);
 
       const confirmReceipt = async (id) => {
@@ -1600,10 +1717,17 @@
           const { error } = await supabase.from('incomes').update({ status: 'Received Today' }).eq('id', id);
           if (error) throw error;
           
-          alert("Pledge confirmed! Funds added to total Income.\nආධාරය තහවුරු කළා. මෙම මුදල මුළු ආදායමට එක්වී ඇත.");
+          if(showNotification) {
+             showNotification({
+               type: 'success',
+               title: 'Pledge Confirmed!',
+               sTitle: 'ආධාරය තහවුරු කළා. මෙම මුදල මුළු ආදායමට එක්වී ඇත.'
+             });
+          }
           onRefresh();
         } catch (err) {
-          alert("Error: " + err.message);
+          if(showNotification) showNotification({ type: 'error', title: 'Error', sTitle: err.message });
+          else alert("Error: " + err.message);
         } finally {
           setLoadingId(null);
         }
@@ -1636,7 +1760,13 @@
               <span>Pending Pledges (Promised Donations)</span>
               <span className="text-sm text-slate-400 font-normal mt-0.5">පොරොන්දු වූ පරිත්‍යාග</span>
             </h2>
-            <ExportButtons onCsv={handleCSV} onPdf={handlePDF} />
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="bg-yellow-500/10 border border-yellow-500/20 px-4 py-2 rounded-xl flex flex-col sm:items-end">
+                <span className="text-xs text-yellow-500/70 font-semibold uppercase tracking-wider">Total Promised / පොරොන්දු මුදල</span>
+                <span className="text-lg font-bold text-yellow-400">{formatCurrency(totalPromisedCash)}</span>
+              </div>
+              <ExportButtons onCsv={handleCSV} onPdf={handlePDF} />
+            </div>
           </div>
           
           {promised.length === 0 ? (
@@ -1746,7 +1876,23 @@
           ]);
           
           if(incRes.error) console.error(incRes.error);
-          else setIncomes(incRes.data || []);
+          else {
+            const incData = incRes.data || [];
+            setIncomes(incData);
+            
+            // Check for confetti condition!
+            const totalCash = incData.filter(i => i.status === 'Received Today' && i.donation_type === 'Cash').reduce((sum, item) => sum + Number(item.amount || 0), 0);
+            if(totalCash >= 80000 && activeTab === 'dashboard') {
+              setTimeout(() => {
+                window.confetti({
+                  particleCount: 150,
+                  spread: 80,
+                  origin: { y: 0.1 },
+                  colors: ['#22c55e', '#eab308', '#3b82f6', '#ec4899']
+                });
+              }, 800);
+            }
+          }
 
           if(expRes.error) console.error(expRes.error);
           else setExpenses(expRes.data || []);
@@ -1761,6 +1907,50 @@
       useEffect(() => {
         fetchData();
       }, []);
+
+      // Swipe Gestures for Mobile Navigation
+      const handleTouchStart = (e) => {
+        // Prevent swipe on tables and interactive scroll areas
+        if (e.target.closest('.overflow-x-auto') || e.target.closest('table') || e.target.closest('input') || e.target.closest('textarea')) return;
+        window.touchStartX = e.changedTouches[0].screenX;
+        window.touchStartY = e.changedTouches[0].screenY;
+      };
+
+      const handleTouchEnd = (e) => {
+        if (window.touchStartX === undefined || window.touchStartX === null) return;
+        
+        const touchEndX = e.changedTouches[0].screenX;
+        const touchEndY = e.changedTouches[0].screenY;
+        
+        const deltaX = touchEndX - window.touchStartX;
+        const deltaY = touchEndY - window.touchStartY;
+        
+        // Thresholds: min 70px horizontal, and horizontal must be 2x vertical
+        if (Math.abs(deltaX) > 70 && Math.abs(deltaX) > Math.abs(deltaY) * 2) {
+          const MAIN_TABS = ['dashboard', 'income-page', 'expense-page', 'pledges'];
+          
+          // Determine current base tab (handling sub-pages)
+          let baseTab = activeTab;
+          if (['income-list', 'goods-list'].includes(activeTab)) baseTab = 'income-page';
+          if (activeTab === 'expense-list') baseTab = 'expense-page';
+          
+          const currentIndex = MAIN_TABS.indexOf(baseTab);
+          
+          if (currentIndex !== -1) {
+            if (deltaX < 0 && currentIndex < MAIN_TABS.length - 1) {
+              // Swipe Left -> Go Right
+              setActiveTab(MAIN_TABS[currentIndex + 1]);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else if (deltaX > 0 && currentIndex > 0) {
+              // Swipe Right -> Go Left
+              setActiveTab(MAIN_TABS[currentIndex - 1]);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }
+        }
+        window.touchStartX = null;
+        window.touchStartY = null;
+      };
 
       // Desktop Top Navigation Button
       const NavigationButton = ({ id, label, sLabel, icon }) => (
@@ -1842,7 +2032,12 @@
           </header>
 
           {/* Main Area with Safe Area Bottom Padding to prevent overlapping with bottom bar */}
-          <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 w-full z-10 relative" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6rem)' }}>
+          <main 
+            className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 w-full z-10 relative" 
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6rem)' }}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
             <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-500/10 blur-[120px] rounded-full pointer-events-none"></div>
             <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-blue-500/10 blur-[120px] pointer-events-none"></div>
             
@@ -1903,7 +2098,7 @@
                   </div>
                 )}
 
-                {activeTab === 'pledges' && <PromisedList incomes={incomes} onRefresh={fetchData} />}
+                {activeTab === 'pledges' && <PromisedList incomes={incomes} onRefresh={fetchData} showNotification={showNotification} />}
             </div>
             
             <div className="text-center mt-12 mb-4 pb-20 md:pb-0">
