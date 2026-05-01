@@ -45,6 +45,12 @@
       background-color: #020617;
       color: #e2e8f0;
       font-family: 'Inter', system-ui, sans-serif;
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+      touch-action: manipulation;
+      -webkit-text-size-adjust: 100%;
+      overscroll-behavior-y: none;
     }
     /* Simple custom scrollbar */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -110,6 +116,58 @@
       font-size: 18px;
     }
     .toast-close:hover { opacity: 1; }
+
+    /* Responsive Table Styles */
+    @media (max-width: 768px) {
+      .responsive-table thead { display: none; }
+      .responsive-table, .responsive-table tbody, .responsive-table tr, .responsive-table td { 
+        display: block; 
+        width: 100%; 
+      }
+      .responsive-table tr { 
+        margin-bottom: 1.5rem; 
+        padding: 1rem; 
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 1.25rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+      .responsive-table td { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center;
+        padding: 0.75rem 0; 
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        text-align: right;
+        white-space: normal;
+      }
+      .responsive-table td::before { 
+        content: attr(data-label); 
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 0.05em;
+        text-align: left;
+        padding-right: 1rem;
+      }
+      .responsive-table td:last-child { 
+        border-bottom: none; 
+        margin-top: 0.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        justify-content: flex-end;
+      }
+      .responsive-table td[data-label="Actions"]::before, 
+      .responsive-table td[data-label="Details"]::before {
+        display: none;
+      }
+      .responsive-table td[data-label="Actions"],
+      .responsive-table td[data-label="Details"] {
+        justify-content: center;
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body class="min-h-screen">
@@ -228,6 +286,14 @@
       const [editIncome, setEditIncome] = useState(null);
       const [editExpense, setEditExpense] = useState(null);
       const [actionLoading, setActionLoading] = useState(false);
+      const [expandedDonors, setExpandedDonors] = useState(new Set());
+
+      const toggleDonorExpand = (name) => {
+        const next = new Set(expandedDonors);
+        if (next.has(name)) next.delete(name);
+        else next.add(name);
+        setExpandedDonors(next);
+      };
 
       useEffect(() => {
         const hour = new Date().getHours();
@@ -416,8 +482,38 @@
         }
       };
 
+      const handleReceiptUpload = async (expenseId, file) => {
+        if (!file) return;
+        setActionLoading(true);
+        try {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Math.random()}.${fileExt}`;
+          const filePath = `${fileName}`;
+
+          const { error: uploadError } = await supabase.storage.from('receipts').upload(filePath, file);
+          if (uploadError) throw uploadError;
+
+          const { data } = supabase.storage.from('receipts').getPublicUrl(filePath);
+          const receipt_url = data.publicUrl;
+
+          const { error: updateError } = await supabase.from('expenses').update({ receipt_url }).eq('id', expenseId);
+          if (updateError) throw updateError;
+
+          window.showToast("Receipt uploaded successfully!", "success");
+          fetchData();
+        } catch (err) {
+          window.showToast("Upload failed: " + err.message, "error");
+        } finally {
+          setActionLoading(false);
+        }
+      };
+
       // Filtering Logic
       const filteredIncomes = incomes.filter(inc => {
+        if (activeTab === 'main_donors' && inc.donor_category !== 'Main Donor') return false;
+        if (activeTab === 'regular_donors' && inc.donor_category !== 'Regular Donor') return false;
+        if (activeTab === 'cash_incomes' && inc.donation_type !== 'Cash') return false;
+        if (activeTab === 'goods_incomes' && inc.donation_type !== 'Goods') return false;
         if(filterDate && inc.date !== filterDate) return false;
         if(searchTerm) {
           const s = searchTerm.toLowerCase();
@@ -434,6 +530,25 @@
         }
         return true;
       });
+
+      const groupedMainDonors = React.useMemo(() => {
+        if (activeTab !== 'main_donors') return [];
+        const groups = {};
+        filteredIncomes.forEach(inc => {
+          const key = (inc.name || 'Unknown').trim().toLowerCase();
+          if (!groups[key]) {
+            groups[key] = {
+              name: inc.name || 'Unknown',
+              total: 0,
+              records: [],
+              key
+            };
+          }
+          groups[key].total += Number(inc.amount || 0);
+          groups[key].records.push(inc);
+        });
+        return Object.values(groups).sort((a, b) => b.total - a.total);
+      }, [filteredIncomes, activeTab]);
 
       // Shares logic
       const totalCashIncome = incomes.filter(i => i.status === 'Received Today' && i.donation_type === 'Cash').reduce((sum, item) => sum + Number(item.amount || 0), 0);
@@ -581,7 +696,7 @@
       }
 
       return (
-        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
           {showBackupNotice && (
             <div className="mb-6 bg-brand-500/10 border border-brand-500/30 p-4 rounded-2xl flex items-center justify-between animate-fade-in">
               <div className="flex items-center gap-3">
@@ -615,9 +730,14 @@
 
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
             <div className="flex flex-wrap gap-2 w-full lg:w-auto">
-              <button onClick={() => {setActiveTab('incomes'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-6 py-2 rounded-lg font-medium transition text-sm sm:text-base ${activeTab === 'incomes' ? 'bg-brand-500 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Incomes</button>
-              <button onClick={() => {setActiveTab('expenses'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-6 py-2 rounded-lg font-medium transition text-sm sm:text-base ${activeTab === 'expenses' ? 'bg-red-500 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Expenses</button>
-              <button onClick={() => {setActiveTab('shares'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-6 py-2 rounded-lg font-medium transition text-sm sm:text-base ${activeTab === 'shares' ? 'bg-blue-600 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Shares</button>
+              <button onClick={() => {setActiveTab('incomes'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition text-xs sm:text-sm ${activeTab === 'incomes' ? 'bg-brand-500 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>All Incomes</button>
+              <button onClick={() => {setActiveTab('cash_incomes'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition text-xs sm:text-sm ${activeTab === 'cash_incomes' ? 'bg-brand-600 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Cash</button>
+              <button onClick={() => {setActiveTab('goods_incomes'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition text-xs sm:text-sm ${activeTab === 'goods_incomes' ? 'bg-purple-600 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Goods</button>
+              <button onClick={() => {setActiveTab('main_donors'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition text-xs sm:text-sm ${activeTab === 'main_donors' ? 'bg-emerald-600 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Main Donors</button>
+              <button onClick={() => {setActiveTab('regular_donors'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition text-xs sm:text-sm ${activeTab === 'regular_donors' ? 'bg-lime-600 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Regular Donors</button>
+              <button onClick={() => {setActiveTab('expenses'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition text-xs sm:text-sm ${activeTab === 'expenses' ? 'bg-red-500 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Expenses</button>
+              <button onClick={() => {setActiveTab('receipts'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition text-xs sm:text-sm ${activeTab === 'receipts' ? 'bg-amber-500 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Receipts</button>
+              <button onClick={() => {setActiveTab('shares'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition text-xs sm:text-sm ${activeTab === 'shares' ? 'bg-blue-600 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Shares</button>
             </div>
             
             <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
@@ -626,17 +746,69 @@
                   <input type="date" value={filterDate} onChange={e=>setFilterDate(e.target.value)} className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500 outline-none w-full sm:w-auto" />
                   <input type="text" placeholder="Search..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500 outline-none w-full sm:w-48" />
                   <div className="flex gap-2">
-                    <button onClick={activeTab === 'incomes' ? exportIncomesCSV : exportExpensesCSV} className="flex-1 px-3 py-2 bg-slate-800 rounded-lg hover:bg-slate-700 text-sm font-medium transition border border-slate-700">CSV</button>
-                    <button onClick={activeTab === 'incomes' ? exportIncomesPDF : exportExpensesPDF} className="flex-1 px-3 py-2 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 text-sm font-medium transition border border-red-500/20">PDF</button>
+                    <button onClick={(activeTab === 'incomes' || activeTab === 'cash_incomes' || activeTab === 'goods_incomes' || activeTab === 'main_donors' || activeTab === 'regular_donors') ? exportIncomesCSV : exportExpensesCSV} className="flex-1 px-3 py-2 bg-slate-800 rounded-lg hover:bg-slate-700 text-sm font-medium transition border border-slate-700">CSV</button>
+                    <button onClick={(activeTab === 'incomes' || activeTab === 'cash_incomes' || activeTab === 'goods_incomes' || activeTab === 'main_donors' || activeTab === 'regular_donors') ? exportIncomesPDF : exportExpensesPDF} className="flex-1 px-3 py-2 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 text-sm font-medium transition border border-red-500/20">PDF</button>
                   </div>
                 </>
               )}
             </div>
           </div>
 
-          <div className="glass rounded-2xl overflow-x-auto min-h-[400px]">
-            {loading ? <div className="p-8 text-center text-slate-400">Fetching records from database...</div> : (
-              <table className="w-full text-left text-sm whitespace-nowrap">
+          <div className={`glass rounded-2xl ${activeTab === 'receipts' ? 'p-6' : 'overflow-x-auto'} min-h-[400px]`}>
+            {loading ? <div className="p-8 text-center text-slate-400">Fetching records from database...</div> : activeTab === 'receipts' ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredExpenses.map(exp => (
+                  <div key={exp.id} className="glass bg-slate-900/50 rounded-xl overflow-hidden border border-slate-800 flex flex-col group hover:border-amber-500/50 transition duration-300">
+                    <div className="aspect-[4/3] bg-slate-950 relative overflow-hidden flex items-center justify-center">
+                      {exp.receipt_url ? (
+                        <img src={exp.receipt_url} alt="Receipt" className="w-full h-full object-contain cursor-pointer hover:scale-105 transition duration-500" onClick={() => window.open(exp.receipt_url, '_blank')} />
+                      ) : (
+                        <div className="flex flex-col items-center gap-2 text-slate-600">
+                          <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                          <span className="text-xs font-medium uppercase tracking-widest">No Receipt Uploaded</span>
+                        </div>
+                      )}
+                      {!exp.receipt_url && (
+                        <label className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                          <input type="file" accept="image/*" className="hidden" onChange={(e) => handleReceiptUpload(exp.id, e.target.files[0])} disabled={actionLoading} />
+                          <div className="flex flex-col items-center text-white gap-1">
+                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                            <span className="text-xs font-bold">Upload Receipt</span>
+                          </div>
+                        </label>
+                      )}
+                      {exp.receipt_url && (
+                        <div className="absolute top-2 right-2 flex gap-1">
+                           <label className="p-1.5 bg-black/60 rounded-md text-white hover:bg-black/80 transition cursor-pointer">
+                             <input type="file" accept="image/*" className="hidden" onChange={(e) => handleReceiptUpload(exp.id, e.target.files[0])} disabled={actionLoading} />
+                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                           </label>
+                           <button onClick={() => window.open(exp.receipt_url, '_blank')} className="p-1.5 bg-black/60 rounded-md text-white hover:bg-black/80 transition">
+                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                           </button>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4 flex-1 flex flex-col">
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-[10px] font-mono text-slate-500 uppercase tracking-tighter">#{exp.id}</span>
+                        <span className="text-[10px] font-bold text-slate-400">{exp.date}</span>
+                      </div>
+                      <h4 className="text-white font-semibold text-sm line-clamp-1 mb-1">{exp.reason}</h4>
+                      <p className="text-slate-400 text-[11px] mb-3 line-clamp-1">Paid to: {exp.withdrawer_name}</p>
+                      <div className="mt-auto pt-3 border-t border-slate-800 flex justify-between items-center">
+                        <span className="text-red-400 font-bold text-sm">Rs. {Number(exp.amount_taken).toLocaleString()}</span>
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${exp.receipt_url ? 'bg-brand-500/20 text-brand-400' : 'bg-red-500/20 text-red-400'}`}>
+                          {exp.receipt_url ? 'Receipt OK' : 'Missing'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {expenses.length === 0 && <div className="col-span-full py-12 text-center text-slate-500">No expense records found.</div>}
+              </div>
+            ) : (
+              <table className="w-full text-left text-sm whitespace-nowrap responsive-table">
                 <thead className="bg-slate-900/80 text-slate-400 text-xs uppercase border-b border-slate-800">
                   {activeTab === 'shares' ? (
                     <tr>
@@ -645,7 +817,14 @@
                       <th className="p-4">Percentage / ප්‍රතිශතය</th>
                       <th className="p-4 rounded-tr-lg">Share Amount / බෙදිය යුතු මුදල</th>
                     </tr>
-                  ) : activeTab === 'incomes' ? (
+                  ) : activeTab === 'main_donors' ? (
+                    <tr>
+                      <th className="p-4 rounded-tl-lg">Donor Name</th>
+                      <th className="p-4">Donations Count</th>
+                      <th className="p-4">Total Amount</th>
+                      <th className="p-4 rounded-tr-lg text-right">Details</th>
+                    </tr>
+                  ) : (activeTab === 'incomes' || activeTab === 'cash_incomes' || activeTab === 'goods_incomes' || activeTab === 'regular_donors') ? (
                     <tr>
                       <th className="p-4 rounded-tl-lg hidden md:table-cell">ID</th>
                       <th className="p-4 hidden sm:table-cell">Date</th>
@@ -663,30 +842,74 @@
                       <th className="p-4 hidden sm:table-cell">Withdrawer</th>
                       <th className="p-4">Reason</th>
                       <th className="p-4">Amount</th>
+                      <th className="p-4">Receipt</th>
                       <th className="p-4 rounded-tr-lg text-right">Actions</th>
                     </tr>
                   )}
                 </thead>
                 <tbody>
-                  {activeTab === 'incomes' && filteredIncomes.map(inc => (
+                  {activeTab === 'main_donors' && groupedMainDonors.map(group => (
+                    <React.Fragment key={group.key}>
+                      <tr className="border-b border-slate-800/50 hover:bg-slate-800/40 transition cursor-pointer" onClick={() => toggleDonorExpand(group.key)}>
+                        <td className="p-4" data-label="Donor Name">
+                          <div className="flex items-center gap-2">
+                            <svg className={`w-4 h-4 transition-transform ${expandedDonors.has(group.key) ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                            <span className="font-bold text-white">{group.name}</span>
+                          </div>
+                        </td>
+                        <td className="p-4 text-slate-400" data-label="Donations Count">{group.records.length} Times</td>
+                        <td className="p-4 text-brand-400 font-bold" data-label="Total Amount">Rs. {group.total.toLocaleString()}</td>
+                        <td className="p-4 text-right" data-label="Details">
+                          <button className="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded-md border border-slate-700 transition">
+                            {expandedDonors.has(group.key) ? 'Hide' : 'View Details'}
+                          </button>
+                        </td>
+                      </tr>
+                      {expandedDonors.has(group.key) && (
+                        <tr>
+                          <td colSpan="4" className="p-0 bg-slate-900/30">
+                            <div className="p-4 space-y-2 border-l-2 border-brand-500 ml-4 my-2">
+                              {group.records.map((r, idx) => (
+                                <div key={idx} className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-800/40 p-3 rounded-lg border border-slate-800/50 gap-2">
+                                  <div className="flex flex-col">
+                                    <span className="text-xs text-slate-400">Date: {r.date} {r.created_at ? `| ${new Date(r.created_at).toLocaleTimeString()}` : ''}</span>
+                                    <span className="text-sm text-white font-medium">{r.item_description || 'Cash Donation'}</span>
+                                  </div>
+                                  <div className="flex items-center gap-4">
+                                    <span className="text-brand-400 font-bold">Rs. {Number(r.amount).toLocaleString()}</span>
+                                    <div className="flex gap-1">
+                                      <button onClick={(e) => { e.stopPropagation(); setEditIncome(r); }} className="p-1 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition text-[10px] font-bold">Edit</button>
+                                      <button onClick={(e) => { e.stopPropagation(); handleDeleteIncome(r.id); }} className="p-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition text-[10px] font-bold">Del</button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))}
+
+                  {(activeTab === 'incomes' || activeTab === 'cash_incomes' || activeTab === 'goods_incomes' || activeTab === 'regular_donors') && filteredIncomes.map(inc => (
                     <tr key={inc.id} className="border-b border-slate-800/50 hover:bg-slate-800/40 transition">
-                      <td className="p-4 font-mono text-xs text-slate-500 hidden md:table-cell">#{inc.id}</td>
-                      <td className="p-4 text-slate-300 hidden sm:table-cell text-xs">{inc.date}</td>
-                      <td className="p-4">
+                      <td className="p-4 font-mono text-xs text-slate-500 hidden md:table-cell" data-label="ID">#{inc.id}</td>
+                      <td className="p-4 text-slate-300 hidden sm:table-cell text-xs" data-label="Date">{inc.date}</td>
+                      <td className="p-4" data-label="Name">
                         <div className="font-medium text-white text-xs sm:text-sm">{inc.name}</div>
                         <div className="text-[9px] text-slate-500 mt-0.5 sm:hidden">{inc.status} • {inc.donation_type}</div>
                       </td>
-                      <td className="p-4 hidden md:table-cell"><span className={`px-2 py-1 rounded text-[10px] ${inc.donation_type === 'Cash' ? 'bg-brand-500/10 text-brand-400' : 'bg-purple-500/10 text-purple-400'}`}>{inc.donation_type}</span></td>
-                      <td className="p-4 max-w-[150px] truncate text-slate-300 hidden lg:table-cell">
+                      <td className="p-4 hidden md:table-cell" data-label="Type"><span className={`px-2 py-1 rounded text-[10px] ${inc.donation_type === 'Cash' ? 'bg-brand-500/10 text-brand-400' : 'bg-purple-500/10 text-purple-400'}`}>{inc.donation_type}</span></td>
+                      <td className="p-4 max-w-[150px] truncate text-slate-300 hidden lg:table-cell" data-label="Details">
                         {inc.donation_type === 'Cash' ? inc.donor_category : `${inc.item_description} (x${inc.quantity})`}
                       </td>
-                      <td className="p-4 text-brand-400 font-bold text-xs sm:text-sm">{inc.amount ? `Rs.${inc.amount}` : '-'}</td>
-                      <td className="p-4 hidden sm:table-cell">
+                      <td className="p-4 text-brand-400 font-bold text-xs sm:text-sm" data-label="Amount">{inc.amount ? `Rs.${inc.amount}` : '-'}</td>
+                      <td className="p-4 hidden sm:table-cell" data-label="Status">
                         <span className={`px-2 py-1 rounded text-[10px] ${inc.status === 'Received Today' ? 'bg-brand-500/20 text-brand-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
                           {inc.status}
                         </span>
                       </td>
-                      <td className="p-4 text-right whitespace-nowrap">
+                      <td className="p-4 text-right whitespace-nowrap" data-label="Actions">
                         <button onClick={() => handleToggleStatus(inc)} disabled={actionLoading} className={`p-1.5 rounded-md mr-1.5 transition text-[10px] font-bold disabled:opacity-50 ${inc.status === 'Received Today' ? 'bg-yellow-500/20 text-yellow-500' : 'bg-brand-500/20 text-brand-400'}`} title="Toggle Status">
                           {inc.status === 'Received Today' ? 'Pledge' : 'Receive'}
                         </button>
@@ -698,12 +921,23 @@
                   
                   {activeTab === 'expenses' && filteredExpenses.map(exp => (
                     <tr key={exp.id} className="border-b border-slate-800/50 hover:bg-slate-800/40 transition">
-                      <td className="p-4 font-mono text-xs text-slate-500 hidden md:table-cell">#{exp.id}</td>
-                      <td className="p-4 text-slate-300 hidden sm:table-cell text-xs">{exp.date}</td>
-                      <td className="p-4 font-medium text-white hidden sm:table-cell text-xs">{exp.withdrawer_name}</td>
-                      <td className="p-4 max-w-[200px] truncate text-slate-300 text-xs sm:text-sm">{exp.reason}</td>
-                      <td className="p-4 text-red-400 font-bold text-xs sm:text-sm">Rs.{exp.amount_taken}</td>
-                      <td className="p-4 text-right whitespace-nowrap">
+                      <td className="p-4 font-mono text-xs text-slate-500 hidden md:table-cell" data-label="ID">#{exp.id}</td>
+                      <td className="p-4 text-slate-300 hidden sm:table-cell text-xs" data-label="Date">{exp.date}</td>
+                      <td className="p-4 font-medium text-white hidden sm:table-cell text-xs" data-label="Withdrawer">{exp.withdrawer_name}</td>
+                      <td className="p-4 max-w-[200px] truncate text-slate-300 text-xs sm:text-sm" data-label="Reason">{exp.reason}</td>
+                      <td className="p-4 text-red-400 font-bold text-xs sm:text-sm" data-label="Amount">Rs.{exp.amount_taken}</td>
+                      <td className="p-4" data-label="Receipt">
+                        {exp.receipt_url ? (
+                          <button onClick={() => window.open(exp.receipt_url, '_blank')} className="text-brand-400 hover:text-brand-300 transition" title="View Receipt">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                          </button>
+                        ) : (
+                          <span className="text-slate-600" title="No Receipt">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-4 text-right whitespace-nowrap" data-label="Actions">
                         <button onClick={() => setEditExpense(exp)} disabled={actionLoading} className="p-1.5 bg-blue-500/20 text-blue-400 rounded-md mr-1.5 hover:bg-blue-500/30 transition text-[10px] font-bold disabled:opacity-50">Edit</button>
                         <button onClick={() => handleDeleteExpense(exp.id)} disabled={actionLoading} className="p-1.5 bg-red-500/20 text-red-400 rounded-md hover:bg-red-500/30 transition text-[10px] font-bold disabled:opacity-50">Del</button>
                       </td>
@@ -728,24 +962,27 @@
                       </tr>
                       {sponsorShares.map((s, idx) => (
                         <tr key={idx} className="border-b border-slate-800/50 hover:bg-slate-800/40 transition">
-                          <td className="p-4 font-medium text-white">{s.name}</td>
-                          <td className="p-4 text-slate-300">{formatCurrency(s.amount)}</td>
-                          <td className="p-4">
-                            <div className="flex items-center gap-2">
+                          <td className="p-4 font-medium text-white" data-label="Donor Name">{s.name}</td>
+                          <td className="p-4 text-slate-300" data-label="Contribution">{formatCurrency(s.amount)}</td>
+                          <td className="p-4" data-label="Percentage">
+                            <div className="flex items-center gap-2 justify-end sm:justify-start">
                               <span className="text-brand-400 font-semibold">{s.percentage.toFixed(2)}%</span>
-                              <div className="w-24 bg-slate-800 rounded-full h-1.5">
+                              <div className="w-24 bg-slate-800 rounded-full h-1.5 hidden sm:block">
                                 <div className="bg-brand-500 h-1.5 rounded-full" style={{width: `${s.percentage}%`}}></div>
                               </div>
                             </div>
                           </td>
-                          <td className="p-4 text-blue-400 font-bold text-lg">{formatCurrency(s.shareAmount)}</td>
+                          <td className="p-4 text-blue-400 font-bold text-lg" data-label="Share Amount">{formatCurrency(s.shareAmount)}</td>
                         </tr>
                       ))}
                     </>
                   )}
 
-                  {(activeTab === 'incomes' && filteredIncomes.length === 0) && (
+                  {((activeTab === 'incomes' || activeTab === 'cash_incomes' || activeTab === 'goods_incomes' || activeTab === 'regular_donors') && filteredIncomes.length === 0) && (
                     <tr><td colSpan="8" className="p-8 text-center text-slate-500">No income records found.</td></tr>
+                  )}
+                  {(activeTab === 'main_donors' && groupedMainDonors.length === 0) && (
+                    <tr><td colSpan="4" className="p-8 text-center text-slate-500">No main donors found.</td></tr>
                   )}
                   {(activeTab === 'expenses' && filteredExpenses.length === 0) && (
                     <tr><td colSpan="6" className="p-8 text-center text-slate-500">No expense records found.</td></tr>
@@ -807,6 +1044,28 @@
                   <InputField label="Amount Taken" type="number" value={editExpense.amount_taken} onChange={e => setEditExpense({...editExpense, amount_taken: e.target.value})} prefix="Rs." />
                   <InputField label="Date" type="date" value={editExpense.date} onChange={e => setEditExpense({...editExpense, date: e.target.value})} />
                   <InputField label="Time" type="time" value={editExpense.time} onChange={e => setEditExpense({...editExpense, time: e.target.value})} />
+                  <div className="md:col-span-2 mt-2">
+                    <label className="text-sm font-medium text-slate-300 block mb-2">Receipt / රිසිට් පත</label>
+                    <div className="flex items-center gap-4">
+                      {editExpense.receipt_url ? (
+                        <div className="relative group">
+                          <img src={editExpense.receipt_url} className="w-20 h-20 object-cover rounded-lg border border-slate-700" />
+                          <button type="button" onClick={() => window.open(editExpense.receipt_url, '_blank')} className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center rounded-lg">
+                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="w-20 h-20 rounded-lg border border-dashed border-slate-700 flex items-center justify-center text-slate-500">
+                          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        </div>
+                      )}
+                      <label className="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg p-4 cursor-pointer transition flex flex-col items-center justify-center gap-1 text-slate-300">
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handleReceiptUpload(editExpense.id, e.target.files[0])} />
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                        <span className="text-xs font-bold">{editExpense.receipt_url ? 'Change Receipt' : 'Upload Receipt'}</span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
                 <div className="flex gap-3 mt-6">
                   <button type="button" onClick={() => setEditExpense(null)} className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-white font-bold transition">Cancel</button>

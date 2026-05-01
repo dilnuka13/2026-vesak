@@ -69,6 +69,11 @@
       font-family: 'Inter', system-ui, sans-serif;
       /* Mobile safe areas handling for body scrolling */
       padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+      touch-action: manipulation; /* Prevents double-tap zoom */
+      -webkit-text-size-adjust: 100%; /* Prevents font scaling in landscape */
+      overscroll-behavior-y: none; /* Prevents pull-to-refresh */
     }
     
     /* Custom Scrollbar for dark theme */
@@ -757,6 +762,10 @@
       , [expenses]);
 
       const currentBalance = totalIncome - totalExpense;
+      
+      const totalGoods = useMemo(() => 
+        incomes.filter(i => i.status === 'Received Today' && i.donation_type === 'Goods').length
+      , [incomes]);
 
       const recentActivities = useMemo(() => {
         const inc = incomes.map(i => ({ ...i, type: 'income', dateStr: i.created_at || i.date }));
@@ -844,51 +853,66 @@
             );
           })()}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             <DashboardCard title="Total Cash Income" sTitle="මුළු මුදල් ආදායම" amount={totalIncome} icon={<IconTrendingUp />} />
             <DashboardCard title="Total Expenses" sTitle="මුළු වියදම්" amount={totalExpense} icon={<IconTrendingDown />} isExpense={true} />
             <DashboardCard title="Current Balance" sTitle="ඉතිරි මුදල" amount={currentBalance} icon={<IconWallet />} />
+            <div className="glass rounded-2xl p-6 border border-slate-800 hover:border-purple-500/30 transition-all group">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex flex-col">
+                  <h3 className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">Total Goods</h3>
+                  <span className="text-purple-400 text-[10px] font-medium">මුළු ද්‍රව්‍ය ආධාර</span>
+                </div>
+                <div className="p-3 rounded-xl bg-purple-500/10 text-purple-400 group-hover:bg-purple-500 group-hover:text-white transition-all">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                </div>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-white tracking-tight">{totalGoods}</span>
+                <span className="text-slate-500 text-xs font-medium">Records</span>
+              </div>
+            </div>
           </div>
 
           {/* Quick List Navigation Buttons */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
-            <button onClick={() => { setActiveTab('income-list'); window.scrollTo(0, 0); }} className="glass rounded-xl p-4 flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-4 hover:bg-slate-800 border border-slate-700/50 hover:border-brand-500/50 transition-all group">
-              <div className="p-3 rounded-full bg-brand-500/10 text-brand-400 group-hover:bg-brand-500 group-hover:text-white transition">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-8">
+            <button onClick={() => { setActiveTab('income-list'); window.scrollTo(0, 0); }} className="glass rounded-xl p-3 sm:p-4 flex flex-col items-center justify-center gap-2 sm:gap-4 hover:bg-slate-800 border border-slate-700/50 hover:border-brand-500/50 transition-all group">
+              <div className="p-2 sm:p-3 rounded-full bg-brand-500/10 text-brand-400 group-hover:bg-brand-500 group-hover:text-white transition">
                 <IconIncome />
               </div>
-              <div className="flex flex-col text-center sm:text-left">
-                <span className="font-bold text-slate-200 text-[13px] sm:text-sm">Income List</span>
-                <span className="text-[10px] sm:text-xs text-slate-400 group-hover:text-brand-300 mt-0.5">ආදායම් ලැයිස්තුව</span>
+              <div className="flex flex-col text-center">
+                <span className="font-bold text-slate-200 text-xs sm:text-sm">Income List</span>
+                <span className="text-[9px] sm:text-[10px] text-slate-400 group-hover:text-brand-300 mt-0.5">ආදායම් ලැයිස්තුව</span>
               </div>
             </button>
             
-            <button onClick={() => { setActiveTab('expense-list'); window.scrollTo(0, 0); }} className="glass rounded-xl p-4 flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-4 hover:bg-slate-800 border border-slate-700/50 hover:border-red-500/50 transition-all group">
-              <div className="p-3 rounded-full bg-red-500/10 text-red-400 group-hover:bg-red-500 group-hover:text-white transition">
+            <button onClick={() => { setActiveTab('expense-list'); window.scrollTo(0, 0); }} className="glass rounded-xl p-3 sm:p-4 flex flex-col items-center justify-center gap-2 sm:gap-4 hover:bg-slate-800 border border-slate-700/50 hover:border-red-500/50 transition-all group">
+              <div className="p-2 sm:p-3 rounded-full bg-red-500/10 text-red-400 group-hover:bg-red-500 group-hover:text-white transition">
                 <IconExpense />
               </div>
-              <div className="flex flex-col text-center sm:text-left">
-                <span className="font-bold text-slate-200 text-[13px] sm:text-sm">Expense List</span>
-                <span className="text-[10px] sm:text-xs text-slate-400 group-hover:text-red-300 mt-0.5">වියදම් ලැයිස්තුව</span>
+              <div className="flex flex-col text-center">
+                <span className="font-bold text-slate-200 text-xs sm:text-sm">Expense List</span>
+                <span className="text-[9px] sm:text-[10px] text-slate-400 group-hover:text-red-300 mt-0.5">වියදම් ලැයිස්තුව</span>
               </div>
             </button>
 
-            <button onClick={() => { setActiveTab('goods-list'); window.scrollTo(0, 0); }} className="glass rounded-xl p-4 flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-4 hover:bg-slate-800 border border-slate-700/50 hover:border-purple-500/50 transition-all group">
-              <div className="p-3 rounded-full bg-purple-500/10 text-purple-400 group-hover:bg-purple-500 group-hover:text-white transition">
-                <svg className="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+            <button onClick={() => { setActiveTab('goods-list'); window.scrollTo(0, 0); }} className="glass rounded-xl p-3 sm:p-4 flex flex-col items-center justify-center gap-2 sm:gap-4 hover:bg-slate-800 border border-slate-700/50 hover:border-purple-500/50 transition-all group">
+              <div className="p-2 sm:p-3 rounded-full bg-purple-500/10 text-purple-400 group-hover:bg-purple-500 group-hover:text-white transition">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
               </div>
-              <div className="flex flex-col text-center sm:text-left">
-                <span className="font-bold text-slate-200 text-[13px] sm:text-sm">Goods List</span>
-                <span className="text-[10px] sm:text-xs text-slate-400 group-hover:text-purple-300 mt-0.5">ද්‍රව්‍ය ලැයිස්තුව</span>
+              <div className="flex flex-col text-center">
+                <span className="font-bold text-slate-200 text-xs sm:text-sm">Goods List</span>
+                <span className="text-[9px] sm:text-[10px] text-slate-400 group-hover:text-purple-300 mt-0.5">ද්‍රව්‍ය ලැයිස්තුව</span>
               </div>
             </button>
 
-            <button onClick={() => { setActiveTab('pledges'); window.scrollTo(0, 0); }} className="glass rounded-xl p-4 flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-4 hover:bg-slate-800 border border-slate-700/50 hover:border-yellow-500/50 transition-all group relative">
-              <div className="p-3 rounded-full bg-yellow-500/10 text-yellow-500 group-hover:bg-yellow-500 group-hover:text-white transition">
+            <button onClick={() => { setActiveTab('pledges'); window.scrollTo(0, 0); }} className="glass rounded-xl p-3 sm:p-4 flex flex-col items-center justify-center gap-2 sm:gap-4 hover:bg-slate-800 border border-slate-700/50 hover:border-yellow-500/50 transition-all group relative">
+              <div className="p-2 sm:p-3 rounded-full bg-yellow-500/10 text-yellow-500 group-hover:bg-yellow-500 group-hover:text-white transition">
                 <IconPledges />
               </div>
-              <div className="flex flex-col text-center sm:text-left">
-                <span className="font-bold text-slate-200 text-[13px] sm:text-sm">Pledges List</span>
-                <span className="text-[10px] sm:text-xs text-slate-400 group-hover:text-yellow-300 mt-0.5">පොරොන්දු ලැයිස්තුව</span>
+              <div className="flex flex-col text-center">
+                <span className="font-bold text-slate-200 text-xs sm:text-sm">Pledges List</span>
+                <span className="text-[9px] sm:text-[10px] text-slate-400 group-hover:text-yellow-300 mt-0.5">පොරොන්දු ලැයිස්තුව</span>
               </div>
               {incomes.filter(i => i.status === 'Promised').length > 0 && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 text-[9px] flex items-center justify-center rounded-full bg-yellow-500 text-slate-900 font-bold border-2 border-slate-900 shadow-[0_0_8px_rgba(234,179,8,0.8)]">
