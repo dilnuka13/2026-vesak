@@ -205,6 +205,13 @@
     };
 
     // Utilities
+    const hashPassword = async (password) => {
+      const msgUint8 = new TextEncoder().encode(password);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    };
+
     const exportToCSV = (filename, rows) => {
       const csvContent = "\uFEFF" + rows.map(r => r.map(cell => {
         if (cell === null || cell === undefined) return '""';
@@ -270,6 +277,29 @@
       </div>
     );
 
+    const ReporterBadge = ({ name, users, showFullName = false }) => {
+      if (!name) return null;
+      const user = users?.find(u => {
+         const firstWord = u.username.split(' ')[0].toLowerCase();
+         return name.toLowerCase().includes(firstWord) || u.username.toLowerCase() === name.toLowerCase();
+      });
+      const displayName = showFullName ? name : name.split(' ')[0];
+      return (
+        <div className="flex items-center gap-1.5">
+          {user?.avatar_url ? (
+            <div className="w-5 h-5 rounded-full overflow-hidden border border-slate-600 shrink-0 shadow-sm">
+              <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <div className="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center border border-slate-600 shrink-0 shadow-sm text-slate-400">
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            </div>
+          )}
+          <span className={`font-medium text-slate-300 ${showFullName ? 'text-sm' : 'text-xs whitespace-nowrap'}`}>{displayName}</span>
+        </div>
+      );
+    };
+
     const AdminApp = () => {
       const [loggedIn, setLoggedIn] = useState(false);
       const [authMode, setAuthMode] = useState('login'); // 'login', 'forgot', 'reset'
@@ -280,6 +310,7 @@
 
       const [incomes, setIncomes] = useState([]);
       const [expenses, setExpenses] = useState([]);
+      const [appUsers, setAppUsers] = useState([]);
       const [loading, setLoading] = useState(false);
       const [activeTab, setActiveTab] = useState('incomes');
       
@@ -313,13 +344,37 @@
 
       const fetchData = async () => {
         setLoading(true);
-        const [inc, exp] = await Promise.all([
+        const [inc, exp, usersRes] = await Promise.all([
           supabase.from('incomes').select('*').order('created_at', { ascending: false }),
-          supabase.from('expenses').select('*').order('created_at', { ascending: false })
+          supabase.from('expenses').select('*').order('created_at', { ascending: false }),
+          supabase.from('app_users').select('*').order('username')
         ]);
         if (inc.data) setIncomes(inc.data);
         if (exp.data) setExpenses(exp.data);
+        if (usersRes.data) setAppUsers(usersRes.data);
         setLoading(false);
+      };
+
+      const handleGenerateTempPassword = async (user) => {
+        const tempPass = prompt(`Enter new temporary password for ${user.username}:\n(e.g., User@1234)`, "Temp@1234");
+        if (!tempPass) return;
+        
+        setActionLoading(true);
+        try {
+          const hashedTemp = await hashPassword(tempPass);
+          const { error } = await supabase.from('app_users').update({
+            password_hash: hashedTemp,
+            is_temp_password: true,
+            reset_requested: false
+          }).eq('id', user.id);
+          if (error) throw error;
+          window.showToast("Temporary password set to: " + tempPass, "success");
+          fetchData();
+        } catch(err) {
+          window.showToast("Error setting password: " + err.message, "error");
+        } finally {
+          setActionLoading(false);
+        }
       };
 
       useEffect(() => {
@@ -738,10 +793,11 @@
               <button onClick={() => {setActiveTab('expenses'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition text-xs sm:text-sm ${activeTab === 'expenses' ? 'bg-red-500 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Expenses</button>
               <button onClick={() => {setActiveTab('receipts'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition text-xs sm:text-sm ${activeTab === 'receipts' ? 'bg-amber-500 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Receipts</button>
               <button onClick={() => {setActiveTab('shares'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition text-xs sm:text-sm ${activeTab === 'shares' ? 'bg-blue-600 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Shares</button>
+              <button onClick={() => {setActiveTab('users'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition text-xs sm:text-sm ${activeTab === 'users' ? 'bg-indigo-600 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>User Management</button>
             </div>
             
             <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-              {activeTab !== 'shares' && (
+              {(activeTab !== 'shares' && activeTab !== 'users') && (
                 <>
                   <input type="date" value={filterDate} onChange={e=>setFilterDate(e.target.value)} className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500 outline-none w-full sm:w-auto" />
                   <input type="text" placeholder="Search..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500 outline-none w-full sm:w-48" />
@@ -810,7 +866,15 @@
             ) : (
               <table className="w-full text-left text-sm whitespace-nowrap responsive-table">
                 <thead className="bg-slate-900/80 text-slate-400 text-xs uppercase border-b border-slate-800">
-                  {activeTab === 'shares' ? (
+                  {activeTab === 'users' ? (
+                    <tr>
+                      <th className="p-4 rounded-tl-lg">Username</th>
+                      <th className="p-4">Role</th>
+                      <th className="p-4">Reset Requested</th>
+                      <th className="p-4">Requires Password Change</th>
+                      <th className="p-4 rounded-tr-lg text-right">Actions</th>
+                    </tr>
+                  ) : activeTab === 'shares' ? (
                     <tr>
                       <th className="p-4 rounded-tl-lg">Sponsor Name / දායකයා</th>
                       <th className="p-4">Contribution / මුදල</th>
@@ -854,7 +918,7 @@
                         <td className="p-4" data-label="Donor Name">
                           <div className="flex items-center gap-2">
                             <svg className={`w-4 h-4 transition-transform ${expandedDonors.has(group.key) ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                            <span className="font-bold text-white">{group.name}</span>
+                            <ReporterBadge name={group.name} users={appUsers} showFullName={true} />
                           </div>
                         </td>
                         <td className="p-4 text-slate-400" data-label="Donations Count">{group.records.length} Times</td>
@@ -896,7 +960,7 @@
                       <td className="p-4 font-mono text-xs text-slate-500 hidden md:table-cell" data-label="ID">#{inc.id}</td>
                       <td className="p-4 text-slate-300 hidden sm:table-cell text-xs" data-label="Date">{inc.date}</td>
                       <td className="p-4" data-label="Name">
-                        <div className="font-medium text-white text-xs sm:text-sm">{inc.name}</div>
+                        <ReporterBadge name={inc.name} users={appUsers} showFullName={true} />
                         <div className="text-[9px] text-slate-500 mt-0.5 sm:hidden">{inc.status} • {inc.donation_type}</div>
                       </td>
                       <td className="p-4 hidden md:table-cell" data-label="Type"><span className={`px-2 py-1 rounded text-[10px] ${inc.donation_type === 'Cash' ? 'bg-brand-500/10 text-brand-400' : 'bg-purple-500/10 text-purple-400'}`}>{inc.donation_type}</span></td>
@@ -923,7 +987,7 @@
                     <tr key={exp.id} className="border-b border-slate-800/50 hover:bg-slate-800/40 transition">
                       <td className="p-4 font-mono text-xs text-slate-500 hidden md:table-cell" data-label="ID">#{exp.id}</td>
                       <td className="p-4 text-slate-300 hidden sm:table-cell text-xs" data-label="Date">{exp.date}</td>
-                      <td className="p-4 font-medium text-white hidden sm:table-cell text-xs" data-label="Withdrawer">{exp.withdrawer_name}</td>
+                      <td className="p-4 font-medium text-white hidden sm:table-cell text-xs" data-label="Withdrawer"><ReporterBadge name={exp.withdrawer_name} users={appUsers} showFullName={true} /></td>
                       <td className="p-4 max-w-[200px] truncate text-slate-300 text-xs sm:text-sm" data-label="Reason">{exp.reason}</td>
                       <td className="p-4 text-red-400 font-bold text-xs sm:text-sm" data-label="Amount">Rs.{exp.amount_taken}</td>
                       <td className="p-4" data-label="Receipt">
@@ -940,6 +1004,22 @@
                       <td className="p-4 text-right whitespace-nowrap" data-label="Actions">
                         <button onClick={() => setEditExpense(exp)} disabled={actionLoading} className="p-1.5 bg-blue-500/20 text-blue-400 rounded-md mr-1.5 hover:bg-blue-500/30 transition text-[10px] font-bold disabled:opacity-50">Edit</button>
                         <button onClick={() => handleDeleteExpense(exp.id)} disabled={actionLoading} className="p-1.5 bg-red-500/20 text-red-400 rounded-md hover:bg-red-500/30 transition text-[10px] font-bold disabled:opacity-50">Del</button>
+                      </td>
+                    </tr>
+                  ))}
+
+                  {activeTab === 'users' && appUsers.map(user => (
+                    <tr key={user.id} className="border-b border-slate-800/50 hover:bg-slate-800/40 transition">
+                      <td className="p-4 font-bold text-white" data-label="Username"><ReporterBadge name={user.username} users={appUsers} showFullName={true} /></td>
+                      <td className="p-4 text-slate-300" data-label="Role"><span className={`px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider ${user.role === 'admin' ? 'bg-red-500/20 text-red-400' : 'bg-slate-700 text-slate-300'}`}>{user.role}</span></td>
+                      <td className="p-4" data-label="Reset Requested">
+                        {user.reset_requested ? <span className="bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded text-[10px] font-bold animate-pulse">Yes / ඔව්</span> : <span className="text-slate-500 text-[10px]">No</span>}
+                      </td>
+                      <td className="p-4" data-label="Requires Change">
+                        {user.is_temp_password ? <span className="bg-brand-500/20 text-brand-400 px-2 py-1 rounded text-[10px] font-bold">Yes</span> : <span className="text-slate-500 text-[10px]">No</span>}
+                      </td>
+                      <td className="p-4 text-right whitespace-nowrap" data-label="Actions">
+                        <button onClick={() => handleGenerateTempPassword(user)} disabled={actionLoading} className="px-3 py-1.5 bg-indigo-500/20 text-indigo-400 rounded-lg hover:bg-indigo-500/30 transition text-xs font-bold disabled:opacity-50">Generate Temp Pass</button>
                       </td>
                     </tr>
                   ))}
@@ -962,7 +1042,7 @@
                       </tr>
                       {sponsorShares.map((s, idx) => (
                         <tr key={idx} className="border-b border-slate-800/50 hover:bg-slate-800/40 transition">
-                          <td className="p-4 font-medium text-white" data-label="Donor Name">{s.name}</td>
+                          <td className="p-4 font-medium text-white" data-label="Donor Name"><ReporterBadge name={s.name} users={appUsers} showFullName={true} /></td>
                           <td className="p-4 text-slate-300" data-label="Contribution">{formatCurrency(s.amount)}</td>
                           <td className="p-4" data-label="Percentage">
                             <div className="flex items-center gap-2 justify-end sm:justify-start">
@@ -989,6 +1069,9 @@
                   )}
                   {(activeTab === 'shares' && sponsorShares.length === 0) && (
                     <tr><td colSpan="4" className="p-8 text-center text-slate-500">No main contributors found.</td></tr>
+                  )}
+                  {(activeTab === 'users' && appUsers.length === 0) && (
+                    <tr><td colSpan="5" className="p-8 text-center text-slate-500">No users found. Please create the app_users table.</td></tr>
                   )}
                 </tbody>
               </table>
