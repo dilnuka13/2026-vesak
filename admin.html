@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Vesak System - Admin Panel</title>
+  <link rel="icon" href="logo.png" type="image/png" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -37,14 +43,25 @@
 
   <style>
     .glass {
-      background: rgba(30, 41, 59, 0.7);
-      backdrop-filter: blur(12px);
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    }
+    .glass-card {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+      backdrop-filter: blur(20px);
       border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
     }
     body {
       background-color: #020617;
+      background-image: radial-gradient(circle at 20% 0%, rgba(34, 197, 94, 0.05), transparent 30%),
+                        radial-gradient(circle at 80% 100%, rgba(59, 130, 246, 0.05), transparent 30%);
+      background-attachment: fixed;
       color: #e2e8f0;
-      font-family: 'Inter', system-ui, sans-serif;
+      font-family: 'Outfit', system-ui, sans-serif;
       padding-bottom: env(safe-area-inset-bottom);
       padding-left: env(safe-area-inset-left);
       padding-right: env(safe-area-inset-right);
@@ -58,7 +75,17 @@
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #475569; }
     
-    /* Toast Animations */
+    /* Animations */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(15px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .animate-fade-in {
+      animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .delay-100 { animation-delay: 100ms; }
+    .delay-200 { animation-delay: 200ms; }
+    
     @keyframes slideInRight {
       from { transform: translateX(100%); opacity: 0; }
     /* Toast Styles */
@@ -170,7 +197,12 @@
     }
   </style>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen relative overflow-x-hidden selection:bg-brand-500/30 selection:text-brand-300">
+  <!-- Dynamic Background Orbs -->
+  <div class="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
+    <div class="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-brand-500/10 blur-[150px] animate-pulse" style="animation-duration: 8s;"></div>
+    <div class="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-blue-500/10 blur-[150px] animate-pulse" style="animation-duration: 12s;"></div>
+  </div>
   
   <div id="root"></div>
 
@@ -244,34 +276,37 @@
     };
 
     // Components
-    const InputField = ({ label, type="text", name, value, onChange, options, autoComplete, prefix }) => (
-      <div className="flex flex-col gap-1 mb-4 w-full">
-        <label className="text-sm font-medium text-slate-300">{label}</label>
+    const InputField = ({ label, type="text", name, value, onChange, options, autoComplete, prefix, required }) => (
+      <div className="flex flex-col gap-1.5 mb-5 w-full group">
+        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">{label} {required && '*'}</label>
         {type === 'textarea' ? (
-          <textarea name={name} value={value || ''} onChange={onChange} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2 outline-none h-20 focus:border-brand-500"></textarea>
+          <textarea name={name} value={value || ''} onChange={onChange} required={required} className="bg-slate-950/50 border border-slate-800 text-white text-sm rounded-2xl p-3 outline-none h-28 focus:border-brand-500/50 transition-all focus:ring-4 focus:ring-brand-500/5"></textarea>
         ) : type === 'select' ? (
-          <select name={name} value={value || ''} onChange={onChange} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2 outline-none focus:border-brand-500">
+          <select name={name} value={value || ''} onChange={onChange} required={required} className="bg-slate-950/50 border border-slate-800 text-white text-sm rounded-2xl p-3 outline-none focus:border-brand-500/50 transition-all focus:ring-4 focus:ring-brand-500/5 appearance-none cursor-pointer">
              <option value="">Select Option</option>
-             {options && options.map(o => <option key={o} value={o}>{o}</option>)}
+             {options && options.map(o => <option key={o} value={o} className="bg-slate-900">{o}</option>)}
           </select>
         ) : (
           <div className="relative">
             {prefix && (
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-slate-400 sm:text-sm text-xs font-semibold">{prefix}</span>
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <span className="text-slate-500 text-sm font-bold">{prefix}</span>
               </div>
             )}
-            <input type={type} name={name} value={value || ''} onChange={onChange} autoComplete={autoComplete} className={`bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2 outline-none focus:border-brand-500 w-full ${prefix ? 'pl-[2.2rem]' : ''}`} />
+            <input type={type} name={name} value={value || ''} onChange={onChange} required={required} autoComplete={autoComplete} className={`bg-slate-950/50 border border-slate-800 text-white text-sm rounded-2xl p-3 outline-none focus:border-brand-500/50 transition-all focus:ring-4 focus:ring-brand-500/5 w-full ${prefix ? 'pl-11' : ''}`} />
           </div>
         )}
       </div>
     );
 
     const Modal = ({ title, children, onClose }) => (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-        <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto relative shadow-2xl">
-          <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-white text-2xl leading-none">&times;</button>
-          <h2 className="text-xl font-bold mb-6 text-brand-400 border-b border-slate-800 pb-2">{title}</h2>
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+        <div className="glass-card border border-white/5 rounded-[2.5rem] p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto relative shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+          <button onClick={onClose} className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center bg-slate-800/50 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-full transition-all text-xl">&times;</button>
+          <div className="mb-8">
+            <h2 className="text-2xl font-black text-white tracking-tight">{title}</h2>
+            <div className="w-12 h-1 bg-brand-500 rounded-full mt-2 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
+          </div>
           {children}
         </div>
       </div>
@@ -316,14 +351,25 @@
       
       const [editIncome, setEditIncome] = useState(null);
       const [editExpense, setEditExpense] = useState(null);
+      const [editUser, setEditUser] = useState(null);
+      const [addUserModal, setAddUserModal] = useState(false);
+      const [newUser, setNewUser] = useState({ username: '', phone_number: '', address: '', password: '', role: 'user' });
       const [actionLoading, setActionLoading] = useState(false);
       const [expandedDonors, setExpandedDonors] = useState(new Set());
+      const [expandedUsers, setExpandedUsers] = useState(new Set());
 
       const toggleDonorExpand = (name) => {
         const next = new Set(expandedDonors);
         if (next.has(name)) next.delete(name);
         else next.add(name);
         setExpandedDonors(next);
+      };
+
+      const toggleUserExpand = (id) => {
+        const next = new Set(expandedUsers);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        setExpandedUsers(next);
       };
 
       useEffect(() => {
@@ -338,20 +384,24 @@
       const [filterDate, setFilterDate] = useState('');
 
       const formatCurrency = (amount) => {
-        if(!amount) return "LKR. 0.00";
-        return "LKR. " + parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if(!amount) return "LKR. 0";
+        return "LKR. " + Math.round(parseFloat(amount)).toLocaleString('en-US');
       };
+
+      const [allSessions, setAllSessions] = useState([]);
 
       const fetchData = async () => {
         setLoading(true);
-        const [inc, exp, usersRes] = await Promise.all([
+        const [inc, exp, usersRes, sessionsRes] = await Promise.all([
           supabase.from('incomes').select('*').order('created_at', { ascending: false }),
           supabase.from('expenses').select('*').order('created_at', { ascending: false }),
-          supabase.from('app_users').select('*').order('username')
+          supabase.from('app_users').select('*').order('username'),
+          supabase.from('user_sessions').select('*').order('last_active', { ascending: false })
         ]);
         if (inc.data) setIncomes(inc.data);
         if (exp.data) setExpenses(exp.data);
         if (usersRes.data) setAppUsers(usersRes.data);
+        if (sessionsRes && sessionsRes.data) setAllSessions(sessionsRes.data);
         setLoading(false);
       };
 
@@ -372,6 +422,100 @@
           fetchData();
         } catch(err) {
           window.showToast("Error setting password: " + err.message, "error");
+        } finally {
+          setActionLoading(false);
+        }
+      };
+
+      const handleResetFaceId = async (user) => {
+        if(!window.confirm(`Are you sure you want to delete Face ID data for ${user.username}? They will be prompted to set it up again on their next password login.`)) return;
+        setActionLoading(true);
+        try {
+          const { error } = await supabase.from('app_users').update({ passkey_id: null }).eq('id', user.id);
+          if (error) throw error;
+          window.showToast("Face ID data deleted. Prompt will appear on next login.", "success");
+          fetchData();
+        } catch(err) {
+          window.showToast("Error: " + err.message, "error");
+        } finally {
+          setActionLoading(false);
+        }
+      };
+
+      const handleRemoveUserSession = async (sessionId) => {
+         if (!confirm('Are you sure you want to log out this specific device?')) return;
+         setActionLoading(true);
+         try {
+            await supabase.from('user_sessions').delete().eq('id', sessionId);
+            window.showToast("Device session logged out.", "success");
+            fetchData();
+         } catch(err) {
+            window.showToast("Error: " + err.message, "error");
+         } finally {
+            setActionLoading(false);
+         }
+      };
+
+      const handleClearAllUserSessions = async (userId) => {
+         if (!confirm('Are you sure you want to log out ALL devices for this user?')) return;
+         setActionLoading(true);
+         try {
+            await supabase.from('user_sessions').delete().eq('user_id', userId);
+            window.showToast("All devices logged out.", "success");
+            fetchData();
+         } catch(err) {
+            window.showToast("Error: " + err.message, "error");
+         } finally {
+            setActionLoading(false);
+         }
+      };
+
+      const handleSaveUser = async (e) => {
+        e.preventDefault();
+        setActionLoading(true);
+        try {
+          const { error } = await supabase.from('app_users').update({ 
+            phone_number: editUser.phone_number, 
+            address: editUser.address,
+            role: editUser.role 
+          }).eq('id', editUser.id);
+          if(error) throw error;
+          window.showToast("User details saved successfully!", "success");
+          setEditUser(null);
+          fetchData();
+        } catch(err) {
+          window.showToast("Error saving user: " + err.message, "error");
+        } finally {
+          setActionLoading(false);
+        }
+      };
+
+      const handleAddUser = async (e) => {
+        e.preventDefault();
+        setActionLoading(true);
+        try {
+          if (!newUser.username || !newUser.password) throw new Error("Username and Password are required");
+          const hashedPass = await hashPassword(newUser.password);
+          const uuid = crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now();
+          
+          const { error } = await supabase.from('app_users').insert([{
+             id: uuid,
+             username: newUser.username,
+             phone_number: newUser.phone_number,
+             address: newUser.address,
+             password_hash: hashedPass,
+             role: newUser.role,
+             is_temp_password: true,
+             reset_requested: false
+          }]);
+
+          if (error) throw error;
+          window.showToast("User added successfully!", "success");
+          setAddUserModal(false);
+          setNewUser({ username: '', phone_number: '', address: '', password: '', role: 'user' });
+          fetchData();
+        } catch(err) {
+          window.showToast("Error adding user: " + err.message, "error");
         } finally {
           setActionLoading(false);
         }
@@ -417,7 +561,12 @@
           email: creds.email,
           password: creds.pass
         });
-        if (error) setError(error.message);
+        if (error) {
+          setError(error.message);
+          setAuthLoading(false);
+          return;
+        }
+        
         setAuthLoading(false);
       };
 
@@ -684,9 +833,9 @@
         // Expenses SQL
         expenses.forEach(e => {
           const values = [
-            e.id, e.reason, e.withdrawer_name, e.date, e.time, e.amount_taken, e.receipt_url
+            e.id, e.reason, e.withdrawer_name, e.date, e.time, e.amount_taken, e.receipt_url, e.reported_by
           ].map(v => v === null || v === undefined ? 'NULL' : `'${String(v).replace(/'/g, "''")}'`);
-          sql += `INSERT INTO expenses (id, reason, withdrawer_name, date, time, amount_taken, receipt_url) VALUES (${values.join(', ')});\n`;
+          sql += `INSERT INTO expenses (id, reason, withdrawer_name, date, time, amount_taken, receipt_url, reported_by) VALUES (${values.join(', ')});\n`;
         });
 
         const blob = new Blob([sql], { type: 'text/plain' });
@@ -702,45 +851,57 @@
 
       if (!loggedIn || authMode === 'reset') {
         return (
-          <div className="min-h-screen flex items-center justify-center p-4">
-            <div className="glass p-8 rounded-2xl w-full max-w-md animate-fade-in">
+          <div className="min-h-screen flex items-center justify-center p-4 relative">
+            {/* Background elements for login only */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-brand-500/20 blur-[100px] rounded-full pointer-events-none"></div>
+            
+            <div className="glass-card p-10 rounded-[2.5rem] w-full max-w-md animate-fade-in relative z-10 border border-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 rounded-full bg-slate-800 border border-brand-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(34,197,94,0.2)]">
+                  <svg className="w-8 h-8 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                </div>
+              </div>
               <div className="text-center mb-8">
                 <h1 className="text-3xl font-bold text-white tracking-tight">
                   {authMode === 'login' ? 'Admin Login' : authMode === 'forgot' ? 'Reset Password' : 'New Password'}
                 </h1>
-                <p className="text-slate-400 text-sm mt-2">Vesak Lantern System 2026</p>
+                <p className="text-slate-400 text-sm mt-2 font-medium">Vesak Lantern System 2026</p>
               </div>
               
               {authMode === 'login' && (
                 <form onSubmit={handleLogin} className="flex flex-col gap-4 animate-fade-in">
-                  {error && <div className="text-red-400 bg-red-500/10 p-3 rounded-lg text-sm text-center border border-red-500/20">{error}</div>}
+                  {error && <div className="text-red-400 bg-red-500/10 p-3 rounded-xl text-sm text-center border border-red-500/20 shadow-inner">{error}</div>}
                   <InputField label="Email Address" type="email" name="email" autoComplete="email" value={creds.email} onChange={e => setCreds({...creds, email: e.target.value})} />
                   <InputField label="Password" type="password" name="password" autoComplete="current-password" value={creds.pass} onChange={e => setCreds({...creds, pass: e.target.value})} />
-                  <button type="button" onClick={() => {setAuthMode('forgot'); setError('');}} className="text-xs text-brand-400 hover:text-brand-300 self-end -mt-2 transition">Forgot Password?</button>
-                  <button type="submit" disabled={authLoading} className="mt-2 bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-lg transition shadow-[0_0_15px_rgba(34,197,94,0.3)] disabled:opacity-50">
-                    {authLoading ? 'Signing in...' : 'Login / පිවිසෙන්න'}
+                  <button type="button" onClick={() => {setAuthMode('forgot'); setError('');}} className="text-xs text-brand-400 hover:text-brand-300 self-end -mt-2 transition font-medium">Forgot Password?</button>
+                  <button type="submit" disabled={authLoading} className="mt-4 bg-brand-600 hover:bg-brand-500 text-white font-bold py-3.5 rounded-xl transition shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:shadow-[0_0_25px_rgba(34,197,94,0.4)] disabled:opacity-50 flex items-center justify-center gap-2">
+                    {authLoading ? (
+                      <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    ) : (
+                      <>Login / පිවිසෙන්න <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg></>
+                    )}
                   </button>
                 </form>
               )}
 
               {authMode === 'forgot' && (
                 <form onSubmit={handleForgotPassword} className="flex flex-col gap-4 animate-fade-in">
-                  <p className="text-sm text-slate-300 mb-2">Enter your email address to receive a password reset link.</p>
-                  {error && <div className="text-red-400 bg-red-500/10 p-3 rounded-lg text-sm text-center border border-red-500/20">{error}</div>}
+                  <p className="text-sm text-slate-300 mb-2 text-center">Enter your email address to receive a password reset link.</p>
+                  {error && <div className="text-red-400 bg-red-500/10 p-3 rounded-xl text-sm text-center border border-red-500/20 shadow-inner">{error}</div>}
                   <InputField label="Email Address" type="email" name="email" value={creds.email} onChange={e => setCreds({...creds, email: e.target.value})} />
-                  <button type="submit" disabled={authLoading} className="mt-2 bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-lg transition shadow-[0_0_15px_rgba(34,197,94,0.3)] disabled:opacity-50">
+                  <button type="submit" disabled={authLoading} className="mt-4 bg-brand-600 hover:bg-brand-500 text-white font-bold py-3.5 rounded-xl transition shadow-[0_0_15px_rgba(34,197,94,0.3)] disabled:opacity-50">
                     {authLoading ? 'Sending...' : 'Send Reset Link'}
                   </button>
-                  <button type="button" onClick={() => {setAuthMode('login'); setError('');}} className="text-sm text-slate-400 hover:text-white mt-2 transition">Back to Login</button>
+                  <button type="button" onClick={() => {setAuthMode('login'); setError('');}} className="text-sm text-slate-400 hover:text-white mt-2 transition font-medium">Back to Login</button>
                 </form>
               )}
 
               {authMode === 'reset' && (
                 <form onSubmit={handleResetPassword} className="flex flex-col gap-4 animate-fade-in">
-                  <p className="text-sm text-slate-300 mb-2">Please enter your new password.</p>
-                  {error && <div className="text-red-400 bg-red-500/10 p-3 rounded-lg text-sm text-center border border-red-500/20">{error}</div>}
+                  <p className="text-sm text-slate-300 mb-2 text-center">Please enter your new password.</p>
+                  {error && <div className="text-red-400 bg-red-500/10 p-3 rounded-xl text-sm text-center border border-red-500/20 shadow-inner">{error}</div>}
                   <InputField label="New Password" type="password" name="new-password" value={creds.pass} onChange={e => setCreds({...creds, pass: e.target.value})} />
-                  <button type="submit" disabled={authLoading} className="mt-2 bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-lg transition shadow-[0_0_15px_rgba(34,197,94,0.3)] disabled:opacity-50">
+                  <button type="submit" disabled={authLoading} className="mt-4 bg-brand-600 hover:bg-brand-500 text-white font-bold py-3.5 rounded-xl transition shadow-[0_0_15px_rgba(34,197,94,0.3)] disabled:opacity-50">
                     {authLoading ? 'Saving...' : 'Save New Password'}
                   </button>
                 </form>
@@ -770,30 +931,54 @@
             </div>
           )}
 
-          <header className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4 glass p-6 rounded-2xl">
-            <div className="text-center sm:text-left">
-              <h1 className="text-2xl font-bold text-white">Administrator Dashboard</h1>
-              <p className="text-brand-400 text-sm">Manage & Edit System Records</p>
+          <header className="flex flex-col lg:flex-row justify-between items-center mb-10 gap-6 glass-card p-8 rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden animate-fade-in">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-brand-500/5 blur-[80px] rounded-full pointer-events-none"></div>
+            <div className="text-center lg:text-left flex flex-col sm:flex-row items-center gap-6 relative z-10">
+              <div className="w-16 h-16 rounded-2xl bg-brand-500/10 flex items-center justify-center border border-brand-500/20 shadow-[0_0_20px_rgba(34,197,94,0.15)] group transition-all duration-500 hover:rotate-6">
+                <svg className="w-8 h-8 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+              </div>
+              <div>
+                <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">Admin Portal</h1>
+                <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.2em] mt-1 opacity-80">Management & Control Center</p>
+              </div>
             </div>
-            <div className="flex flex-wrap justify-center gap-2 sm:gap-4">
-              <a href="index.html" className="px-4 py-2 bg-slate-800 rounded-lg hover:bg-slate-700 transition flex items-center text-sm font-medium">Home</a>
-              <button onClick={fetchData} className="px-4 py-2 bg-brand-600 rounded-lg hover:bg-brand-500 transition text-sm font-medium shadow-[0_0_10px_rgba(34,197,94,0.3)]">Refresh</button>
-              <button onClick={generateSQLBackup} className="px-4 py-2 bg-blue-600/20 text-blue-400 border border-blue-600/30 rounded-lg hover:bg-blue-600/30 transition text-sm font-medium">SQL Backup</button>
-              <button onClick={handleLogout} className="px-4 py-2 bg-red-600/20 text-red-500 rounded-lg hover:bg-red-600/30 transition text-sm font-medium">Logout</button>
+            <div className="flex flex-wrap justify-center gap-3 relative z-10">
+              <a href="index.html" className="px-5 py-2.5 bg-slate-900/50 rounded-2xl hover:bg-slate-800 transition-all flex items-center gap-2 text-sm font-bold border border-slate-800 hover:border-slate-700 shadow-lg">
+                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                Home
+              </a>
+              <button onClick={fetchData} className="px-5 py-2.5 bg-brand-600 rounded-2xl hover:bg-brand-500 transition-all text-sm font-bold shadow-[0_10px_20px_rgba(34,197,94,0.2)] flex items-center gap-2 text-white">
+                <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                Refresh
+              </button>
+              <button onClick={handleLogout} className="px-5 py-2.5 bg-red-600/10 text-red-500 rounded-2xl hover:bg-red-600/20 transition-all text-sm font-bold border border-red-500/20 flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                Logout
+              </button>
             </div>
           </header>
 
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
-            <div className="flex flex-wrap gap-2 w-full lg:w-auto">
-              <button onClick={() => {setActiveTab('incomes'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition text-xs sm:text-sm ${activeTab === 'incomes' ? 'bg-brand-500 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>All Incomes</button>
-              <button onClick={() => {setActiveTab('cash_incomes'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition text-xs sm:text-sm ${activeTab === 'cash_incomes' ? 'bg-brand-600 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Cash</button>
-              <button onClick={() => {setActiveTab('goods_incomes'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition text-xs sm:text-sm ${activeTab === 'goods_incomes' ? 'bg-purple-600 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Goods</button>
-              <button onClick={() => {setActiveTab('main_donors'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition text-xs sm:text-sm ${activeTab === 'main_donors' ? 'bg-emerald-600 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Main Donors</button>
-              <button onClick={() => {setActiveTab('regular_donors'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition text-xs sm:text-sm ${activeTab === 'regular_donors' ? 'bg-lime-600 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Regular Donors</button>
-              <button onClick={() => {setActiveTab('expenses'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition text-xs sm:text-sm ${activeTab === 'expenses' ? 'bg-red-500 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Expenses</button>
-              <button onClick={() => {setActiveTab('receipts'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition text-xs sm:text-sm ${activeTab === 'receipts' ? 'bg-amber-500 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Receipts</button>
-              <button onClick={() => {setActiveTab('shares'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition text-xs sm:text-sm ${activeTab === 'shares' ? 'bg-blue-600 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>Shares</button>
-              <button onClick={() => {setActiveTab('users'); setSearchTerm(''); setFilterDate('');}} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition text-xs sm:text-sm ${activeTab === 'users' ? 'bg-indigo-600 text-white shadow-lg' : 'glass text-slate-400 hover:text-white'}`}>User Management</button>
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8 animate-fade-in delay-100">
+            <div className="flex flex-wrap gap-2 w-full lg:w-auto bg-slate-950/40 p-2.5 rounded-[2rem] border border-white/5 shadow-inner">
+              {[
+                { id: 'incomes', label: 'All Incomes', color: 'brand' },
+                { id: 'cash_incomes', label: 'Cash', color: 'brand' },
+                { id: 'goods_incomes', label: 'Goods', color: 'purple' },
+                { id: 'main_donors', label: 'Main Donors', color: 'emerald' },
+                { id: 'regular_donors', label: 'Regular', color: 'lime' },
+                { id: 'expenses', label: 'Expenses', color: 'red' },
+                { id: 'receipts', label: 'Receipts', color: 'amber' },
+                { id: 'shares', label: 'Shares', color: 'blue' },
+                { id: 'users', label: 'User Mgmt', color: 'indigo' }
+              ].map(tab => (
+                <button 
+                  key={tab.id}
+                  onClick={() => {setActiveTab(tab.id); setSearchTerm(''); setFilterDate('');}} 
+                  className={`flex-1 sm:flex-none px-5 py-2.5 rounded-2xl font-bold transition-all text-[11px] uppercase tracking-wider ${activeTab === tab.id ? `bg-${tab.color === 'brand' ? 'brand-500' : tab.color + '-600'} text-white shadow-xl scale-105` : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
             
             <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
@@ -807,14 +992,20 @@
                   </div>
                 </>
               )}
+              {activeTab === 'users' && (
+                <button onClick={() => setAddUserModal(true)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition font-medium text-sm flex items-center justify-center gap-2 w-full sm:w-auto shadow-[0_0_15px_rgba(79,70,229,0.3)]">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
+                  Add New User
+                </button>
+              )}
             </div>
           </div>
 
-          <div className={`glass rounded-2xl ${activeTab === 'receipts' ? 'p-6' : 'overflow-x-auto'} min-h-[400px]`}>
+          <div className={`glass-card rounded-[2.5rem] ${activeTab === 'receipts' ? 'p-6 sm:p-8' : 'overflow-x-auto'} border border-white/5 shadow-2xl min-h-[500px] animate-fade-in delay-200`}>
             {loading ? <div className="p-8 text-center text-slate-400">Fetching records from database...</div> : activeTab === 'receipts' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredExpenses.map(exp => (
-                  <div key={exp.id} className="glass bg-slate-900/50 rounded-xl overflow-hidden border border-slate-800 flex flex-col group hover:border-amber-500/50 transition duration-300">
+                  <div key={exp.id} className="glass-card bg-slate-900/40 rounded-3xl overflow-hidden border border-white/5 flex flex-col group hover:border-amber-500/30 transition-all duration-500 hover:scale-[1.02]">
                     <div className="aspect-[4/3] bg-slate-950 relative overflow-hidden flex items-center justify-center">
                       {exp.receipt_url ? (
                         <img src={exp.receipt_url} alt="Receipt" className="w-full h-full object-contain cursor-pointer hover:scale-105 transition duration-500" onClick={() => window.open(exp.receipt_url, '_blank')} />
@@ -864,14 +1055,14 @@
                 {expenses.length === 0 && <div className="col-span-full py-12 text-center text-slate-500">No expense records found.</div>}
               </div>
             ) : (
-              <table className="w-full text-left text-sm whitespace-nowrap responsive-table">
-                <thead className="bg-slate-900/80 text-slate-400 text-xs uppercase border-b border-slate-800">
+              <table className="w-full text-left text-sm whitespace-nowrap responsive-table border-separate border-spacing-y-2 px-4 sm:px-8">
+                <thead className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] opacity-70">
                   {activeTab === 'users' ? (
                     <tr>
                       <th className="p-4 rounded-tl-lg">Username</th>
                       <th className="p-4">Role</th>
-                      <th className="p-4">Reset Requested</th>
-                      <th className="p-4">Requires Password Change</th>
+                      <th className="p-4">Active Devices</th>
+                      <th className="p-4">Reset Req.</th>
                       <th className="p-4 rounded-tr-lg text-right">Actions</th>
                     </tr>
                   ) : activeTab === 'shares' ? (
@@ -911,19 +1102,14 @@
                     </tr>
                   )}
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-slate-800/50">
                   {activeTab === 'main_donors' && groupedMainDonors.map(group => (
                     <React.Fragment key={group.key}>
-                      <tr className="border-b border-slate-800/50 hover:bg-slate-800/40 transition cursor-pointer" onClick={() => toggleDonorExpand(group.key)}>
-                        <td className="p-4" data-label="Donor Name">
-                          <div className="flex items-center gap-2">
-                            <svg className={`w-4 h-4 transition-transform ${expandedDonors.has(group.key) ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                            <ReporterBadge name={group.name} users={appUsers} showFullName={true} />
-                          </div>
-                        </td>
-                        <td className="p-4 text-slate-400" data-label="Donations Count">{group.records.length} Times</td>
-                        <td className="p-4 text-brand-400 font-bold" data-label="Total Amount">Rs. {group.total.toLocaleString()}</td>
-                        <td className="p-4 text-right" data-label="Details">
+                      <tr className="bg-slate-900/40 rounded-2xl border border-white/5 hover:bg-slate-800/40 transition cursor-pointer" onClick={() => toggleDonorExpand(group.key)}>
+                        <td className="p-4 font-bold text-white group-hover:text-brand-400 transition-colors rounded-l-2xl" data-label="Donor Name"><ReporterBadge name={group.name} users={appUsers} showFullName={true} /></td>
+                        <td className="p-4 text-slate-500 font-medium" data-label="Donations Count">{group.records.length} Times</td>
+                        <td className="p-4 text-brand-400 font-black" data-label="Total Amount">Rs. {Math.round(group.total).toLocaleString()}</td>
+                        <td className="p-4 text-right rounded-r-2xl" data-label="Details">
                           <button className="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded-md border border-slate-700 transition">
                             {expandedDonors.has(group.key) ? 'Hide' : 'View Details'}
                           </button>
@@ -940,7 +1126,7 @@
                                     <span className="text-sm text-white font-medium">{r.item_description || 'Cash Donation'}</span>
                                   </div>
                                   <div className="flex items-center gap-4">
-                                    <span className="text-brand-400 font-bold">Rs. {Number(r.amount).toLocaleString()}</span>
+                                    <span className="text-brand-400 font-bold">Rs. {Math.round(r.amount).toLocaleString()}</span>
                                     <div className="flex gap-1">
                                       <button onClick={(e) => { e.stopPropagation(); setEditIncome(r); }} className="p-1 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition text-[10px] font-bold">Edit</button>
                                       <button onClick={(e) => { e.stopPropagation(); handleDeleteIncome(r.id); }} className="p-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition text-[10px] font-bold">Del</button>
@@ -956,18 +1142,17 @@
                   ))}
 
                   {(activeTab === 'incomes' || activeTab === 'cash_incomes' || activeTab === 'goods_incomes' || activeTab === 'regular_donors') && filteredIncomes.map(inc => (
-                    <tr key={inc.id} className="border-b border-slate-800/50 hover:bg-slate-800/40 transition">
-                      <td className="p-4 font-mono text-xs text-slate-500 hidden md:table-cell" data-label="ID">#{inc.id}</td>
-                      <td className="p-4 text-slate-300 hidden sm:table-cell text-xs" data-label="Date">{inc.date}</td>
+                    <tr key={inc.id} className="bg-slate-900/40 border border-white/5 hover:bg-slate-800/40 transition">
+                      <td className="p-4 font-mono text-[10px] text-slate-600 hidden md:table-cell rounded-l-2xl" data-label="ID">#{inc.id}</td>
+                      <td className="p-4 text-slate-500 hidden sm:table-cell text-[10px] font-bold uppercase" data-label="Date">{inc.date}</td>
                       <td className="p-4" data-label="Name">
                         <ReporterBadge name={inc.name} users={appUsers} showFullName={true} />
-                        <div className="text-[9px] text-slate-500 mt-0.5 sm:hidden">{inc.status} • {inc.donation_type}</div>
                       </td>
-                      <td className="p-4 hidden md:table-cell" data-label="Type"><span className={`px-2 py-1 rounded text-[10px] ${inc.donation_type === 'Cash' ? 'bg-brand-500/10 text-brand-400' : 'bg-purple-500/10 text-purple-400'}`}>{inc.donation_type}</span></td>
-                      <td className="p-4 max-w-[150px] truncate text-slate-300 hidden lg:table-cell" data-label="Details">
+                      <td className="p-4 hidden md:table-cell" data-label="Type"><span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter ${inc.donation_type === 'Cash' ? 'bg-brand-500/10 text-brand-400' : 'bg-purple-500/10 text-purple-400'}`}>{inc.donation_type}</span></td>
+                      <td className="p-4 max-w-[150px] truncate text-slate-400 hidden lg:table-cell text-xs" data-label="Details">
                         {inc.donation_type === 'Cash' ? inc.donor_category : `${inc.item_description} (x${inc.quantity})`}
                       </td>
-                      <td className="p-4 text-brand-400 font-bold text-xs sm:text-sm" data-label="Amount">{inc.amount ? `Rs.${inc.amount}` : '-'}</td>
+                      <td className="p-4 text-brand-400 font-black text-sm" data-label="Amount">{inc.amount ? `Rs.${Math.round(inc.amount).toLocaleString()}` : '-'}</td>
                       <td className="p-4 hidden sm:table-cell" data-label="Status">
                         <span className={`px-2 py-1 rounded text-[10px] ${inc.status === 'Received Today' ? 'bg-brand-500/20 text-brand-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
                           {inc.status}
@@ -984,12 +1169,12 @@
                   ))}
                   
                   {activeTab === 'expenses' && filteredExpenses.map(exp => (
-                    <tr key={exp.id} className="border-b border-slate-800/50 hover:bg-slate-800/40 transition">
-                      <td className="p-4 font-mono text-xs text-slate-500 hidden md:table-cell" data-label="ID">#{exp.id}</td>
-                      <td className="p-4 text-slate-300 hidden sm:table-cell text-xs" data-label="Date">{exp.date}</td>
+                    <tr key={exp.id} className="bg-slate-900/30 border border-white/5 rounded-2xl hover:bg-slate-800/40 transition-all duration-300">
+                      <td className="p-4 font-mono text-[10px] text-slate-600 hidden md:table-cell" data-label="ID">#{exp.id}</td>
+                      <td className="p-4 text-slate-500 hidden sm:table-cell text-[10px] font-bold uppercase" data-label="Date">{exp.date}</td>
                       <td className="p-4 font-medium text-white hidden sm:table-cell text-xs" data-label="Withdrawer"><ReporterBadge name={exp.withdrawer_name} users={appUsers} showFullName={true} /></td>
-                      <td className="p-4 max-w-[200px] truncate text-slate-300 text-xs sm:text-sm" data-label="Reason">{exp.reason}</td>
-                      <td className="p-4 text-red-400 font-bold text-xs sm:text-sm" data-label="Amount">Rs.{exp.amount_taken}</td>
+                      <td className="p-4 max-w-[200px] truncate text-slate-400 text-xs sm:text-sm" data-label="Reason">{exp.reason}</td>
+                      <td className="p-4 text-red-400 font-black text-sm" data-label="Amount">Rs.{Math.round(exp.amount_taken).toLocaleString()}</td>
                       <td className="p-4" data-label="Receipt">
                         {exp.receipt_url ? (
                           <button onClick={() => window.open(exp.receipt_url, '_blank')} className="text-brand-400 hover:text-brand-300 transition" title="View Receipt">
@@ -1008,21 +1193,59 @@
                     </tr>
                   ))}
 
-                  {activeTab === 'users' && appUsers.map(user => (
-                    <tr key={user.id} className="border-b border-slate-800/50 hover:bg-slate-800/40 transition">
-                      <td className="p-4 font-bold text-white" data-label="Username"><ReporterBadge name={user.username} users={appUsers} showFullName={true} /></td>
-                      <td className="p-4 text-slate-300" data-label="Role"><span className={`px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider ${user.role === 'admin' ? 'bg-red-500/20 text-red-400' : 'bg-slate-700 text-slate-300'}`}>{user.role}</span></td>
-                      <td className="p-4" data-label="Reset Requested">
-                        {user.reset_requested ? <span className="bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded text-[10px] font-bold animate-pulse">Yes / ඔව්</span> : <span className="text-slate-500 text-[10px]">No</span>}
-                      </td>
-                      <td className="p-4" data-label="Requires Change">
-                        {user.is_temp_password ? <span className="bg-brand-500/20 text-brand-400 px-2 py-1 rounded text-[10px] font-bold">Yes</span> : <span className="text-slate-500 text-[10px]">No</span>}
-                      </td>
-                      <td className="p-4 text-right whitespace-nowrap" data-label="Actions">
-                        <button onClick={() => handleGenerateTempPassword(user)} disabled={actionLoading} className="px-3 py-1.5 bg-indigo-500/20 text-indigo-400 rounded-lg hover:bg-indigo-500/30 transition text-xs font-bold disabled:opacity-50">Generate Temp Pass</button>
-                      </td>
-                    </tr>
-                  ))}
+                  {activeTab === 'users' && appUsers.map(user => {
+                    const userSessions = allSessions.filter(s => s.user_id === user.id);
+                    return (
+                      <tr key={user.id} className="border-b border-slate-800/50 hover:bg-slate-800/40 transition cursor-pointer" onClick={() => toggleUserExpand(user.id)}>
+                        <td className="p-4" data-label="Username">
+                           <div className="flex items-center gap-2">
+                             <svg className={`w-4 h-4 text-slate-500 transition-transform ${expandedUsers.has(user.id) ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                             <div className="font-bold text-white"><ReporterBadge name={user.username} users={appUsers} showFullName={true} /></div>
+                           </div>
+                        </td>
+                        <td className="p-4 text-slate-300" data-label="Role"><span className={`px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider ${user.role === 'admin' ? 'bg-red-500/20 text-red-400' : 'bg-slate-700 text-slate-300'}`}>{user.role}</span></td>
+                        <td className="p-4" data-label="Active Devices">
+                           {userSessions.length > 0 ? (
+                             <div className="flex flex-col gap-2">
+                               <span className="bg-brand-500/20 text-brand-400 px-2 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit">
+                                 <div className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse"></div>
+                                 {userSessions.length} Device{userSessions.length > 1 ? 's' : ''}
+                               </span>
+                               {expandedUsers.has(user.id) && (
+                                 <div className="flex flex-col gap-1 mt-1 bg-slate-900/80 p-2 rounded-lg border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
+                                    <div className="text-[9px] text-slate-400 font-bold uppercase mb-1 flex justify-between items-center border-b border-slate-700/50 pb-1">
+                                      Sessions
+                                      <button onClick={(e) => { e.stopPropagation(); handleClearAllUserSessions(user.id); }} className="text-red-400 hover:text-red-300 bg-red-500/10 px-2 py-0.5 rounded-md">Clear All</button>
+                                    </div>
+                                    {userSessions.map(s => (
+                                       <div key={s.id} className="flex justify-between items-center text-[10px] py-1 border-b border-slate-700/30 last:border-0">
+                                         <div className="flex flex-col">
+                                           <span className="text-slate-300 font-medium truncate max-w-[120px]" title={s.device_name}>{s.device_name || 'Unknown'}</span>
+                                           <span className="text-slate-500 text-[8px] truncate max-w-[120px]">{s.location || 'Unknown'} • {s.ip_address}</span>
+                                         </div>
+                                         <button onClick={(e) => { e.stopPropagation(); handleRemoveUserSession(s.id); }} className="text-slate-500 hover:text-red-400 hover:bg-red-500/10 p-1.5 rounded transition" title="Logout">
+                                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                                         </button>
+                                       </div>
+                                    ))}
+                                 </div>
+                               )}
+                             </div>
+                           ) : (
+                             <span className="text-slate-500 text-[10px] font-bold">Offline</span>
+                           )}
+                        </td>
+                        <td className="p-4" data-label="Reset Requested">
+                          {user.reset_requested ? <span className="bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded text-[10px] font-bold animate-pulse">Yes / ඔව්</span> : <span className="text-slate-500 text-[10px]">No</span>}
+                        </td>
+                        <td className="p-4 text-right whitespace-nowrap" data-label="Actions">
+                          <button onClick={(e) => { e.stopPropagation(); setEditUser(user); }} disabled={actionLoading} className="p-1.5 bg-blue-500/20 text-blue-400 rounded-md hover:bg-blue-500/30 transition text-[10px] font-bold disabled:opacity-50 mr-1.5">Edit</button>
+                          <button onClick={(e) => { e.stopPropagation(); handleResetFaceId(user); }} disabled={actionLoading} className="p-1.5 bg-red-500/20 text-red-400 rounded-md hover:bg-red-500/30 transition text-[10px] font-bold disabled:opacity-50 mr-1.5" title="Reset Face ID">Del FaceID</button>
+                          <button onClick={(e) => { e.stopPropagation(); handleGenerateTempPassword(user); }} disabled={actionLoading} className="p-1.5 bg-indigo-500/20 text-indigo-400 rounded-md hover:bg-indigo-500/30 transition text-[10px] font-bold disabled:opacity-50">Temp Pass</button>
+                        </td>
+                      </tr>
+                    );
+                  })}
 
                   {activeTab === 'shares' && (
                     <>
@@ -1153,6 +1376,48 @@
                 <div className="flex gap-3 mt-6">
                   <button type="button" onClick={() => setEditExpense(null)} className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-white font-bold transition">Cancel</button>
                   <button type="submit" disabled={actionLoading} className="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-lg transition disabled:opacity-50">Save Changes</button>
+                </div>
+              </form>
+            </Modal>
+          )}
+          {/* Edit User Modal */}
+          {editUser && (
+            <Modal title={`Edit User (${editUser.username})`} onClose={() => setEditUser(null)}>
+              <form onSubmit={handleSaveUser}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+                  <InputField label="Phone Number" value={editUser.phone_number} onChange={e => setEditUser({...editUser, phone_number: e.target.value})} />
+                  <InputField label="Role / භූමිකාව" type="select" options={['user', 'admin']} value={editUser.role} onChange={e => setEditUser({...editUser, role: e.target.value})} required />
+                  <div className="md:col-span-2">
+                    <InputField label="Address" type="textarea" value={editUser.address} onChange={e => setEditUser({...editUser, address: e.target.value})} />
+                  </div>
+                </div>
+                <div className="flex gap-3 mt-4">
+                  <button type="button" onClick={() => setEditUser(null)} className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-white font-bold transition">Cancel</button>
+                  <button type="submit" disabled={actionLoading} className="flex-1 bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-lg transition disabled:opacity-50">Save Details</button>
+                </div>
+              </form>
+            </Modal>
+          )}
+
+          {/* Add User Modal */}
+          {addUserModal && (
+            <Modal title="Add New User" onClose={() => setAddUserModal(false)}>
+              <form onSubmit={handleAddUser}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+                  <InputField label="Username (Full Name)" value={newUser.username} onChange={e => setNewUser({...newUser, username: e.target.value})} required />
+                  <InputField label="Temporary Password" type="password" value={newUser.password} onChange={e => setNewUser({...newUser, password: e.target.value})} required />
+                  <InputField label="Phone Number" value={newUser.phone_number} onChange={e => setNewUser({...newUser, phone_number: e.target.value})} />
+                  <InputField label="Role" type="select" options={['user', 'admin']} value={newUser.role} onChange={e => setNewUser({...newUser, role: e.target.value})} required />
+                  <div className="md:col-span-2">
+                    <InputField label="Address" type="textarea" value={newUser.address} onChange={e => setNewUser({...newUser, address: e.target.value})} />
+                  </div>
+                </div>
+                <div className="bg-slate-900/50 border border-slate-800 p-3 rounded-lg mb-4 mt-2">
+                  <p className="text-[10px] text-slate-400">Note: New users will be forced to change this temporary password upon their first login. Since they are added here, they will instantly appear as selectable Main Donors and Withdrawers.</p>
+                </div>
+                <div className="flex gap-3 mt-4">
+                  <button type="button" onClick={() => setAddUserModal(false)} className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-white font-bold transition">Cancel</button>
+                  <button type="submit" disabled={actionLoading} className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-lg transition disabled:opacity-50 shadow-[0_0_15px_rgba(79,70,229,0.3)]">Create User</button>
                 </div>
               </form>
             </Modal>

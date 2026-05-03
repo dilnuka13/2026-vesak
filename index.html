@@ -11,6 +11,11 @@
   <link rel="manifest" href="manifest.json" />
   <title>Vesak Lantern Project - Finance Dashboard</title>
 
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Canvas Confetti -->
@@ -68,8 +73,11 @@
     
     body {
       background-color: #020617; /* Tailwind slate-950 */
+      background-image: radial-gradient(circle at 20% 0%, rgba(34, 197, 94, 0.05), transparent 30%),
+                        radial-gradient(circle at 80% 100%, rgba(59, 130, 246, 0.05), transparent 30%);
+      background-attachment: fixed;
       color: #e2e8f0; /* slate-200 */
-      font-family: 'Inter', system-ui, sans-serif;
+      font-family: 'Outfit', system-ui, sans-serif;
       /* Mobile safe areas handling for body scrolling */
       padding-bottom: env(safe-area-inset-bottom);
       padding-left: env(safe-area-inset-left);
@@ -80,21 +88,43 @@
     }
     
     /* Custom Scrollbar for dark theme */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #020617; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #475569; }
     
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(15px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
     .animate-fade-in {
-      animation: fadeIn 0.4s ease-out forwards;
+      animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .delay-100 { animation-delay: 100ms; }
+    .delay-200 { animation-delay: 200ms; }
+    
+    /* Advanced Glassmorphism */
+    .glass {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    }
+    .glass-card {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
     }
   </style>
 </head>
-<body class="min-h-screen text-slate-200 antialiased overflow-x-hidden selection:bg-brand-500 selection:text-white">
+<body class="min-h-screen text-slate-200 antialiased overflow-x-hidden selection:bg-brand-500/30 selection:text-brand-300 relative">
+  <!-- Dynamic Background Orbs -->
+  <div class="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
+    <div class="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-brand-500/10 blur-[150px] animate-pulse" style="animation-duration: 8s;"></div>
+    <div class="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-blue-500/10 blur-[150px] animate-pulse" style="animation-duration: 12s;"></div>
+  </div>
   
   <div id="root"></div>
 
@@ -175,10 +205,105 @@
       return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     };
 
+    // --- WEBAUTHN / FACE ID UTILS ---
+    const generateRandomBuffer = (length) => {
+      const array = new Uint8Array(length);
+      crypto.getRandomValues(array);
+      return array;
+    };
+
+    const registerFaceId = async (user) => {
+      try {
+        if (!window.PublicKeyCredential) {
+          throw new Error("WebAuthn / Face ID is not supported in this browser.");
+        }
+        if (window.location.protocol === 'file:') {
+          throw new Error("Face ID cannot be set up on 'file://'. You must run the app using a local server (localhost) or an HTTPS domain.");
+        }
+        
+        const challenge = generateRandomBuffer(32);
+        const userId = generateRandomBuffer(16);
+        
+        const rpConfig = { name: "Vesak Finance System" };
+        if (window.location.hostname) {
+          rpConfig.id = window.location.hostname;
+        }
+        
+        const publicKeyCredentialCreationOptions = {
+          challenge,
+          rp: rpConfig,
+          user: {
+            id: userId,
+            name: user.username,
+            displayName: user.username,
+          },
+          pubKeyCredParams: [{alg: -7, type: "public-key"}, {alg: -257, type: "public-key"}],
+          authenticatorSelection: {
+            authenticatorAttachment: "platform", // Forces the OS to use Face ID / Fingerprint / Screen Lock
+            userVerification: "preferred"
+          },
+          timeout: 60000,
+          attestation: "none"
+        };
+        
+        const credential = await navigator.credentials.create({
+          publicKey: publicKeyCredentialCreationOptions
+        });
+        
+        const rawIdBase64 = btoa(String.fromCharCode.apply(null, new Uint8Array(credential.rawId)));
+        
+        const { error } = await supabase.from('app_users').update({ passkey_id: rawIdBase64 }).eq('id', user.id);
+        if (error) throw error;
+        
+        return rawIdBase64;
+      } catch (err) {
+        console.error(err);
+        throw err;
+      }
+    };
+
+    const authenticateWithFaceId = async (passkeyId) => {
+      try {
+        if (!window.PublicKeyCredential) {
+          throw new Error("WebAuthn / Face ID is not supported.");
+        }
+        if (window.location.protocol === 'file:') {
+          throw new Error("Face ID cannot be used on 'file://'. You must run the app using a local server (localhost) or an HTTPS domain.");
+        }
+        
+        const challenge = generateRandomBuffer(32);
+        const binaryString = atob(passkeyId);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        
+        const publicKeyCredentialRequestOptions = {
+          challenge,
+          allowCredentials: [{
+            id: bytes,
+            type: 'public-key',
+            transports: ['internal'] // Specifies internal platform authenticators
+          }],
+          userVerification: "preferred",
+          timeout: 60000
+        };
+        
+        const assertion = await navigator.credentials.get({
+          publicKey: publicKeyCredentialRequestOptions
+        });
+        
+        return assertion !== null;
+      } catch (err) {
+        console.error(err);
+        throw err;
+      }
+    };
+
     // --- UTILS ---
     const formatCurrency = (amount) => {
-      if(!amount) return "LKR. 0.00";
-      return "LKR. " + parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if(!amount) return "LKR. 0";
+      return "LKR. " + Math.round(parseFloat(amount)).toLocaleString('en-US');
     };
     
     const formatDate = (dateString) => {
@@ -349,7 +474,7 @@
 
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 55px monospace';
-        const amountStr = donation.donation_type === 'Cash' ? `Rs. ${Number(donation.amount).toLocaleString()}` : 'GOODS / ද්‍රව්‍ය';
+        const amountStr = donation.donation_type === 'Cash' ? `Rs. ${Math.round(Number(donation.amount)).toLocaleString()}` : 'GOODS / ද්‍රව්‍ය';
         ctx.fillText(amountStr, width/2, currentY + 105);
 
         currentY += 200;
@@ -421,8 +546,8 @@
     }
 
     const formatNumber = (amount) => {
-      if(!amount) return "0.00";
-      return parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if(!amount) return "0";
+      return Math.round(parseFloat(amount)).toLocaleString('en-US');
     };
 
     const NumberCounter = ({ value, prefix = "LKR." }) => {
@@ -457,22 +582,24 @@
       );
     };
 
-    function DashboardCard({ title, sTitle, amount, icon, isExpense }) {
+    function DashboardCard({ title, sTitle, amount, icon, isExpense, delay = 'delay-100' }) {
       return (
-        <div className="glass rounded-2xl p-6 transition transform hover:-translate-y-1 hover:shadow-xl duration-300 relative overflow-hidden group border border-slate-800">
-          <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-brand-500 opacity-10 blur-3xl group-hover:opacity-20 transition"></div>
-          <div className="flex items-start justify-between mb-4">
-            <h3 className="text-slate-400 font-medium tracking-wide uppercase flex flex-col gap-0.5">
-              <span className="text-sm tracking-widest">{title}</span>
-              <span className="text-[11px] font-normal normal-case opacity-80">{sTitle}</span>
+        <div className={`glass-card rounded-3xl p-6 transition-all transform hover:-translate-y-2 duration-500 relative overflow-hidden group animate-fade-in ${delay} ${isExpense ? 'hover:shadow-[0_10px_30px_rgba(239,68,68,0.2)] hover:border-red-500/30' : 'hover:shadow-[0_10px_30px_rgba(34,197,94,0.2)] hover:border-brand-500/30'}`}>
+          <div className={`absolute top-0 right-0 -mr-8 -mt-8 w-40 h-40 rounded-full blur-[50px] transition-opacity duration-500 ${isExpense ? 'bg-red-500/20 group-hover:bg-red-500/30' : 'bg-brand-500/20 group-hover:bg-brand-500/30'}`}></div>
+          <div className="flex items-start justify-between mb-6 relative z-10">
+            <h3 className="font-medium uppercase flex flex-col gap-1">
+              <span className="text-sm tracking-widest font-bold text-slate-300 group-hover:text-white transition-colors">{title}</span>
+              <span className="text-[10px] normal-case text-slate-500">{sTitle}</span>
             </h3>
-            <div className={`p-2 rounded-lg shrink-0 ${isExpense ? 'bg-red-500/20' : 'bg-brand-500/20'}`}>
+            <div className={`p-3 rounded-2xl shrink-0 shadow-inner backdrop-blur-md group-hover:scale-110 transition-transform duration-300 ${isExpense ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-brand-500/10 text-brand-400 border border-brand-500/20'}`}>
               {icon}
             </div>
           </div>
-          <p className={`text-3xl font-bold tracking-tight ${isExpense ? 'text-slate-100' : 'neon-text text-white'}`}>
-            {amount}
-          </p>
+          <div className="relative z-10 mt-auto">
+            <p className={`text-3xl sm:text-4xl font-bold tracking-tight ${isExpense ? 'text-white drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'text-white drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]'}`}>
+              {typeof amount === 'number' || !isNaN(parseFloat(amount)) ? <NumberCounter value={amount} /> : amount}
+            </p>
+          </div>
         </div>
       );
     }
@@ -551,6 +678,61 @@
                   <span className="text-sm text-slate-300">Today's Expenses</span>
                 </div>
                 <span className="text-sm font-bold text-red-400">{formatCurrency(todayExpense)}</span>
+              </div>
+              <div className="w-full bg-slate-800 rounded-full h-4 overflow-hidden relative">
+                <div className="bg-red-500 h-4 rounded-full transition-all duration-1000" style={{width: `${expPct}%`}}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function LastWeekStatsChart({ incomes, expenses }) {
+      const todayDate = new Date();
+      const lastWeekDate = new Date();
+      lastWeekDate.setDate(todayDate.getDate() - 6);
+      
+      const todayStr = todayDate.toISOString().split('T')[0];
+      const lastWeekStr = lastWeekDate.toISOString().split('T')[0];
+      
+      const lastWeekIncome = incomes.filter(i => {
+        if(i.status !== 'Received Today' || i.donation_type !== 'Cash') return false;
+        return i.date >= lastWeekStr && i.date <= todayStr;
+      }).reduce((sum, i) => sum + Number(i.amount || 0), 0);
+      
+      const lastWeekExpense = expenses.filter(e => {
+        return e.date >= lastWeekStr && e.date <= todayStr;
+      }).reduce((sum, e) => sum + Number(e.amount_taken || 0), 0);
+      
+      const max = Math.max(lastWeekIncome, lastWeekExpense, 1);
+      const incPct = (lastWeekIncome / max) * 100;
+      const expPct = (lastWeekExpense / max) * 100;
+
+      return (
+        <div className="glass p-6 rounded-2xl flex flex-col justify-center border border-slate-800">
+          <h3 className="text-xl font-semibold mb-6 flex flex-col gap-1 text-white">
+            <span>Last 7 Days</span>
+            <span className="text-sm text-slate-400 font-normal">පසුගිය දින 7 සාරාංශය</span>
+          </h3>
+          <div className="flex flex-col gap-6 w-full">
+            <div>
+              <div className="flex justify-between items-end mb-2">
+                <div className="flex flex-col">
+                  <span className="text-sm text-slate-300">Income (ආදායම)</span>
+                </div>
+                <span className="text-sm font-bold text-brand-400">{formatCurrency(lastWeekIncome)}</span>
+              </div>
+              <div className="w-full bg-slate-800 rounded-full h-4 overflow-hidden relative">
+                <div className="bg-brand-500 h-4 rounded-full transition-all duration-1000" style={{width: `${incPct}%`}}></div>
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between items-end mb-2">
+                <div className="flex flex-col">
+                  <span className="text-sm text-slate-300">Expenses (වියදම්)</span>
+                </div>
+                <span className="text-sm font-bold text-red-400">{formatCurrency(lastWeekExpense)}</span>
               </div>
               <div className="w-full bg-slate-800 rounded-full h-4 overflow-hidden relative">
                 <div className="bg-red-500 h-4 rounded-full transition-all duration-1000" style={{width: `${expPct}%`}}></div>
@@ -778,36 +960,32 @@
       }, []);
 
       return (
-        <div className="glass rounded-2xl p-6 border border-slate-800 bg-gradient-to-br from-[#0f172a] to-slate-900 flex justify-between items-center sm:gap-6 flex-col sm:flex-row relative overflow-hidden group mb-8">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-[50px] rounded-full transition-all duration-700 pointer-events-none"></div>
+        <div className="glass-card rounded-3xl p-6 border border-slate-800/50 bg-gradient-to-br from-[#0f172a]/60 to-slate-900/40 flex justify-between items-center sm:gap-6 flex-col sm:flex-row relative overflow-hidden group mb-8 shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/5 blur-[60px] rounded-full transition-all duration-700 pointer-events-none group-hover:scale-125"></div>
           <div className="flex flex-col z-10 text-center sm:text-left mb-6 sm:mb-0">
-            <h3 className="text-xl font-bold text-amber-500 flex items-center justify-center sm:justify-start gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            <h3 className="text-xl font-bold text-amber-500 flex items-center justify-center sm:justify-start gap-2 drop-shadow-[0_0_8px_rgba(245,158,11,0.3)]">
+              <svg className="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
               Vesak Exhibition Begins In
             </h3>
-            <span className="text-xs font-medium text-slate-400 mt-1">මහා වෙසක් කූඩු ප්‍රදර්ශනයට තව...</span>
+            <span className="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-widest mt-1.5 opacity-80">මහා වෙසක් කූඩු ප්‍රදර්ශනයට තව...</span>
           </div>
           
-          <div className="flex gap-1.5 sm:gap-4 z-10 text-center text-white justify-center w-full sm:w-auto overflow-x-auto py-2">
-            <div className="bg-slate-900/80 border border-slate-700 rounded-xl px-1.5 py-3 min-w-[55px] sm:min-w-[70px] shadow-lg flex flex-col items-center">
-              <span className="text-xl sm:text-2xl font-bold text-brand-400 font-mono tracking-tight">{timeLeft.d}</span>
-              <span className="text-[8px] sm:text-[9px] text-slate-400 uppercase tracking-widest mt-1">Days</span>
-            </div>
-            <div className="text-xl sm:text-2xl font-bold text-slate-600 mt-2">:</div>
-            <div className="bg-slate-900/80 border border-slate-700 rounded-xl px-1.5 py-3 min-w-[55px] sm:min-w-[70px] shadow-lg flex flex-col items-center">
-              <span className="text-xl sm:text-2xl font-bold text-brand-400 font-mono tracking-tight">{String(timeLeft.h).padStart(2, '0')}</span>
-              <span className="text-[8px] sm:text-[9px] text-slate-400 uppercase tracking-widest mt-1">Hrs</span>
-            </div>
-            <div className="text-xl sm:text-2xl font-bold text-slate-600 mt-2">:</div>
-            <div className="bg-slate-900/80 border border-slate-700 rounded-xl px-1.5 py-3 min-w-[55px] sm:min-w-[70px] shadow-lg flex flex-col items-center">
-              <span className="text-xl sm:text-2xl font-bold text-brand-400 font-mono tracking-tight">{String(timeLeft.m).padStart(2, '0')}</span>
-              <span className="text-[8px] sm:text-[9px] text-slate-400 uppercase tracking-widest mt-1">Mins</span>
-            </div>
-            <div className="text-xl sm:text-2xl font-bold text-slate-600 mt-2">:</div>
-            <div className="bg-slate-900/80 border border-slate-700 rounded-xl px-1.5 py-3 min-w-[55px] sm:min-w-[70px] shadow-lg flex flex-col items-center">
-              <span className="text-xl sm:text-2xl font-bold text-amber-500 font-mono tracking-tight">{String(timeLeft.s).padStart(2, '0')}</span>
-              <span className="text-[8px] sm:text-[9px] text-slate-400 uppercase tracking-widest mt-1">Secs</span>
-            </div>
+          <div className="flex gap-2 sm:gap-4 z-10 text-center text-white justify-center w-full sm:w-auto overflow-x-auto py-2">
+            {[
+              { val: timeLeft.d, label: 'Days' },
+              { val: String(timeLeft.h).padStart(2, '0'), label: 'Hrs' },
+              { val: String(timeLeft.m).padStart(2, '0'), label: 'Mins' },
+              { val: String(timeLeft.s).padStart(2, '0'), label: 'Secs', highlight: true }
+            ].map((unit, i) => (
+              <React.Fragment key={unit.label}>
+                <div className="glass-card border border-white/5 rounded-2xl px-2 py-3 min-w-[60px] sm:min-w-[75px] shadow-xl flex flex-col items-center bg-slate-950/40 relative group/unit overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none"></div>
+                  <span className={`text-xl sm:text-2xl font-bold font-mono tracking-tight ${unit.highlight ? 'text-amber-500' : 'text-brand-400'}`}>{unit.val}</span>
+                  <span className="text-[7px] sm:text-[8px] text-slate-500 uppercase tracking-widest mt-1.5 font-bold">{unit.label}</span>
+                </div>
+                {i < 3 && <div className="text-xl sm:text-2xl font-bold text-slate-800 self-center hidden sm:block">:</div>}
+              </React.Fragment>
+            ))}
           </div>
         </div>
       );
@@ -836,7 +1014,62 @@
       );
     }
 
-    function ProfileView({ currentUser, incomes, userTotalContribution, balanceToPay, users }) {
+    function ProfileView({ currentUser, incomes, expenses, userTotalContribution, balanceToPay, users }) {
+      const [viewCategory, setViewCategory] = useState(null);
+      const [profileData, setProfileData] = useState({ phone_number: currentUser?.phone_number || '', address: currentUser?.address || '' });
+      const [savingProfile, setSavingProfile] = useState(false);
+      const [isEditingProfile, setIsEditingProfile] = useState(false);
+
+      const [sessions, setSessions] = useState([]);
+      const [loadingSessions, setLoadingSessions] = useState(true);
+
+      useEffect(() => {
+        if(!currentUser) return;
+        fetchSessions();
+      }, [currentUser]);
+
+      const fetchSessions = async () => {
+         setLoadingSessions(true);
+         try {
+           const { data, error } = await supabase.from('user_sessions').select('*').eq('user_id', currentUser.id).order('last_active', { ascending: false });
+           if (!error && data) setSessions(data);
+         } catch(e) {}
+         setLoadingSessions(false);
+      };
+
+      const handleRemoveSession = async (sessionId) => {
+         if (!confirm('Are you sure you want to log out this device? / මෙම උපාංගය ඉවත් කිරීමට අවශ්‍යද?')) return;
+         try {
+            await supabase.from('user_sessions').delete().eq('id', sessionId);
+            fetchSessions();
+         } catch(e) { alert("Error: " + e.message); }
+      };
+
+      const handleClearAllSessions = async () => {
+         if (!confirm('Are you sure you want to log out ALL devices? / සියලුම උපාංග ඉවත් කිරීමට අවශ්‍යද?')) return;
+         try {
+            await supabase.from('user_sessions').delete().eq('user_id', currentUser.id);
+            fetchSessions();
+         } catch(e) { alert("Error: " + e.message); }
+      };
+
+      const handleSaveProfile = async (e) => {
+        e.preventDefault();
+        setSavingProfile(true);
+        try {
+          const { error } = await supabase.from('app_users').update({ phone_number: profileData.phone_number, address: profileData.address }).eq('id', currentUser.id);
+          if (error) throw error;
+          const updatedUser = { ...currentUser, ...profileData };
+          localStorage.setItem('vesak_current_user', JSON.stringify(updatedUser));
+          alert("Profile updated successfully!");
+          setIsEditingProfile(false);
+        } catch (err) {
+          alert("Error: " + err.message);
+        } finally {
+          setSavingProfile(false);
+        }
+      };
+
       const handleAvatarUpload = async (e) => {
          const file = e.target.files[0];
          if(!file) return;
@@ -877,6 +1110,17 @@
          return i.name.toLowerCase().includes(firstWord) && i.status === 'Received Today';
       });
 
+      const myIncomes = incomes.filter(i => i.reported_by === currentUser.username && i.status === 'Received Today' && i.donation_type === 'Cash');
+      const myExpenses = expenses.filter(e => {
+        if (e.reported_by === currentUser.username) return true;
+        if (!currentUser || !e.withdrawer_name) return false;
+        const firstWord = currentUser.username.split(' ')[0].toLowerCase();
+        const withdrawerLower = e.withdrawer_name.toLowerCase().replace(/\s+/g, ' ');
+        return withdrawerLower.includes(firstWord);
+      });
+      const myPledges = incomes.filter(i => i.reported_by === currentUser.username && i.status === 'Promised');
+      const myGoods = incomes.filter(i => i.reported_by === currentUser.username && i.donation_type === 'Goods');
+
       return (
         <div className="space-y-6">
           <h2 className="text-2xl font-bold text-white mb-6 flex flex-col">
@@ -899,22 +1143,211 @@
                </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-700/50 flex-1">
-                <p className="text-xs text-slate-400 mb-1">Total Contribution</p>
-                <p className="text-xl font-bold text-brand-400">Rs. {userTotalContribution.toLocaleString()}</p>
+            <div className="flex flex-col sm:flex-row gap-4 mb-8">
+              <div className="glass-card p-5 rounded-2xl border border-slate-700/30 flex-1 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-16 h-16 bg-brand-500/5 blur-xl rounded-full"></div>
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-1">Total Contribution</p>
+                <p className="text-2xl font-bold text-brand-400 drop-shadow-[0_0_10px_rgba(34,197,94,0.3)]">Rs. {Math.round(userTotalContribution).toLocaleString()}</p>
               </div>
-              <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-700/50 flex-1">
-                <p className="text-xs text-slate-400 mb-1">Status</p>
+              <div className="glass-card p-5 rounded-2xl border border-slate-700/30 flex-1 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 blur-xl rounded-full"></div>
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-1">Payment Status</p>
                 {balanceToPay > 0 ? (
-                  <p className="text-sm font-bold text-yellow-400 mt-1">Pending: Rs. {balanceToPay.toLocaleString()}</p>
+                  <p className="text-lg font-bold text-yellow-400 drop-shadow-[0_0_10px_rgba(234,179,8,0.3)]">Pending: Rs. {Math.round(balanceToPay).toLocaleString()}</p>
                 ) : balanceToPay < 0 ? (
-                  <p className="text-sm font-bold text-amber-500 mt-1">Top Contributor 🏆</p>
+                  <p className="text-lg font-bold text-amber-500 drop-shadow-[0_0_10px_rgba(245,158,11,0.3)]">Top Contributor 🏆</p>
                 ) : (
-                  <p className="text-sm font-bold text-brand-400 mt-1">Target Reached 🎉</p>
+                  <p className="text-lg font-bold text-brand-400 drop-shadow-[0_0_10px_rgba(34,197,94,0.3)]">Target Reached 🎉</p>
                 )}
               </div>
             </div>
+
+            <div className="glass p-6 rounded-2xl border border-slate-800 mb-6">
+               <h3 className="text-lg font-semibold text-white mb-4">Security Settings</h3>
+               <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-700/50">
+                  <div className="flex items-center gap-3">
+                     <div className="w-10 h-10 rounded-full bg-brand-500/10 text-brand-400 flex items-center justify-center">
+                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" /></svg>
+                     </div>
+                     <div className="flex flex-col">
+                        <span className="font-semibold text-white">Face ID / Passkey</span>
+                        <span className="text-[10px] text-slate-400">{currentUser.passkey_id ? 'Setup Completed' : 'Not Setup Yet'}</span>
+                     </div>
+                  </div>
+                  <button onClick={async () => {
+                     try {
+                       const newPasskeyId = await registerFaceId(currentUser);
+                       const updatedUser = {...currentUser, passkey_id: newPasskeyId};
+                       localStorage.setItem('vesak_current_user', JSON.stringify(updatedUser));
+                       window.location.reload();
+                     } catch(e) {
+                       alert("Setup failed: " + e.message);
+                     }
+                  }} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-xs font-semibold text-white transition whitespace-nowrap">
+                     {currentUser.passkey_id ? 'Update / වෙනස් කරන්න' : 'Set Up / සකසන්න'}
+                  </button>
+               </div>
+            </div>
+
+            <div className="glass p-6 rounded-2xl border border-slate-800 mb-6">
+               <div className="flex justify-between items-center mb-4">
+                 <h3 className="text-lg font-semibold text-white">Active Devices / සක්‍රීය උපාංග</h3>
+                 {sessions.length > 1 && (
+                   <button onClick={handleClearAllSessions} className="text-[10px] bg-red-500/10 text-red-400 px-3 py-1 rounded-full border border-red-500/20 hover:bg-red-500/20 transition-colors uppercase font-bold tracking-widest">Clear All</button>
+                 )}
+               </div>
+               
+               {loadingSessions ? (
+                 <div className="text-center py-4 text-slate-500 text-sm">Loading devices...</div>
+               ) : sessions.length === 0 ? (
+                 <div className="text-center py-4 text-slate-500 text-sm">No other devices found.</div>
+               ) : (
+                 <div className="space-y-3">
+                   {sessions.map(session => {
+                     const isCurrent = session.session_token === localStorage.getItem('vesak_session_token');
+                     return (
+                       <div key={session.id} className={`flex items-center justify-between p-4 rounded-xl border transition group ${isCurrent ? 'bg-brand-500/5 border-brand-500/30 shadow-[0_0_15px_rgba(34,197,94,0.05)]' : 'bg-slate-900/50 border-slate-700/50 hover:border-slate-600'}`}>
+                         <div className="flex items-center gap-3">
+                           <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isCurrent ? 'bg-brand-500/20 text-brand-400' : 'bg-slate-800 text-slate-400'}`}>
+                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                           </div>
+                           <div className="flex flex-col">
+                             <div className="flex items-center gap-2">
+                               <span className="font-semibold text-white text-sm">{session.device_name || 'Unknown Device'}</span>
+                               {isCurrent && <span className="bg-brand-500 text-white text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full">This Device</span>}
+                             </div>
+                             <span className="text-[10px] text-slate-400 mt-0.5">IP: {session.ip_address || 'Unknown'} • {session.location || 'Unknown Location'}</span>
+                             <span className="text-[9px] text-slate-500 mt-0.5">Last active: {new Date(session.last_active).toLocaleString()}</span>
+                           </div>
+                         </div>
+                         {!isCurrent && (
+                           <button onClick={() => handleRemoveSession(session.id)} className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition" title="Log out this device">
+                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                           </button>
+                         )}
+                       </div>
+                     );
+                   })}
+                 </div>
+               )}
+            </div>
+
+            <div className="glass p-6 rounded-2xl border border-slate-800 mb-6 relative">
+               <h3 className="text-lg font-semibold text-white mb-4">Contact Details / සම්බන්ධ වීමේ විස්තර</h3>
+               {!isEditingProfile && (
+                 <button onClick={() => setIsEditingProfile(true)} className="absolute top-6 right-6 p-2 text-brand-400 hover:bg-brand-500/10 rounded-lg transition" title="Edit Profile">
+                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                 </button>
+               )}
+
+               {!isEditingProfile ? (
+                 <div className="space-y-3 mt-2">
+                   <div className="flex items-start gap-4 bg-slate-900/40 p-4 rounded-xl border border-slate-800 hover:border-slate-700 transition group">
+                     <div className="w-10 h-10 rounded-full bg-brand-500/10 text-brand-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                     </div>
+                     <div className="flex flex-col justify-center min-h-[40px]">
+                       <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-0.5">Phone Number</p>
+                       <p className="text-sm font-medium text-white">{currentUser?.phone_number || <span className="text-slate-500 italic text-xs">Not provided</span>}</p>
+                     </div>
+                   </div>
+                   <div className="flex items-start gap-4 bg-slate-900/40 p-4 rounded-xl border border-slate-800 hover:border-slate-700 transition group">
+                     <div className="w-10 h-10 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.243-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                     </div>
+                     <div className="flex flex-col justify-center min-h-[40px]">
+                       <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-0.5">Address</p>
+                       <p className="text-sm font-medium text-white whitespace-pre-wrap leading-relaxed">{currentUser?.address || <span className="text-slate-500 italic text-xs">Not provided</span>}</p>
+                     </div>
+                   </div>
+                 </div>
+               ) : (
+                 <form onSubmit={handleSaveProfile} className="grid grid-cols-1 gap-x-4">
+                   <div className="mb-4">
+                     <label className="text-sm font-medium text-slate-300">Phone Number</label>
+                     <input type="text" value={profileData.phone_number} onChange={e => setProfileData({...profileData, phone_number: e.target.value})} className="mt-1 block w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-2 text-sm focus:border-brand-500 outline-none" />
+                   </div>
+                   <div className="mb-4">
+                     <label className="text-sm font-medium text-slate-300">Address</label>
+                     <textarea value={profileData.address} onChange={e => setProfileData({...profileData, address: e.target.value})} className="mt-1 block w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-2 text-sm focus:border-brand-500 outline-none h-20"></textarea>
+                   </div>
+                   <div className="flex justify-end gap-3">
+                     <button type="button" onClick={() => { setIsEditingProfile(false); setProfileData({ phone_number: currentUser?.phone_number || '', address: currentUser?.address || '' }); }} className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-semibold transition">
+                       Cancel
+                     </button>
+                     <button type="submit" disabled={savingProfile} className="px-6 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-sm font-semibold transition disabled:opacity-50">
+                       {savingProfile ? 'Saving...' : 'Save Details / යාවත්කාලීන කරන්න'}
+                     </button>
+                   </div>
+                 </form>
+               )}
+            </div>
+
+            <h3 className="text-lg font-semibold text-white mb-4 mt-8">My Recorded Data / මා වාර්තා කල දත්ත</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+               <button onClick={() => setViewCategory('income')} className="bg-slate-900/80 hover:bg-slate-800 p-4 rounded-xl border border-slate-700/50 flex flex-col items-center justify-center gap-2 transition">
+                 <svg className="w-6 h-6 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                 <span className="text-xs font-semibold text-brand-400">Cash Incomes</span>
+                 <span className="text-[10px] text-slate-400 bg-slate-800 px-2 rounded-full">{myIncomes.length}</span>
+               </button>
+               <button onClick={() => setViewCategory('expense')} className="bg-slate-900/80 hover:bg-slate-800 p-4 rounded-xl border border-slate-700/50 flex flex-col items-center justify-center gap-2 transition">
+                 <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>
+                 <span className="text-xs font-semibold text-red-400">Expenses</span>
+                 <span className="text-[10px] text-slate-400 bg-slate-800 px-2 rounded-full">{myExpenses.length}</span>
+               </button>
+               <button onClick={() => setViewCategory('pledges')} className="bg-slate-900/80 hover:bg-slate-800 p-4 rounded-xl border border-slate-700/50 flex flex-col items-center justify-center gap-2 transition">
+                 <svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                 <span className="text-xs font-semibold text-yellow-400">Pledges</span>
+                 <span className="text-[10px] text-slate-400 bg-slate-800 px-2 rounded-full">{myPledges.length}</span>
+               </button>
+               <button onClick={() => setViewCategory('goods')} className="bg-slate-900/80 hover:bg-slate-800 p-4 rounded-xl border border-slate-700/50 flex flex-col items-center justify-center gap-2 transition">
+                 <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                 <span className="text-xs font-semibold text-blue-400">Goods</span>
+                 <span className="text-[10px] text-slate-400 bg-slate-800 px-2 rounded-full">{myGoods.length}</span>
+               </button>
+            </div>
+
+            {viewCategory && (() => {
+
+               let data = [];
+               let title = '';
+               if (viewCategory === 'income') { data = myIncomes; title = 'My Cash Incomes'; }
+               if (viewCategory === 'expense') { data = myExpenses; title = 'My Recorded Expenses'; }
+               if (viewCategory === 'pledges') { data = myPledges; title = 'My Recorded Pledges'; }
+               if (viewCategory === 'goods') { data = myGoods; title = 'My Recorded Goods'; }
+
+               return (
+                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+                   <div className="glass p-6 rounded-2xl max-w-2xl w-full border border-brand-500/30 max-h-[80vh] flex flex-col">
+                     <div className="flex justify-between items-center mb-4">
+                       <h3 className="text-xl font-bold text-white">{title}</h3>
+                       <button onClick={() => setViewCategory(null)} className="text-slate-400 hover:text-white border-none bg-transparent">
+                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                       </button>
+                     </div>
+                     <div className="overflow-y-auto flex-1 custom-scrollbar pr-2">
+                        {data.length === 0 ? (
+                          <div className="text-center py-8 text-slate-500">No records found. / වාර්තා නොමැත.</div>
+                        ) : (
+                          <div className="space-y-2">
+                            {data.map(item => (
+                              <div key={item.id} className="bg-slate-900/50 p-3 rounded-lg border border-slate-800 flex justify-between items-center">
+                                 <div>
+                                   <div className="font-semibold text-white text-sm">{item.name || item.reason}</div>
+                                   <div className="text-[10px] text-slate-400">{item.date}</div>
+                                 </div>
+                                 <div className={`font-bold text-sm ${viewCategory === 'expense' ? 'text-red-400' : 'text-brand-400'}`}>
+                                   {item.donation_type === 'Goods' ? `${item.item_description} (x${item.quantity})` : `Rs. ${Math.round(Number(item.amount || item.amount_taken)).toLocaleString()}`}
+                                 </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                     </div>
+                   </div>
+                 </div>
+               );
+            })()}
 
             <h3 className="text-lg font-semibold text-white mb-4">Contribution History</h3>
             {userIncomes.length === 0 ? (
@@ -944,7 +1377,7 @@
                         </td>
                         <td className="p-3">
                           {inc.donation_type === 'Cash' ? (
-                            <span className="text-brand-400 font-bold">Rs. {Number(inc.amount).toLocaleString()}</span>
+                            <span className="text-brand-400 font-bold">Rs. {Math.round(Number(inc.amount)).toLocaleString()}</span>
                           ) : (
                             <span className="text-slate-300">{inc.item_description} (x{inc.quantity})</span>
                           )}
@@ -994,26 +1427,26 @@
 
           {/* Mobile Only - User Contribution Tracker */}
           {currentUser && (
-             <div className="sm:hidden glass rounded-2xl p-6 border border-slate-800 shadow-md mb-6 relative overflow-hidden group">
-               <div className="absolute top-0 right-0 w-24 h-24 bg-brand-500/10 blur-2xl rounded-full pointer-events-none"></div>
-               <div className="flex justify-between items-center mb-2 relative z-10 cursor-pointer group-hover:scale-[1.02] transition-transform" onClick={() => setActiveTab('profile')}>
-                 <div className="flex items-center gap-3">
-                   <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-700 border border-slate-600 shadow-md">
+             <div className="sm:hidden glass-card rounded-3xl p-6 border border-slate-800 shadow-[0_10px_30px_rgba(0,0,0,0.4)] mb-8 relative overflow-hidden group animate-fade-in">
+               <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 blur-3xl rounded-full pointer-events-none group-hover:scale-110 transition-transform duration-700"></div>
+               <div className="flex justify-between items-center mb-4 relative z-10 cursor-pointer" onClick={() => setActiveTab('profile')}>
+                 <div className="flex items-center gap-4">
+                   <div className="w-12 h-12 rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 shadow-[0_0_15px_rgba(34,197,94,0.2)]">
                      <img src={currentUser.avatar_url || 'logo.png'} alt="Avatar" className="w-full h-full object-cover" />
                    </div>
                    <div className="flex flex-col">
-                     <span className="text-xs text-slate-400">{currentUser.username}</span>
-                     <span className="text-sm text-white font-medium">Your Contribution</span>
+                     <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{currentUser.username}</span>
+                     <span className="text-sm text-white font-bold tracking-tight">Your Contribution</span>
                    </div>
                  </div>
-                 <span className="text-lg font-bold text-brand-400 tracking-tight">Rs. {userTotalContribution.toLocaleString()}</span>
+                 <span className="text-xl font-bold text-brand-400 tracking-tight drop-shadow-[0_0_10px_rgba(34,197,94,0.3)]">Rs. {Math.round(userTotalContribution).toLocaleString()}</span>
                </div>
                
                {balanceToPay > 0 ? (
                  <div className="flex items-start gap-2 bg-yellow-500/10 border border-yellow-500/20 p-3 rounded-xl mt-3 animate-fade-in relative z-10">
                    <svg className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                    <p className="text-xs text-yellow-400 font-medium leading-relaxed">
-                     කරුණාකර ඔබගේ ඉතිරි දායකත්ව මුදල වන <span className="font-bold text-yellow-300">Rs. {balanceToPay.toLocaleString()}</span> ක මුදල හැකි ඉක්මනින් ලබා දෙන්න.
+                     කරුණාකර ඔබගේ ඉතිරි දායකත්ව මුදල වන <span className="font-bold text-yellow-300">Rs. {Math.round(balanceToPay).toLocaleString()}</span> ක මුදල හැකි ඉක්මනින් ලබා දෙන්න.
                    </p>
                  </div>
                ) : balanceToPay < 0 ? (
@@ -1059,7 +1492,7 @@
             }, [isSuccess]);
 
             return (
-              <div className={`glass rounded-2xl p-6 border animate-fade-in relative overflow-hidden ${isSuccess ? 'border-brand-500/50 shadow-[0_0_30px_rgba(34,197,94,0.15)]' : 'border-slate-800'}`}>
+              <div className={`glass-card rounded-3xl p-6 border animate-fade-in relative overflow-hidden transition-all duration-500 ${isSuccess ? 'border-brand-500/50 shadow-[0_20px_50px_rgba(34,197,94,0.15)] bg-brand-500/5' : 'border-slate-800/50'}`}>
                  <div className="absolute top-0 left-0 w-full h-1 bg-slate-800"></div>
                  <div className="absolute top-0 left-0 h-1 bg-brand-500 shadow-[0_0_10px_rgba(34,197,94,0.8)] transition-all duration-1000" style={{ width: `${progressPercent}%` }}></div>
                  
@@ -1114,65 +1547,65 @@
             <DashboardCard title="Total Cash Income" sTitle="මුළු මුදල් ආදායම" amount={totalIncome} icon={<IconTrendingUp />} />
             <DashboardCard title="Total Expenses" sTitle="මුළු වියදම්" amount={totalExpense} icon={<IconTrendingDown />} isExpense={true} />
             <DashboardCard title="Current Balance" sTitle="ඉතිරි මුදල" amount={currentBalance} icon={<IconWallet />} />
-            <div className="glass rounded-2xl p-6 border border-slate-800 hover:border-purple-500/30 transition-all group">
-              <div className="flex justify-between items-start mb-4">
+            <div className="glass-card rounded-3xl p-6 border border-slate-800/50 hover:border-purple-500/30 transition-all group relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 blur-2xl rounded-full"></div>
+              <div className="flex justify-between items-start mb-6 relative z-10">
                 <div className="flex flex-col">
-                  <h3 className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">Total Goods</h3>
-                  <span className="text-purple-400 text-[10px] font-medium">මුළු ද්‍රව්‍ය ආධාර</span>
+                  <h3 className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Total Goods</h3>
+                  <span className="text-purple-400 text-[11px] font-semibold">මුළු ද්‍රව්‍ය ආධාර</span>
                 </div>
-                <div className="p-3 rounded-xl bg-purple-500/10 text-purple-400 group-hover:bg-purple-500 group-hover:text-white transition-all">
+                <div className="p-3 rounded-2xl bg-purple-500/10 text-purple-400 group-hover:bg-purple-500 group-hover:text-white transition-all duration-300">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
                 </div>
               </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-white tracking-tight">{totalGoods}</span>
+              <div className="flex items-baseline gap-2 relative z-10">
+                <span className="text-3xl font-bold text-white tracking-tight drop-shadow-[0_0_10px_rgba(168,85,247,0.4)]">{totalGoods}</span>
                 <span className="text-slate-500 text-xs font-medium">Records</span>
               </div>
             </div>
           </div>
 
-          {/* Quick List Navigation Buttons */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-8">
-            <button onClick={() => { setActiveTab('income-list'); window.scrollTo(0, 0); }} className="glass rounded-xl p-3 sm:p-4 flex flex-col items-center justify-center gap-2 sm:gap-4 hover:bg-slate-800 border border-slate-700/50 hover:border-brand-500/50 transition-all group">
-              <div className="p-2 sm:p-3 rounded-full bg-brand-500/10 text-brand-400 group-hover:bg-brand-500 group-hover:text-white transition">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-8">
+            <button onClick={() => { setActiveTab('income-list'); window.scrollTo(0, 0); }} className="glass-card rounded-3xl p-5 flex flex-col items-center justify-center gap-3 hover:bg-slate-800/80 border border-slate-700/30 hover:border-brand-500/50 transition-all group animate-fade-in delay-100">
+              <div className="w-14 h-14 rounded-2xl bg-brand-500/10 text-brand-400 flex items-center justify-center group-hover:bg-brand-500 group-hover:text-white transition-all duration-500 shadow-inner group-hover:shadow-[0_0_20px_rgba(34,197,94,0.4)]">
                 <IconIncome />
               </div>
               <div className="flex flex-col text-center">
-                <span className="font-bold text-slate-200 text-xs sm:text-sm">Income List</span>
-                <span className="text-[9px] sm:text-[10px] text-slate-400 group-hover:text-brand-300 mt-0.5">ආදායම් ලැයිස්තුව</span>
+                <span className="font-bold text-slate-200 text-sm">Income List</span>
+                <span className="text-[10px] text-slate-400 group-hover:text-brand-300 mt-0.5 font-medium">ආදායම් ලැයිස්තුව</span>
               </div>
             </button>
             
-            <button onClick={() => { setActiveTab('expense-list'); window.scrollTo(0, 0); }} className="glass rounded-xl p-3 sm:p-4 flex flex-col items-center justify-center gap-2 sm:gap-4 hover:bg-slate-800 border border-slate-700/50 hover:border-red-500/50 transition-all group">
-              <div className="p-2 sm:p-3 rounded-full bg-red-500/10 text-red-400 group-hover:bg-red-500 group-hover:text-white transition">
+            <button onClick={() => { setActiveTab('expense-list'); window.scrollTo(0, 0); }} className="glass-card rounded-3xl p-5 flex flex-col items-center justify-center gap-3 hover:bg-slate-800/80 border border-slate-700/30 hover:border-red-500/50 transition-all group animate-fade-in delay-200">
+              <div className="w-14 h-14 rounded-2xl bg-red-500/10 text-red-400 flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-all duration-500 shadow-inner group-hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]">
                 <IconExpense />
               </div>
               <div className="flex flex-col text-center">
-                <span className="font-bold text-slate-200 text-xs sm:text-sm">Expense List</span>
-                <span className="text-[9px] sm:text-[10px] text-slate-400 group-hover:text-red-300 mt-0.5">වියදම් ලැයිස්තුව</span>
+                <span className="font-bold text-slate-200 text-sm">Expense List</span>
+                <span className="text-[10px] text-slate-400 group-hover:text-red-300 mt-0.5 font-medium">වියදම් ලැයිස්තුව</span>
               </div>
             </button>
 
-            <button onClick={() => { setActiveTab('goods-list'); window.scrollTo(0, 0); }} className="glass rounded-xl p-3 sm:p-4 flex flex-col items-center justify-center gap-2 sm:gap-4 hover:bg-slate-800 border border-slate-700/50 hover:border-purple-500/50 transition-all group">
-              <div className="p-2 sm:p-3 rounded-full bg-purple-500/10 text-purple-400 group-hover:bg-purple-500 group-hover:text-white transition">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+            <button onClick={() => { setActiveTab('goods-list'); window.scrollTo(0, 0); }} className="glass-card rounded-3xl p-5 flex flex-col items-center justify-center gap-3 hover:bg-slate-800/80 border border-slate-700/30 hover:border-purple-500/50 transition-all group animate-fade-in delay-100">
+              <div className="w-14 h-14 rounded-2xl bg-purple-500/10 text-purple-400 flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white transition-all duration-500 shadow-inner group-hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
               </div>
               <div className="flex flex-col text-center">
-                <span className="font-bold text-slate-200 text-xs sm:text-sm">Goods List</span>
-                <span className="text-[9px] sm:text-[10px] text-slate-400 group-hover:text-purple-300 mt-0.5">ද්‍රව්‍ය ලැයිස්තුව</span>
+                <span className="font-bold text-slate-200 text-sm">Goods List</span>
+                <span className="text-[10px] text-slate-400 group-hover:text-purple-300 mt-0.5 font-medium">ද්‍රව්‍ය ලැයිස්තුව</span>
               </div>
             </button>
 
-            <button onClick={() => { setActiveTab('pledges'); window.scrollTo(0, 0); }} className="glass rounded-xl p-3 sm:p-4 flex flex-col items-center justify-center gap-2 sm:gap-4 hover:bg-slate-800 border border-slate-700/50 hover:border-yellow-500/50 transition-all group relative">
-              <div className="p-2 sm:p-3 rounded-full bg-yellow-500/10 text-yellow-500 group-hover:bg-yellow-500 group-hover:text-white transition">
+            <button onClick={() => { setActiveTab('pledges'); window.scrollTo(0, 0); }} className="glass-card rounded-3xl p-5 flex flex-col items-center justify-center gap-3 hover:bg-slate-800/80 border border-slate-700/30 hover:border-yellow-500/50 transition-all group relative animate-fade-in delay-200">
+              <div className="w-14 h-14 rounded-2xl bg-yellow-500/10 text-yellow-500 flex items-center justify-center group-hover:bg-yellow-500 group-hover:text-white transition-all duration-500 shadow-inner group-hover:shadow-[0_0_20px_rgba(234,179,8,0.4)]">
                 <IconPledges />
               </div>
               <div className="flex flex-col text-center">
-                <span className="font-bold text-slate-200 text-xs sm:text-sm">Pledges List</span>
-                <span className="text-[9px] sm:text-[10px] text-slate-400 group-hover:text-yellow-300 mt-0.5">පොරොන්දු ලැයිස්තුව</span>
+                <span className="font-bold text-slate-200 text-sm">Pledges List</span>
+                <span className="text-[10px] text-slate-400 group-hover:text-yellow-300 mt-0.5 font-medium">පොරොන්දු ලැයිස්තුව</span>
               </div>
               {incomes.filter(i => i.status === 'Promised').length > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 text-[9px] flex items-center justify-center rounded-full bg-yellow-500 text-slate-900 font-bold border-2 border-slate-900 shadow-[0_0_8px_rgba(234,179,8,0.8)]">
+                <span className="absolute top-4 right-4 w-5 h-5 text-[10px] flex items-center justify-center rounded-full bg-yellow-500 text-slate-900 font-black border-2 border-slate-900 shadow-[0_0_15px_rgba(234,179,8,0.6)]">
                   {incomes.filter(i => i.status === 'Promised').length}
                 </span>
               )}
@@ -1183,6 +1616,7 @@
             <div className="lg:col-span-1 flex flex-col gap-6 h-auto">
               <SimpleChart income={totalIncome} expense={totalExpense} />
               <TodayStatsChart incomes={incomes} expenses={expenses} />
+              <LastWeekStatsChart incomes={incomes} expenses={expenses} />
             </div>
             
             <div className="lg:col-span-2 glass rounded-2xl p-6 border border-slate-800 flex flex-col h-auto">
@@ -1650,7 +2084,7 @@
       );
     }
 
-    function IncomeForm({ onComplete, currentUser }) {
+    function IncomeForm({ onComplete, currentUser, users }) {
       const [step, setStep] = useState(1);
       const totalSteps = 3;
       const [formData, setFormData] = useState({
@@ -1734,7 +2168,46 @@
           <form onSubmit={handleFormSubmit}>
             {step === 1 && (
                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 animate-fade-in">
-                 <InputField label="Name" sLabel="නම" name="name" value={formData.name} onChange={handleChange} required />
+                 <div className="flex flex-col gap-1.5 mb-4 md:col-span-2">
+                   <label className="text-sm font-medium text-slate-300 flex flex-col gap-0.5 leading-tight">
+                     <span>Donor Category *</span>
+                     <span className="text-[10.5px] text-brand-400 opacity-90">ආධාරකරුගේ වර්ගය</span>
+                   </label>
+                   <div className="flex gap-4 mt-2">
+                     <label className="flex items-center gap-2 cursor-pointer flex-col sm:flex-row bg-slate-900/50 p-2 px-4 rounded-lg border border-slate-800 hover:border-slate-700 transition">
+                       <input type="radio" name="donor_category" value="Regular Donor" checked={formData.donor_category === 'Regular Donor'} onChange={(e) => setFormData({...formData, donor_category: e.target.value, name: ''})} className="text-brand-500 focus:ring-brand-500" /> 
+                       <div className="flex flex-col text-center sm:text-left">
+                         <span className="text-sm">Regular Donor</span>
+                         <span className="text-[10px] text-slate-400">සාමාන්‍ය ආධාරකරු</span>
+                       </div>
+                     </label>
+                     <label className="flex items-center gap-2 cursor-pointer flex-col sm:flex-row bg-slate-900/50 p-2 px-4 rounded-lg border border-slate-800 hover:border-slate-700 transition">
+                       <input type="radio" name="donor_category" value="Main Donor" checked={formData.donor_category === 'Main Donor'} onChange={(e) => setFormData({...formData, donor_category: e.target.value, name: ''})} className="text-brand-500 focus:ring-brand-500" /> 
+                       <div className="flex flex-col text-center sm:text-left">
+                         <span className="text-sm">Main Donor</span>
+                         <span className="text-[10px] text-slate-400">ප්‍රධාන ආධාරකරු</span>
+                       </div>
+                     </label>
+                   </div>
+                 </div>
+
+                 {formData.donor_category === 'Main Donor' ? (
+                   <div className="flex flex-col gap-1.5 mb-4 md:col-span-2">
+                     <label className="text-sm font-medium text-slate-300">Select Main Donor / ප්‍රධාන ආධාරකරු තෝරන්න</label>
+                     <div className="flex flex-wrap gap-4 mt-2">
+                       {users && users.map(u => (
+                         <div key={u.id} onClick={() => setFormData({...formData, name: u.username, phone_number: u.phone_number || '', address: u.address || ''})} className={`flex flex-col items-center cursor-pointer transition-all duration-300 ${formData.name === u.username ? 'scale-110 opacity-100' : 'opacity-50 hover:opacity-100 hover:scale-105'}`}>
+                            <div className={`w-12 h-12 rounded-full overflow-hidden border-2 ${formData.name === u.username ? 'border-brand-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'border-slate-700'}`}>
+                              <img src={u.avatar_url || 'logo.png'} alt={u.username} className="w-full h-full object-cover" />
+                            </div>
+                            <span className="text-[10px] mt-1 text-slate-300 font-medium whitespace-nowrap">{u.username.split(' ')[0]}</span>
+                         </div>
+                       ))}
+                     </div>
+                   </div>
+                 ) : (
+                   <InputField label="Name" sLabel="නම" name="name" value={formData.name} onChange={handleChange} required />
+                 )}
                  <InputField label="Phone Number" sLabel="දුරකථන අංකය (අත්‍යවශ්‍ය නොවේ)" name="phone_number" value={formData.phone_number} onChange={handleChange} />
                  <div className="md:col-span-2">
                    <InputField label="Address" sLabel="ලිපිනය (අත්‍යවශ්‍ය නොවේ)" name="address" value={formData.address} onChange={handleChange} />
@@ -1771,28 +2244,6 @@
                  {formData.donation_type === 'Cash' && (
                    <>
                      <InputField label="Amount (Rs)" sLabel="ප්‍රමාණය (රු)" type="number" name="amount" value={formData.amount} onChange={handleChange} required prefix="Rs." />
-                     <div className="flex flex-col gap-1.5 mb-4">
-                       <label className="text-sm font-medium text-slate-300 flex flex-col gap-0.5 leading-tight">
-                         <span>Donor Category *</span>
-                         <span className="text-[10.5px] text-brand-400 opacity-90">ආධාරකරුගේ වර්ගය</span>
-                       </label>
-                       <div className="flex gap-4 mt-2">
-                         <label className="flex items-center gap-2 cursor-pointer flex-col sm:flex-row bg-slate-900/50 p-2 px-4 rounded-lg border border-slate-800 hover:border-slate-700 transition">
-                           <input type="radio" name="donor_category" value="Main Donor" checked={formData.donor_category === 'Main Donor'} onChange={handleChange} className="text-brand-500 focus:ring-brand-500" /> 
-                           <div className="flex flex-col text-center sm:text-left">
-                             <span className="text-sm">Main Donor</span>
-                             <span className="text-[10px] text-slate-400">ප්‍රධාන ආධාරකරු</span>
-                           </div>
-                         </label>
-                         <label className="flex items-center gap-2 cursor-pointer flex-col sm:flex-row bg-slate-900/50 p-2 px-4 rounded-lg border border-slate-800 hover:border-slate-700 transition">
-                           <input type="radio" name="donor_category" value="Regular Donor" checked={formData.donor_category === 'Regular Donor'} onChange={handleChange} className="text-brand-500 focus:ring-brand-500" /> 
-                           <div className="flex flex-col text-center sm:text-left">
-                             <span className="text-sm">Regular Donor</span>
-                             <span className="text-[10px] text-slate-400">සාමාන්‍ය ආධාරකරු</span>
-                           </div>
-                         </label>
-                       </div>
-                     </div>
                    </>
                  )}
 
@@ -1868,8 +2319,11 @@
       );
     }
 
-    function ExpenseForm({ onComplete, currentUser }) {
+    function ExpenseForm({ onComplete, currentUser, users }) {
       const [step, setStep] = useState(1);
+      const [selectedMainWithdrawers, setSelectedMainWithdrawers] = useState([]);
+      const [showOtherWithdrawer, setShowOtherWithdrawer] = useState(false);
+      const [otherWithdrawers, setOtherWithdrawers] = useState(['']);
       const totalSteps = 2;
       const [formData, setFormData] = useState({
         reason: '',
@@ -1907,13 +2361,23 @@
             receipt_url = data.publicUrl;
           }
 
+          let allWithdrawers = [...selectedMainWithdrawers];
+          if (showOtherWithdrawer) {
+             allWithdrawers = [...allWithdrawers, ...otherWithdrawers.filter(n => n.trim() !== '')];
+          }
+          if (allWithdrawers.length === 0) {
+             throw new Error("Please select or type at least one withdrawer.");
+          }
+          const finalWithdrawerName = allWithdrawers.join(', ');
+
           const payload = {
             reason: formData.reason,
             date: formData.date,
             time: formData.time,
             amount_taken: parseFloat(formData.amount_taken),
-            withdrawer_name: formData.withdrawer_name === 'Other' ? formData.custom_withdrawer : formData.withdrawer_name,
-            receipt_url
+            withdrawer_name: finalWithdrawerName,
+            receipt_url,
+            reported_by: currentUser?.username
           };
 
           const { error: dbErr } = await supabase.from('expenses').insert([payload]);
@@ -1928,11 +2392,14 @@
           if(onComplete) onComplete(payload);
           setStep(1);
           setFormData({
-            reason: '', withdrawer_name: '', custom_withdrawer: '',
+            reason: '',
             date: new Date().toISOString().split('T')[0],
             time: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
             amount_taken: ''
           });
+          setSelectedMainWithdrawers([]);
+          setShowOtherWithdrawer(false);
+          setOtherWithdrawers(['']);
           setReceiptFile(null);
           // Only reset form natively to clear file input file selection
           e.target.reset();
@@ -1979,10 +2446,57 @@
 
             {step === 2 && (
                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 animate-fade-in">
-                 <InputField label="Withdrawer Name" sLabel="මුදල් ලබාගන්නාගේ නම" type="select" options={REPORTERS} name="withdrawer_name" value={formData.withdrawer_name} onChange={handleChange} required />
-                 {formData.withdrawer_name === 'Other' && (
-                   <InputField label="Type Name" sLabel="නම ඇතුලත් කරන්න" name="custom_withdrawer" value={formData.custom_withdrawer} onChange={handleChange} required />
-                 )}
+                 <div className="md:col-span-2 mb-6">
+                   <label className="text-sm font-medium text-slate-300 flex flex-col gap-0.5 leading-tight mb-3">
+                     <span>Withdrawer Name(s) *</span>
+                     <span className="text-[10.5px] text-brand-400 opacity-90">මුදල් ලබාගන්නාගේ නම (කිහිප දෙනෙක් වුවද තෝරාගත හැක)</span>
+                   </label>
+                   <div className="flex flex-wrap gap-4 mb-4">
+                     {users && users.map(u => (
+                        <div key={u.id} onClick={() => {
+                           if (selectedMainWithdrawers.includes(u.username)) {
+                              setSelectedMainWithdrawers(selectedMainWithdrawers.filter(n => n !== u.username));
+                           } else {
+                              setSelectedMainWithdrawers([...selectedMainWithdrawers, u.username]);
+                           }
+                        }} className={`flex flex-col items-center cursor-pointer transition-all duration-300 ${selectedMainWithdrawers.includes(u.username) ? 'scale-110 opacity-100' : 'opacity-50 hover:opacity-100 hover:scale-105'}`}>
+                           <div className={`w-12 h-12 rounded-full overflow-hidden border-2 ${selectedMainWithdrawers.includes(u.username) ? 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'border-slate-700'}`}>
+                             <img src={u.avatar_url || 'logo.png'} alt={u.username} className="w-full h-full object-cover" />
+                           </div>
+                           <span className="text-[10px] mt-1 text-slate-300 font-medium whitespace-nowrap">{u.username.split(' ')[0]}</span>
+                        </div>
+                     ))}
+                     <div onClick={() => setShowOtherWithdrawer(!showOtherWithdrawer)} className={`flex flex-col items-center cursor-pointer transition-all duration-300 ${showOtherWithdrawer ? 'scale-110 opacity-100' : 'opacity-50 hover:opacity-100 hover:scale-105'}`}>
+                        <div className={`w-12 h-12 rounded-full overflow-hidden border-2 bg-slate-800 flex items-center justify-center text-slate-300 ${showOtherWithdrawer ? 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'border-slate-700'}`}>
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                        </div>
+                        <span className="text-[10px] mt-1 text-slate-300 font-medium">Other</span>
+                     </div>
+                   </div>
+
+                   {showOtherWithdrawer && (
+                     <div className="space-y-3 pl-2 border-l-2 border-slate-700 mt-4">
+                       <label className="text-xs text-slate-400">Other Withdrawer Names (වෙනත් අයගේ නම්):</label>
+                       {otherWithdrawers.map((name, idx) => (
+                         <div key={idx} className="flex gap-2">
+                           <input type="text" placeholder="Type name..." value={name} onChange={e => {
+                             const newArr = [...otherWithdrawers];
+                             newArr[idx] = e.target.value;
+                             setOtherWithdrawers(newArr);
+                           }} className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2.5 outline-none flex-1 focus:border-red-500" />
+                           {otherWithdrawers.length > 1 && (
+                             <button type="button" onClick={() => setOtherWithdrawers(otherWithdrawers.filter((_, i) => i !== idx))} className="px-3 bg-slate-800 text-slate-400 rounded-lg hover:text-red-400 border border-slate-700 hover:border-red-500">
+                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                             </button>
+                           )}
+                         </div>
+                       ))}
+                       <button type="button" onClick={() => setOtherWithdrawers([...otherWithdrawers, ''])} className="text-xs text-brand-400 hover:text-brand-300 mt-2 font-medium">
+                         + Add another person
+                       </button>
+                     </div>
+                   )}
+                 </div>
                  <div className="flex flex-col gap-1.5 mb-4 md:col-span-2 mt-4">
                    <label className="text-sm font-medium text-slate-300 flex flex-col gap-0.5 leading-tight">
                      <span>Receipt / Bill Photo (Optional)</span>
@@ -2175,6 +2689,7 @@
       const [newPassword, setNewPassword] = useState('');
       const [confirmPassword, setConfirmPassword] = useState('');
       const [currentUserData, setCurrentUserData] = useState(null);
+      const [usePasswordFallback, setUsePasswordFallback] = useState(false);
 
       useEffect(() => {
         fetchUsers();
@@ -2233,6 +2748,27 @@
           onLogin(user);
         } catch (err) {
           setError('Login failed: ' + err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleFaceIdLogin = async () => {
+        const user = users.find(u => u.username === username);
+        if (!user || !user.passkey_id) return;
+        setLoading(true);
+        setError('');
+        try {
+          const success = await authenticateWithFaceId(user.passkey_id);
+          if (success) {
+            onLogin(user);
+          } else {
+            setError("Face ID verification failed.");
+            setUsePasswordFallback(true);
+          }
+        } catch(err) {
+          setError("Face ID error: " + err.message);
+          setUsePasswordFallback(true);
         } finally {
           setLoading(false);
         }
@@ -2322,14 +2858,33 @@
                    </div>
                  </div>
                  
-                 {username && (
-                   <div className="animate-fade-in space-y-4">
-                     <input type="password" placeholder={`Password for ${username.split(' ')[0]}`} value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-3 outline-none focus:border-brand-500" required />
-                     <button type="submit" disabled={loading} className="w-full bg-brand-600 hover:bg-brand-500 text-white font-semibold py-3 rounded-xl transition shadow-[0_0_15px_rgba(34,197,94,0.3)] disabled:opacity-50">
-                       {loading ? 'Logging in...' : 'Login'}
-                     </button>
-                   </div>
-                 )}
+                 {username && (() => {
+                   const selectedUser = users.find(u => u.username === username);
+                   const hasPasskey = selectedUser && selectedUser.passkey_id;
+
+                   if (hasPasskey && !usePasswordFallback) {
+                     return (
+                       <div className="animate-fade-in space-y-4">
+                         <button type="button" onClick={handleFaceIdLogin} disabled={loading} className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold py-3 rounded-xl transition border border-slate-600 disabled:opacity-50">
+                           <svg className="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" /></svg>
+                           {loading ? 'Verifying...' : 'Login with Face ID / Fingerprint'}
+                         </button>
+                         <button type="button" onClick={() => setUsePasswordFallback(true)} className="text-xs text-slate-400 hover:text-slate-300 w-full">
+                           Use Password Instead
+                         </button>
+                       </div>
+                     );
+                   }
+
+                   return (
+                     <div className="animate-fade-in space-y-4">
+                       <input type="password" placeholder={`Password for ${username.split(' ')[0]}`} value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-3 outline-none focus:border-brand-500" required />
+                       <button type="submit" disabled={loading} className="w-full bg-brand-600 hover:bg-brand-500 text-white font-semibold py-3 rounded-xl transition shadow-[0_0_15px_rgba(34,197,94,0.3)] disabled:opacity-50">
+                         {loading ? 'Logging in...' : 'Login'}
+                       </button>
+                     </div>
+                   );
+                 })()}
                  <div className="flex justify-between mt-4">
                    <button type="button" onClick={() => setView('forgot_password')} className="text-xs text-brand-400 hover:text-brand-300">Forgot Password?</button>
                    <button type="button" onClick={onShowBalance} className="text-xs text-slate-400 hover:text-slate-300 border-b border-slate-600 pb-0.5">View Current Balance</button>
@@ -2379,6 +2934,7 @@
       });
       const [showBalanceOnly, setShowBalanceOnly] = useState(false);
       const [activeTab, setActiveTab] = useState('dashboard');
+      const [showFaceIdSetup, setShowFaceIdSetup] = useState(false);
 
       useEffect(() => {
         if (currentUser) {
@@ -2386,10 +2942,69 @@
           if (typeof window.requestFCMPermission === 'function') {
             window.requestFCMPermission(currentUser.id);
           }
+          registerSession(currentUser.id);
         } else {
           localStorage.removeItem('vesak_current_user');
         }
       }, [currentUser]);
+
+      const registerSession = async (userId) => {
+        try {
+          let ip = "Unknown IP", loc = "Unknown Location";
+          try {
+             const res = await fetch('https://get.geojs.io/v1/ip/geo.json');
+             const data = await res.json();
+             if (data.ip) {
+                ip = data.ip;
+                loc = `${data.city || ''}, ${data.country || ''}`.replace(/^, | , $/g, '').trim();
+             }
+          } catch(e) {
+             console.log("GeoJS failed, trying fallback...");
+             try {
+               const fallbackRes = await fetch('https://api.db-ip.com/v2/free/self');
+               const fallbackData = await fallbackRes.json();
+               if (fallbackData.ipAddress) {
+                  ip = fallbackData.ipAddress;
+                  loc = `${fallbackData.city || ''}, ${fallbackData.countryName || ''}`.replace(/^, | , $/g, '').trim();
+               }
+             } catch(fallbackErr) {
+               console.error("IP fetch failed", fallbackErr);
+             }
+          }
+          
+          let sessionToken = localStorage.getItem('vesak_session_token');
+          if (!sessionToken) {
+             sessionToken = 'sess_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+             localStorage.setItem('vesak_session_token', sessionToken);
+          }
+          
+          const ua = navigator.userAgent;
+          let browser = "Unknown Browser";
+          if (ua.includes("Firefox/")) browser = "Firefox";
+          else if (ua.includes("Edg/")) browser = "Edge";
+          else if (ua.includes("Chrome/")) browser = "Chrome";
+          else if (ua.includes("Safari/") && !ua.includes("Chrome")) browser = "Safari";
+          
+          let os = "Unknown OS";
+          if (ua.includes("Win")) os = "Windows";
+          else if (ua.includes("Mac")) os = "MacOS";
+          else if (ua.includes("Linux")) os = "Linux";
+          else if (ua.includes("Android")) os = "Android";
+          else if (ua.includes("like Mac")) os = "iOS";
+          
+          const deviceName = `${os} - ${browser}`;
+
+          await supabase.from('user_sessions').upsert({
+             session_token: sessionToken,
+             user_id: userId,
+             device_name: deviceName,
+             location: loc,
+             ip_address: ip,
+             last_active: new Date().toISOString(),
+             is_online: true
+          }, { onConflict: 'session_token' });
+        } catch(err) { console.error('Session Error:', err); }
+      };
 
       const [users, setUsers] = useState([]);
       const [incomes, setIncomes] = useState([]);
@@ -2508,19 +3123,24 @@
       const NavigationButton = ({ id, label, sLabel, icon }) => (
         <button
           onClick={() => setActiveTab(id)}
-          className={`flex items-start gap-2.5 px-4 py-3 rounded-xl transition-all duration-300 w-auto ${
+          className={`flex items-start gap-3 px-5 py-3.5 rounded-2xl transition-all duration-500 w-auto group relative overflow-hidden ${
             activeTab === id 
-            ? 'bg-brand-600/20 text-brand-400 shadow-[inset_0_0_12px_rgba(34,197,94,0.2)] border border-brand-500/30' 
-            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            ? 'bg-gradient-to-r from-brand-600/20 to-brand-500/10 text-white shadow-[0_0_20px_rgba(34,197,94,0.15)] border border-brand-500/30' 
+            : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border border-transparent hover:border-slate-700/50'
           }`}
         >
-          <div className="mt-0.5">{icon}</div>
-          <div className="flex flex-col text-left">
-            <span className="font-semibold text-sm leading-tight">{label}</span>
-            <span className="text-[10px] font-medium opacity-80 mt-0.5">{sLabel}</span>
+          {activeTab === id && (
+            <div className="absolute inset-0 bg-gradient-to-r from-brand-400/0 via-brand-400/10 to-brand-400/0 translate-x-[-100%] animate-[shimmer_2s_infinite]"></div>
+          )}
+          <div className={`mt-0.5 transition-transform duration-300 ${activeTab === id ? 'scale-110 text-brand-400 drop-shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'group-hover:scale-110 group-hover:text-slate-300'}`}>
+            {icon}
+          </div>
+          <div className="flex flex-col text-left relative z-10">
+            <span className="font-bold text-sm tracking-wide leading-tight">{label}</span>
+            <span className={`text-[10px] font-medium mt-0.5 transition-opacity ${activeTab === id ? 'text-brand-300 opacity-90' : 'opacity-60 group-hover:opacity-100'}`}>{sLabel}</span>
           </div>
           {id === 'pledges' && incomes.filter(i => i.status === 'Promised').length > 0 && (
-            <span className="ml-1 self-center px-1.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-500 text-xs font-bold border border-yellow-500/30">
+            <span className="ml-2 self-center px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-500 text-[10px] font-extrabold border border-yellow-500/30 shadow-[0_0_10px_rgba(234,179,8,0.3)] animate-pulse">
               {incomes.filter(i => i.status === 'Promised').length}
             </span>
           )}
@@ -2531,20 +3151,23 @@
       const MobileNavButton = ({ id, label, sLabel, icon }) => (
         <button
           onClick={() => setActiveTab(id)}
-          className={`flex flex-col items-center justify-center flex-1 py-1.5 rounded-xl transition-all duration-300 relative ${
+          className={`flex flex-col items-center justify-center flex-1 py-2 rounded-2xl transition-all duration-500 relative group overflow-hidden ${
             activeTab === id 
-            ? 'text-brand-400 font-bold bg-brand-500/10' 
-            : 'text-slate-400 hover:text-slate-200'
+            ? 'text-brand-400 font-bold bg-brand-500/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] border border-brand-500/20' 
+            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
           }`}
         >
-          <div className={`mb-1 transition-transform duration-300 ${activeTab === id ? 'scale-110 drop-shadow-[0_0_8px_rgba(34,197,94,0.5)]' : ''}`}>
+          <div className={`mb-1 transition-all duration-300 ${activeTab === id ? '-translate-y-0.5 scale-110 drop-shadow-[0_0_10px_rgba(34,197,94,0.6)]' : 'group-hover:scale-110'}`}>
             {icon}
           </div>
-          <span className="text-[10px] uppercase tracking-wide leading-none">{label}</span>
-          <span className="text-[8px] font-normal opacity-80 mt-1">{sLabel}</span>
+          <span className={`text-[10px] uppercase tracking-wider leading-none transition-all duration-300 ${activeTab === id ? 'font-extrabold' : 'font-medium'}`}>{label}</span>
+          <span className={`text-[8px] mt-1 transition-all duration-300 ${activeTab === id ? 'text-brand-300 opacity-100' : 'font-normal opacity-60'}`}>{sLabel}</span>
           
           {id === 'pledges' && incomes.filter(i => i.status === 'Promised').length > 0 && (
-            <span className="absolute top-1 right-3 sm:right-6 w-2.5 h-2.5 rounded-full bg-yellow-500 border-2 border-slate-900 shadow-[0_0_8px_rgba(234,179,8,0.8)]"></span>
+            <span className="absolute top-1.5 right-3 sm:right-6 w-2.5 h-2.5 rounded-full bg-yellow-500 border border-slate-900 shadow-[0_0_10px_rgba(234,179,8,1)] animate-ping" style={{animationDuration: '2s'}}></span>
+          )}
+          {id === 'pledges' && incomes.filter(i => i.status === 'Promised').length > 0 && (
+            <span className="absolute top-1.5 right-3 sm:right-6 w-2.5 h-2.5 rounded-full bg-yellow-500 border border-slate-900 shadow-[0_0_5px_rgba(234,179,8,0.8)]"></span>
           )}
         </button>
       );
@@ -2571,7 +3194,14 @@
              </div>
            );
         }
-        return <LoginScreen onLogin={(user) => setCurrentUser(user)} onShowBalance={() => setShowBalanceOnly(true)} showNotification={showNotification} />;
+        const handleLoginSuccess = (user) => {
+           setCurrentUser(user);
+           if (!user.passkey_id) {
+             setShowFaceIdSetup(true);
+           }
+        };
+
+        return <LoginScreen onLogin={handleLoginSuccess} onShowBalance={() => setShowBalanceOnly(true)} showNotification={showNotification} />;
       }
 
       let targetAmount = 10000;
@@ -2593,19 +3223,50 @@
         <div className="flex flex-col min-h-screen pb-20 md:pb-0 relative">
           <NotificationToast show={!!notification} data={notification} onClose={() => setNotification(null)} />
           
+          {showFaceIdSetup && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
+              <div className="glass p-8 rounded-2xl max-w-sm w-full text-center border border-brand-500/30 shadow-[0_0_40px_rgba(34,197,94,0.15)]">
+                <div className="w-20 h-20 mx-auto bg-brand-500/20 text-brand-400 rounded-full flex items-center justify-center mb-6">
+                  <svg className="w-10 h-10 drop-shadow-[0_0_10px_rgba(34,197,94,0.5)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" /></svg>
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">Set Up Face ID</h3>
+                <p className="text-sm text-slate-400 mb-8 leading-relaxed">ඊලඟ වතාවේ මුරපදය නොමැතිව පහසුවෙන් ලොග් වීමට Face ID හෝ Fingerprint සකසන්න.</p>
+                <button onClick={async () => {
+                   try {
+                     const newPasskeyId = await registerFaceId(currentUser);
+                     const updatedUser = {...currentUser, passkey_id: newPasskeyId};
+                     setCurrentUser(updatedUser);
+                     localStorage.setItem('vesak_current_user', JSON.stringify(updatedUser));
+                     setShowFaceIdSetup(false);
+                     showNotification({ type: 'success', title: 'Face ID Setup Successful!', sTitle: 'සාර්ථකව සැකසුනි.' });
+                   } catch(e) {
+                     alert("Setup Failed: " + e.message);
+                   }
+                }} className="w-full bg-brand-600 hover:bg-brand-500 text-white font-bold py-3.5 rounded-xl mb-4 transition shadow-[0_0_15px_rgba(34,197,94,0.3)]">
+                  Set Up Now / සකසන්න
+                </button>
+                <button onClick={() => setShowFaceIdSetup(false)} className="text-slate-400 hover:text-slate-200 text-xs font-medium transition border-b border-transparent hover:border-slate-500 pb-0.5">
+                  Skip for now / පසුවට කල් දමන්න
+                </button>
+              </div>
+            </div>
+          )}
+          
           {/* Top Navigation with Safe Area (env) for Notch / Dynamic Island */}
-          <header className="glass sticky top-0 z-50 border-b border-slate-800" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <header className="glass sticky top-0 z-50 border-b border-slate-800 shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-saturate-150" style={{ paddingTop: 'max(env(safe-area-inset-top), 0.75rem)' }}>
+            <div className="absolute inset-0 bg-gradient-to-b from-brand-500/5 to-transparent pointer-events-none"></div>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 pb-2">
               <div className="flex items-center justify-between h-20 md:h-24">
-                <div className="flex items-center gap-3 md:gap-4">
-                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-[#0f172a]/80 backdrop-blur-md flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(34,197,94,0.2)] border border-white/10 overflow-hidden">
-                    <img src="logo.png" alt="App Logo" className="w-[80%] h-[80%] object-contain" />
+                <div className="flex items-center gap-3 md:gap-5">
+                  <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-slate-900/80 backdrop-blur-md flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(34,197,94,0.3)] border border-brand-500/20 overflow-hidden relative group cursor-pointer">
+                    <div className="absolute inset-0 bg-brand-500/20 animate-pulse pointer-events-none"></div>
+                    <img src="logo.png" alt="App Logo" className="w-[75%] h-[75%] object-contain relative z-10 group-hover:scale-110 transition-transform duration-500 drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]" />
                   </div>
                   <div className="flex flex-col justify-center">
-                    <h1 className="text-lg md:text-xl font-bold tracking-tight text-white m-0 leading-tight">Vesak Lantern Project</h1>
-                    <p className="text-brand-400 text-[10px] md:text-[11px] font-medium tracking-wide mt-0.5">වෙසක් කූඩු ව්‍යාපෘතිය</p>
-                    <p className="text-slate-300 text-[10px] md:text-xs font-medium uppercase tracking-widest mt-0.5 md:mt-1">
-                      Financial Dashboard <span className="text-[9px] md:text-[10px] opacity-70 ml-1">මූල්‍ය පාලක පුවරුව</span>
+                    <h1 className="text-xl md:text-2xl font-extrabold tracking-tight text-white m-0 leading-tight drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">Vesak Lantern Project</h1>
+                    <p className="text-brand-400 text-[11px] md:text-xs font-semibold tracking-wider mt-0.5 drop-shadow-[0_0_5px_rgba(34,197,94,0.5)]">වෙසක් කූඩු ව්‍යාපෘතිය</p>
+                    <p className="text-slate-300 text-[10px] md:text-xs font-medium uppercase tracking-widest mt-1 opacity-80 flex items-center gap-2">
+                      Financial Dashboard <span className="w-1 h-1 rounded-full bg-brand-500"></span> <span className="text-[9px] md:text-[10px] tracking-widest">මූල්‍ය පාලක පුවරුව</span>
                     </p>
                   </div>
                 </div>
@@ -2644,11 +3305,11 @@
                     <div className="hidden sm:flex mt-1 bg-slate-900/80 border border-slate-700/50 px-3 py-1.5 rounded-lg flex-col items-end min-w-[140px] shadow-md">
                        <div className="flex justify-between w-full text-[10px] text-slate-400 mb-0.5 gap-3">
                          <span>Your Contribution:</span>
-                         <span className="font-bold text-white">Rs. {userTotalContribution.toLocaleString()}</span>
+                         <span className="font-bold text-white">Rs. {Math.round(userTotalContribution).toLocaleString()}</span>
                        </div>
                        {balanceToPay > 0 ? (
                          <div className="text-[9px] text-yellow-400 font-medium animate-pulse mt-0.5">
-                           කරුණාකර ඉතිරි මුදල ලබා දෙන්න (Rs. {balanceToPay.toLocaleString()})
+                           කරුණාකර ඉතිරි මුදල ලබා දෙන්න (Rs. {Math.round(balanceToPay).toLocaleString()})
                          </div>
                        ) : balanceToPay < 0 ? (
                          <div className="flex items-center gap-1 mt-0.5 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 px-2 py-0.5 rounded border border-amber-500/30">
@@ -2680,7 +3341,7 @@
           {/* Main Area with Safe Area Bottom Padding to prevent overlapping with bottom bar */}
           <main 
             className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 w-full z-10 relative" 
-            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6rem)' }}
+            style={{ paddingBottom: 'calc(max(env(safe-area-inset-bottom), 1rem) + 6rem)' }}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
@@ -2688,12 +3349,12 @@
             <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-blue-500/10 blur-[120px] pointer-events-none"></div>
             
             <div className="relative z-10 animate-fade-in">
-                {activeTab === 'profile' && <ProfileView currentUser={currentUser} incomes={incomes} userTotalContribution={userTotalContribution} balanceToPay={balanceToPay} users={users} />}
+                {activeTab === 'profile' && <ProfileView currentUser={currentUser} incomes={incomes} expenses={expenses} userTotalContribution={userTotalContribution} balanceToPay={balanceToPay} users={users} />}
                 {activeTab === 'dashboard' && <DashboardView incomes={incomes} expenses={expenses} setActiveTab={setActiveTab} currentUser={currentUser} userTotalContribution={userTotalContribution} balanceToPay={balanceToPay} users={users} />}
                 
                 {activeTab === 'income-page' && (
                   <div className="space-y-8 animate-fade-in">
-                    <IncomeForm currentUser={currentUser} onComplete={(data) => {
+                    <IncomeForm currentUser={currentUser} users={users} onComplete={(data) => {
                       fetchData();
                       if(data) showNotification({
                         type: 'success',
@@ -2723,7 +3384,7 @@
                 
                 {activeTab === 'expense-page' && (
                   <div className="space-y-8 animate-fade-in">
-                    <ExpenseForm currentUser={currentUser} onComplete={(data) => {
+                    <ExpenseForm currentUser={currentUser} users={users} onComplete={(data) => {
                       fetchData();
                       if(data) showNotification({
                         type: 'blue',
@@ -2749,17 +3410,21 @@
             </div>
             
             {currentUser?.role === 'admin' && (
-              <div className="text-center mt-12 mb-4 pb-20 md:pb-0">
-                 <a href="admin.html" className="text-xs text-slate-600 hover:text-slate-400 font-medium transition border-b border-transparent hover:border-slate-600 pb-0.5 inline-flex items-center gap-1.5 cursor-pointer">
-                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                   System Administrator Dashboard
+              <div className="text-center mt-12 mb-8 pb-24 md:pb-8 flex justify-center animate-fade-in delay-200">
+                 <a href="admin.html" className="group relative px-6 py-3 bg-slate-900/40 hover:bg-brand-500/10 rounded-2xl border border-white/5 hover:border-brand-500/30 transition-all duration-500 flex items-center gap-3 overflow-hidden shadow-xl shadow-black/20">
+                   <div className="absolute inset-0 bg-gradient-to-r from-brand-500/0 via-brand-500/5 to-brand-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                   <div className="w-8 h-8 rounded-xl bg-brand-500/10 flex items-center justify-center text-brand-400 group-hover:scale-110 transition-transform">
+                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                   </div>
+                   <span className="text-xs font-black text-slate-400 group-hover:text-white uppercase tracking-widest transition-colors">System Admin Dashboard</span>
+                   <svg className="w-3.5 h-3.5 text-slate-600 group-hover:text-brand-400 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                  </a>
               </div>
             )}
           </main>
 
           {/* Mobile Footer Navigation with Bottom Safe Area for iPhone Home Indicator */}
-          <div className="md:hidden fixed bottom-0 left-0 right-0 glass border-t border-slate-800/80 z-50 flex justify-between px-2 pt-2 bg-slate-950/90 backdrop-blur-xl" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)' }}>
+          <div className="md:hidden fixed bottom-0 left-0 right-0 glass border-t border-slate-800/80 z-50 flex justify-between px-2 pt-2 bg-slate-950/90 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_-10px_40px_rgba(0,0,0,0.6)]" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 1rem)' }}>
             <MobileNavButton id="dashboard" label="Dashboard" sLabel="ආරම්භය" icon={<IconDashboard />} />
             <MobileNavButton id="income-page" label="Income" sLabel="ආදායම්" icon={<IconIncome />} />
             <MobileNavButton id="expense-page" label="Expense" sLabel="වියදම්" icon={<IconExpense />} />
