@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#020617" />
   <link rel="apple-touch-icon" href="logo.png" />
@@ -150,40 +150,48 @@
       window.firebase.initializeApp(firebaseConfig);
       const messaging = window.firebase.messaging();
 
-      // Request FCM permission and token
+      // Request FCM permission and token — called on every login to keep DB up to date
       window.requestFCMPermission = async function(userId) {
         try {
-          console.log("Requesting Notification Permission...");
-          const permission = await Notification.requestPermission();
-          console.log("Permission Status:", permission);
+          // If already granted, skip the dialog and just refresh the token silently
+          let permission = Notification.permission;
+          if (permission === 'default') {
+            permission = await Notification.requestPermission();
+          }
           
           if (permission === 'granted') {
-            console.log("Getting FCM Token...");
             const currentToken = await messaging.getToken({ vapidKey: 'BD7bBsXr1AmUvaNDpjoHXfivdwA9lMNuXCLQHV3XRf2_RhaUZcThK1-583BRRFUnzprE6SyfMt_umreDFHT0TS8' });
             if (currentToken) {
-              console.log("FCM Token Generated Successfully!", currentToken);
-              const { error } = await supabase.from('app_users').update({ fcm_token: currentToken }).eq('id', userId);
-              if(error) {
-                 console.error("Error saving token to Supabase:", error);
-              } else {
-                 console.log("Token saved to Supabase app_users table.");
-              }
-            } else {
-              console.log("FCM Token could not be generated. Please check if you have allowed notifications.");
+              // Always save/update — this keeps the token fresh for the current browser
+              await supabase.from('app_users').update({ fcm_token: currentToken }).eq('id', userId);
+              console.log('FCM token refreshed & saved.');
             }
           }
         } catch (err) {
-          console.error('Failed to get FCM token:', err);
+          console.error('FCM token refresh failed:', err);
         }
       };
 
-      // Handle foreground messages
+
+      // Handle foreground messages (app is open and in focus)
       messaging.onMessage((payload) => {
-         const title = payload.notification?.title || 'Notification';
-         const body = payload.notification?.body || '';
+         const title = payload.notification?.title || payload.data?.title || 'Notification';
+         const body  = payload.notification?.body  || payload.data?.body  || '';
          window.dispatchEvent(new CustomEvent('fcm-message', { detail: { title, body } }));
       });
     }
+
+    // Handle background messages relayed from Service Worker (app open but not focused)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'FCM_MESSAGE') {
+          window.dispatchEvent(new CustomEvent('fcm-message', {
+            detail: { title: event.data.title, body: event.data.body }
+          }));
+        }
+      });
+    }
+
 
     // --- ICONS ---
     const IconDashboard = () => <svg className="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>;
@@ -1122,7 +1130,7 @@
       const myGoods = incomes.filter(i => i.reported_by === currentUser.username && i.donation_type === 'Goods');
 
       return (
-        <div className="space-y-6">
+        <div className="space-y-6" id="profile">
           <h2 className="text-2xl font-bold text-white mb-6 flex flex-col">
             <span>My Profile & Contributions</span>
             <span className="text-sm text-slate-400 font-normal">මගේ දායකත්ව වාර්තා</span>
@@ -1417,7 +1425,7 @@
       }, [incomes, expenses]);
 
       return (
-        <div className="space-y-6">
+        <div className="space-y-6" id="dashboard">
           <h2 className="text-2xl font-bold text-white mb-6 flex flex-col">
             <span>Overview</span>
             <span className="text-sm text-slate-400 font-normal">සාරාංශය</span>
@@ -2121,9 +2129,20 @@
             payload.quantity = parseFloat(formData.quantity);
           }
 
-          const { error: dbErr } = await supabase.from('incomes').insert([payload]);
+          const { data: dbData, error: dbErr } = await supabase.from('incomes').insert([payload]).select();
           if (dbErr) throw dbErr;
           
+          const insertedRecord = dbData[0];
+          
+          // Add Notification Record
+          const notifBody = `${payload.name} added a ${payload.donation_type === 'Cash' ? 'donation of Rs.' + payload.amount : 'contribution of ' + payload.item_description}`;
+          await supabase.from('notifications').insert([{
+            title: `New ${payload.donation_type} Record`,
+            body: notifBody,
+            type: 'income',
+            record_id: insertedRecord.id
+          }]);
+
           if (typeof supabase.functions !== 'undefined') {
              supabase.functions.invoke('send_fcm_notification', {
                body: { record: payload, type: 'INSERT' }
@@ -2154,7 +2173,7 @@
       );
 
       return (
-        <div className="max-w-3xl mx-auto glass rounded-2xl p-8 border border-slate-800">
+        <div className="max-w-3xl mx-auto glass rounded-2xl p-8 border border-slate-800" id="income-page">
           <div className="flex justify-between items-end mb-6">
              <h2 className="text-2xl font-bold text-white flex flex-col">
                <span>Add New Donation</span>
@@ -2380,9 +2399,20 @@
             reported_by: currentUser?.username
           };
 
-          const { error: dbErr } = await supabase.from('expenses').insert([payload]);
+          const { data: dbData, error: dbErr } = await supabase.from('expenses').insert([payload]).select();
           if (dbErr) throw dbErr;
           
+          const insertedRecord = dbData[0];
+
+          // Add Notification Record
+          const notifBody = `${payload.withdrawer_name} withdrew Rs. ${payload.amount_taken} for ${payload.reason}`;
+          await supabase.from('notifications').insert([{
+            title: 'New Expense Record',
+            body: notifBody,
+            type: 'expense',
+            record_id: insertedRecord.id
+          }]);
+
           if (typeof supabase.functions !== 'undefined') {
              supabase.functions.invoke('send_fcm_notification', {
                body: { record: { ...payload, reported_by: currentUser?.username }, type: 'INSERT' }
@@ -2419,7 +2449,7 @@
       );
 
       return (
-        <div className="max-w-3xl mx-auto glass rounded-2xl p-8 border border-slate-800">
+        <div className="max-w-3xl mx-auto glass rounded-2xl p-8 border border-slate-800" id="expense-page">
           <div className="flex justify-between items-end mb-6">
              <h2 className="text-2xl font-bold text-white flex flex-col">
                <span>Add New Expense</span>
@@ -2645,35 +2675,111 @@
     function NotificationToast({ show, data, onClose }) {
       if (!show || !data) return null;
 
-      const isSuccess = data.type === 'success';
+      const isError   = data.type === 'error';
+      const isBlue    = data.type === 'blue';
+      const isReminder = data.type === 'reminder';
+      // default / success → green
+
+      const c = isError ? {
+        border: 'border-red-500/40',
+        bar:    'bg-red-500',
+        icon:   'bg-red-500/20 text-red-400',
+        accent: 'text-red-400',
+        sub:    'text-red-300',
+        btn:    'bg-red-600 hover:bg-red-500',
+        glow:   'shadow-[0_25px_60px_rgba(239,68,68,0.35)]'
+      } : isBlue ? {
+        border: 'border-blue-500/40',
+        bar:    'bg-blue-500',
+        icon:   'bg-blue-500/20 text-blue-400',
+        accent: 'text-blue-400',
+        sub:    'text-blue-300',
+        btn:    'bg-blue-600 hover:bg-blue-500',
+        glow:   'shadow-[0_25px_60px_rgba(59,130,246,0.35)]'
+      } : isReminder ? {
+        border: 'border-yellow-500/40',
+        bar:    'bg-yellow-500',
+        icon:   'bg-yellow-500/20 text-yellow-400',
+        accent: 'text-yellow-400',
+        sub:    'text-yellow-300',
+        btn:    'bg-yellow-600 hover:bg-yellow-500',
+        glow:   'shadow-[0_25px_60px_rgba(234,179,8,0.35)]'
+      } : {
+        border: 'border-brand-500/40',
+        bar:    'bg-brand-500',
+        icon:   'bg-brand-500/20 text-brand-400',
+        accent: 'text-brand-400',
+        sub:    'text-brand-300',
+        btn:    'bg-brand-600 hover:bg-brand-500',
+        glow:   'shadow-[0_25px_60px_rgba(34,197,94,0.35)]'
+      };
+
+      const IconSvg = () => isError ? (
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      ) : isReminder ? (
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      ) : (
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg>
+      );
 
       return (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] animate-fade-in w-[90%] max-w-sm" style={{ marginTop: 'env(safe-area-inset-top)' }}>
-          <div className="glass flex flex-col gap-2 p-4 rounded-xl border border-slate-700/50 shadow-[0_10px_40px_rgba(0,0,0,0.5)] relative overflow-hidden bg-slate-900/95 backdrop-blur-2xl">
-            <div className={`absolute top-0 left-0 h-1 w-full ${isSuccess ? 'bg-brand-500' : 'bg-red-500'}`}></div>
-            <button onClick={onClose} className="absolute top-3 right-3 text-slate-400 hover:text-white transition">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-            <div className="flex items-center gap-3 pr-6">
-              <div className={`p-2 rounded-full shrink-0 ${isSuccess ? 'bg-brand-500/20 text-brand-400' : 'bg-red-500/20 text-red-400'}`}>
-                {isSuccess ? <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> : <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)' }}
+          onClick={onClose}
+        >
+          <style>{`
+            @keyframes popupIn {
+              0%   { opacity:0; transform: scale(0.75) translateY(30px); }
+              100% { opacity:1; transform: scale(1)    translateY(0);    }
+            }
+            .popup-enter { animation: popupIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both; }
+          `}</style>
+
+          <div
+            className={`popup-enter relative w-full max-w-sm rounded-3xl bg-slate-900 border ${c.border} ${c.glow} overflow-hidden`}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* top color bar */}
+            <div className={`absolute top-0 left-0 w-full h-1 ${c.bar}`}></div>
+            {/* background glow blob */}
+            <div className={`absolute -top-8 -right-8 w-40 h-40 rounded-full blur-3xl opacity-20 ${c.bar}`}></div>
+
+            <div className="relative z-10 p-6 pt-8 flex flex-col items-center text-center">
+              {/* close X */}
+              <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-white transition p-1 rounded-full hover:bg-white/10">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+
+              {/* icon circle */}
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${c.icon} border border-current/20`}>
+                <IconSvg />
               </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-white text-[15px] leading-tight">{data.title}</span>
-                <span className={`text-[11px] mt-0.5 ${isSuccess ? 'text-brand-300' : 'text-red-300'}`}>{data.sTitle}</span>
-              </div>
+
+              {/* title */}
+              <h3 className={`text-xl font-black tracking-tight ${c.accent}`}>{data.title}</h3>
+              {data.sTitle && <p className={`text-[11px] mt-1 font-bold uppercase tracking-widest opacity-80 ${c.sub}`}>{data.sTitle}</p>}
+
+              {/* details */}
+              {data.details && data.details.length > 0 && (
+                <div className="mt-4 w-full bg-slate-950/70 rounded-2xl p-4 border border-slate-800 text-left space-y-2">
+                  {data.details.map((d, i) => (
+                    <div key={i} className="flex justify-between items-start gap-3 border-b border-slate-800/50 last:border-0 pb-2 last:pb-0">
+                      <span className="text-slate-400 text-xs font-semibold shrink-0">{d.label}</span>
+                      <span className={`font-bold text-sm text-right break-all ${c.sub}`}>{d.value}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* OK button */}
+              <button
+                onClick={onClose}
+                className={`mt-5 w-full py-3.5 rounded-xl font-black text-sm uppercase tracking-widest transition-all text-white ${c.btn} active:scale-95 shadow-lg`}
+              >
+                OK / හරි
+              </button>
             </div>
-            
-            {(data.details && data.details.length > 0) && (
-              <div className="mt-3 text-xs bg-slate-950/50 rounded-lg p-3 flex flex-col gap-1.5 border border-slate-800/80 w-full">
-                {data.details.map((d, i) => (
-                  <div key={i} className="flex flex-col sm:flex-row sm:justify-between border-b border-slate-800/50 last:border-0 pb-1.5 last:pb-0 gap-0.5 sm:gap-2">
-                    <span className="text-slate-400 font-medium">{d.label}:</span>
-                    <span className={`font-semibold truncate w-full sm:w-auto text-left sm:text-right ${isSuccess ? 'text-brand-300' : 'text-slate-200'}`}>{d.value}</span>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       );
@@ -3011,36 +3117,119 @@
       const [expenses, setExpenses] = useState([]);
       const [loading, setLoading] = useState(true);
       const [notification, setNotification] = useState(null);
+      const [notifications, setNotifications] = useState([]);
+      const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+      const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
 
       const showNotification = (data) => {
         setNotification(data);
-        setTimeout(() => setNotification(null), 7000);
+        // No auto-dismiss — user must press OK or tap backdrop
       };
 
+
+      // URL Hash Navigation Logic
       useEffect(() => {
-        const handleFCM = (e) => {
-           showNotification({
-             title: e.detail.title,
-             sTitle: 'New Notification',
-             details: [
-               { label: 'Message', value: e.detail.body }
-             ]
-           });
+        const handleHashChange = () => {
+          const hash = window.location.hash.replace('#', '');
+          const validTabs = ['dashboard', 'income-page', 'income-list', 'goods-list', 'expense-page', 'expense-list', 'pledges', 'profile'];
+          if (hash && validTabs.includes(hash)) {
+            setActiveTab(hash);
+          }
+        };
+
+        window.addEventListener('hashchange', handleHashChange);
+        // Initial check
+        handleHashChange();
+        return () => window.removeEventListener('hashchange', handleHashChange);
+      }, []);
+
+      useEffect(() => {
+        window.location.hash = activeTab;
+      }, [activeTab]);
+
+      useEffect(() => {
+        const handleFCM = async (e) => {
+          const { title, body } = e.detail;
+
+          // Insert into DB so this device's user always sees it in history
+          // (the Edge Function also does a global insert, so we skip duplicates by checking)
+          await supabase.from('notifications').insert([{
+            title: title || 'Vesak System Update',
+            body: body || '',
+            type: 'broadcast',
+            user_id: null   // global
+          }]).then(() => {});   // fire-and-forget, ignore duplicates
+
+          setHasUnreadNotifications(true);
+          fetchData(); // Refresh notification list
+
+          showNotification({
+            title: title || 'New Notification',
+            sTitle: 'Vesak System Update',
+            details: body ? [{ label: 'Message', value: body }] : []
+          });
         };
         window.addEventListener('fcm-message', handleFCM);
         return () => window.removeEventListener('fcm-message', handleFCM);
       }, []);
 
+      // Scheduled Reminders (8 AM & 8 PM)
+      useEffect(() => {
+        if (!currentUser) return;
+        
+        const checkReminders = () => {
+          const now = new Date();
+          const hours = now.getHours();
+          const mins = now.getMinutes();
+          const today = now.toISOString().split('T')[0];
+          const lastReminderKey = `vesak_last_reminder_${currentUser.id}`;
+          const lastReminder = localStorage.getItem(lastReminderKey);
+
+          // Check if it's around 8 AM or 8 PM
+          const isMorning = hours === 8 && mins < 30;
+          const isEvening = hours === 20 && mins < 30;
+          
+          if ((isMorning || isEvening) && lastReminder !== `${today}_${hours}`) {
+            const target = 10000; // Default target
+            const totalCont = incomes.filter(i => {
+               const firstWord = currentUser.username.split(' ')[0].toLowerCase();
+               return i.name?.toLowerCase().includes(firstWord) && i.status === 'Received Today' && i.donation_type === 'Cash';
+            }).reduce((sum, i) => sum + Number(i.amount || 0), 0);
+            
+            const remaining = Math.round(target - totalCont);
+            if (remaining > 0) {
+              const title = "🔔 Payment Reminder";
+              const body = `ඔබගේ ඉතිරි දායකත්ව මුදල වන Rs. ${remaining.toLocaleString()} හැකි ඉක්මනින් ලබා දී සහයෝගය දක්වන්න.`;
+              
+              showNotification({ title, sTitle: 'Reminder', details: [{ label: 'Remaining', value: `Rs. ${remaining.toLocaleString()}` }] });
+              
+              // Only insert into DB if not already there for this user/time
+              supabase.from('notifications').insert([{
+                title, body, type: 'reminder', user_id: currentUser.id
+              }]).then(() => fetchData());
+              
+              localStorage.setItem(lastReminderKey, `${today}_${hours}`);
+            }
+          }
+        };
+
+        checkReminders();
+        const interval = setInterval(checkReminders, 60000 * 5); // Check every 5 mins
+        return () => clearInterval(interval);
+      }, [currentUser, incomes]);
+
       const fetchData = async () => {
         setLoading(true);
         try {
-          const [incRes, expRes, usersRes] = await Promise.all([
+          const [incRes, expRes, usersRes, notifRes] = await Promise.all([
             supabase.from('incomes').select('*').order('created_at', { ascending: false }),
             supabase.from('expenses').select('*').order('created_at', { ascending: false }),
-            supabase.from('app_users').select('*')
+            supabase.from('app_users').select('*'),
+            supabase.from('notifications').select('*').or(`user_id.is.null,user_id.eq.${currentUser?.id}`).order('created_at', { ascending: false }).limit(50)
           ]);
           
           if(!usersRes.error) setUsers(usersRes.data || []);
+          if(!notifRes.error) setNotifications(notifRes.data || []);
 
           if(incRes.error) console.error(incRes.error);
           else {
@@ -3219,9 +3408,70 @@
         
       const balanceToPay = targetAmount - userTotalContribution;
 
+      const NotificationModal = () => (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
+          <div className="glass p-6 rounded-3xl max-w-md w-full border border-brand-500/30 max-h-[80vh] flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex flex-col">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <svg className="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                  Notifications
+                </h3>
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">දැනුම්දීම් ඉතිහාසය</span>
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  onClick={async () => {
+                    const { error } = await supabase.from('notifications').delete().eq('user_id', currentUser.id);
+                    if (!error) fetchData();
+                  }}
+                  className="text-[10px] text-slate-500 hover:text-red-400 px-2 py-1 rounded-lg border border-transparent hover:border-red-500/20 transition-all font-bold uppercase tracking-widest"
+                >
+                  Clear All
+                </button>
+                <button onClick={() => { setIsNotificationModalOpen(false); setHasUnreadNotifications(false); }} className="text-slate-400 hover:text-white transition">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+            </div>
+            
+            <div className="overflow-y-auto flex-1 custom-scrollbar pr-2 space-y-3">
+              {notifications.length === 0 ? (
+                <div className="text-center py-20 flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-700">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
+                  </div>
+                  <p className="text-slate-500 text-sm font-medium">No notifications yet. / දැනුම්දීම් කිසිවක් නැත.</p>
+                </div>
+              ) : (
+                notifications.map(n => (
+                  <div key={n.id} className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800 hover:border-slate-700 transition group relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-brand-500/30"></div>
+                    <div className="flex justify-between items-start mb-1">
+                      <h4 className="font-bold text-white text-sm group-hover:text-brand-400 transition-colors">{n.title}</h4>
+                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">{new Date(n.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                    <p className="text-xs text-slate-400 leading-relaxed">{n.body}</p>
+                    <div className="mt-2 text-[8px] text-slate-600 font-bold uppercase tracking-widest">{new Date(n.created_at).toLocaleString()}</div>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            <button 
+              onClick={() => { setIsNotificationModalOpen(false); setHasUnreadNotifications(false); }}
+              className="mt-6 w-full py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold uppercase tracking-widest transition border border-slate-700 shadow-lg"
+            >
+              Close / වසන්න
+            </button>
+          </div>
+        </div>
+      );
+
       return (
         <div className="flex flex-col min-h-screen pb-20 md:pb-0 relative">
           <NotificationToast show={!!notification} data={notification} onClose={() => setNotification(null)} />
+          {isNotificationModalOpen && <NotificationModal />}
           
           {showFaceIdSetup && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
@@ -3296,6 +3546,15 @@
                         </label>
                         <span className="text-slate-200 font-semibold cursor-pointer hover:text-brand-400 transition" onClick={() => document.getElementById('btn-profile').click()}>{currentUser.username}</span>
                       </div>
+                      <button 
+                        onClick={() => { setIsNotificationModalOpen(true); setHasUnreadNotifications(false); }}
+                        className="relative p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition border border-slate-700/50 group"
+                      >
+                        <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                        {hasUnreadNotifications && (
+                          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-slate-800 animate-pulse"></span>
+                        )}
+                      </button>
                       <button onClick={() => setCurrentUser(null)} className="text-[10px] bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition px-2 py-1 rounded flex items-center gap-1">
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                         Logout
@@ -3428,6 +3687,19 @@
             <MobileNavButton id="dashboard" label="Dashboard" sLabel="ආරම්භය" icon={<IconDashboard />} />
             <MobileNavButton id="income-page" label="Income" sLabel="ආදායම්" icon={<IconIncome />} />
             <MobileNavButton id="expense-page" label="Expense" sLabel="වියදම්" icon={<IconExpense />} />
+            <button
+              onClick={() => { setIsNotificationModalOpen(true); setHasUnreadNotifications(false); }}
+              className={`flex flex-col items-center justify-center flex-1 py-2 rounded-2xl transition-all duration-500 relative group overflow-hidden ${isNotificationModalOpen ? 'text-brand-400 bg-brand-500/10' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+              <div className={`mb-1 relative ${hasUnreadNotifications ? 'animate-bounce' : ''}`}>
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                {hasUnreadNotifications && (
+                  <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border border-slate-900 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
+                )}
+              </div>
+              <span className="text-[10px] uppercase tracking-wider leading-none font-bold">Alerts</span>
+              <span className="text-[8px] mt-1 opacity-60">දැනුම්දීම්</span>
+            </button>
             <div id="btn-profile" className="hidden" onClick={() => setActiveTab('profile')}></div>
             <MobileNavButton id="profile" label="Profile" sLabel="ගිණුම" icon={
               currentUser?.avatar_url 

@@ -12,7 +12,9 @@ const SERVICE_ACCOUNT_EMAIL = Deno.env.get('FIREBASE_CLIENT_EMAIL')!;
 const SERVICE_ACCOUNT_KEY = Deno.env.get('FIREBASE_PRIVATE_KEY')!;
 
 async function getAccessToken() {
-  const privateKey = await importPKCS8(SERVICE_ACCOUNT_KEY.replace(/\\n/g, '\n'), 'RS256');
+  // Clean up the key: remove quotes, replace literal \n with actual newlines
+  const cleanKey = SERVICE_ACCOUNT_KEY.replace(/^"|"$/g, '').replace(/\\n/g, '\n');
+  const privateKey = await importPKCS8(cleanKey, 'RS256');
   const jwt = await new SignJWT({
     iss: SERVICE_ACCOUNT_EMAIL,
     sub: SERVICE_ACCOUNT_EMAIL,
@@ -104,9 +106,20 @@ serve(async (req) => {
       });
     });
 
-    await Promise.all(fcmRequests);
+    const results = await Promise.all(fcmRequests);
 
-    return new Response(JSON.stringify({ success: true, sentCount: tokens.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    // Save notification to DB so ALL users see it in their history panel
+    // user_id = null means it's a global broadcast visible to everyone
+    await supabaseAdmin.from('notifications').insert([{
+      title,
+      body,
+      type: customMessage ? 'custom' : (record?.amount_taken ? 'expense' : 'income'),
+      record_id: record?.id ?? null,
+      user_id: null   // global — visible to all users
+    }]);
+
+    const successCount = results.filter(r => r.ok).length;
+    return new Response(JSON.stringify({ success: true, sentCount: successCount, totalTokens: tokens.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: corsHeaders });
   }
