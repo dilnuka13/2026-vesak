@@ -55,6 +55,11 @@
   <!-- PDF Libraries (jsPDF + autoTable) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <!-- QR Code Generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- TOTP Library -->
+  <script src="https://cdn.jsdelivr.net/npm/otplib@12.0.1/otplib-browser.js"></script>
+
 
   <style>
     /* Glassmorphism utilities */
@@ -130,6 +135,24 @@
 
   <script type="text/babel">
     const { useState, useEffect, useMemo } = React;
+    
+    const getDeviceName = () => {
+      const ua = navigator.userAgent;
+      let os = "Device";
+      if (ua.includes("Win")) os = "Windows";
+      else if (ua.includes("Mac")) os = "MacOS";
+      else if (ua.includes("Linux")) os = "Linux";
+      else if (ua.includes("Android")) os = "Android";
+      else if (ua.includes("like Mac")) os = "iOS";
+      
+      let browser = "Browser";
+      if (ua.includes("Firefox/")) browser = "Firefox";
+      else if (ua.includes("Edg/")) browser = "Edge";
+      else if (ua.includes("Chrome/")) browser = "Chrome";
+      else if (ua.includes("Safari/") && !ua.includes("Chrome")) browser = "Safari";
+      
+      return `${os} (${browser})`.trim();
+    };
 
     // --- SUPABASE INITIALIZATION ---
     const supabaseUrl = 'https://yqpkgybmjdovdnmekpnw.supabase.co';
@@ -220,13 +243,23 @@
       return array;
     };
 
-    const registerFaceId = async (user) => {
+    const registerFaceId = async (user, passkeyName = 'My Device') => {
       try {
         if (!window.PublicKeyCredential) {
           throw new Error("WebAuthn / Face ID is not supported in this browser.");
         }
         if (window.location.protocol === 'file:') {
           throw new Error("Face ID cannot be set up on 'file://'. You must run the app using a local server (localhost) or an HTTPS domain.");
+        }
+
+        // Check if user already has 5 passkeys
+        const { count, error: countError } = await supabase
+          .from('user_passkeys')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+        
+        if (count >= 5) {
+          throw new Error("You can only register up to 5 passkeys. Please remove an existing one first.");
         }
         
         const challenge = generateRandomBuffer(32);
@@ -247,7 +280,7 @@
           },
           pubKeyCredParams: [{alg: -7, type: "public-key"}, {alg: -257, type: "public-key"}],
           authenticatorSelection: {
-            authenticatorAttachment: "platform", // Forces the OS to use Face ID / Fingerprint / Screen Lock
+            authenticatorAttachment: "platform",
             userVerification: "preferred"
           },
           timeout: 60000,
@@ -260,7 +293,11 @@
         
         const rawIdBase64 = btoa(String.fromCharCode.apply(null, new Uint8Array(credential.rawId)));
         
-        const { error } = await supabase.from('app_users').update({ passkey_id: rawIdBase64 }).eq('id', user.id);
+        const { error } = await supabase.from('user_passkeys').insert({ 
+          user_id: user.id, 
+          passkey_id: rawIdBase64,
+          passkey_name: passkeyName 
+        });
         if (error) throw error;
         
         return rawIdBase64;
@@ -270,7 +307,7 @@
       }
     };
 
-    const authenticateWithFaceId = async (passkeyId) => {
+    const authenticateWithFaceId = async (passkeys) => {
       try {
         if (!window.PublicKeyCredential) {
           throw new Error("WebAuthn / Face ID is not supported.");
@@ -278,21 +315,27 @@
         if (window.location.protocol === 'file:') {
           throw new Error("Face ID cannot be used on 'file://'. You must run the app using a local server (localhost) or an HTTPS domain.");
         }
+        if (!passkeys || passkeys.length === 0) {
+          throw new Error("No passkeys registered for this account.");
+        }
         
         const challenge = generateRandomBuffer(32);
-        const binaryString = atob(passkeyId);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
+        const allowCredentials = passkeys.map(pk => {
+          const binaryString = atob(pk.passkey_id);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          return {
+            id: bytes,
+            type: 'public-key',
+            transports: ['internal']
+          };
+        });
         
         const publicKeyCredentialRequestOptions = {
           challenge,
-          allowCredentials: [{
-            id: bytes,
-            type: 'public-key',
-            transports: ['internal'] // Specifies internal platform authenticators
-          }],
+          allowCredentials: allowCredentials,
           userVerification: "preferred",
           timeout: 60000
         };
@@ -307,6 +350,21 @@
         throw err;
       }
     };
+
+    // --- 2FA UTILS ---
+    if (window.otplib) {
+      window.otplib.authenticator.options = { window: 1 };
+    }
+    const verifyTOTP = (secret, token) => {
+      try {
+        // Use otplib from CDN
+        return window.otplib.authenticator.check(token, secret);
+      } catch (err) {
+        console.error('TOTP verification error:', err);
+        return false;
+      }
+    };
+
 
     // --- UTILS ---
     const formatCurrency = (amount) => {
@@ -590,9 +648,9 @@
       );
     };
 
-    function DashboardCard({ title, sTitle, amount, icon, isExpense, delay = 'delay-100' }) {
+    function DashboardCard({ title, sTitle, amount, icon, isExpense, delay = 'delay-100', onClick }) {
       return (
-        <div className={`glass-card rounded-3xl p-6 transition-all transform hover:-translate-y-2 duration-500 relative overflow-hidden group animate-fade-in ${delay} ${isExpense ? 'hover:shadow-[0_10px_30px_rgba(239,68,68,0.2)] hover:border-red-500/30' : 'hover:shadow-[0_10px_30px_rgba(34,197,94,0.2)] hover:border-brand-500/30'}`}>
+        <div onClick={onClick} className={`glass-card rounded-3xl p-6 transition-all transform hover:-translate-y-2 duration-500 relative overflow-hidden group animate-fade-in cursor-pointer ${delay} ${isExpense ? 'hover:shadow-[0_10px_30px_rgba(239,68,68,0.2)] hover:border-red-500/30' : 'hover:shadow-[0_10px_30px_rgba(34,197,94,0.2)] hover:border-brand-500/30'}`}>
           <div className={`absolute top-0 right-0 -mr-8 -mt-8 w-40 h-40 rounded-full blur-[50px] transition-opacity duration-500 ${isExpense ? 'bg-red-500/20 group-hover:bg-red-500/30' : 'bg-brand-500/20 group-hover:bg-brand-500/30'}`}></div>
           <div className="flex items-start justify-between mb-6 relative z-10">
             <h3 className="font-medium uppercase flex flex-col gap-1">
@@ -1021,12 +1079,166 @@
         </div>
       );
     }
+    function TwoFactorSetup({ user, onComplete, onCancel }) {
+      const [step, setStep] = useState(1);
+      const [secret, setSecret] = useState('');
+      const [qrCodeData, setQrCodeData] = useState('');
+      const [token, setToken] = useState('');
+      const [error, setError] = useState('');
+      const [loading, setLoading] = useState(false);
+
+      useEffect(() => {
+        if (step === 1) {
+          const newSecret = window.otplib.authenticator.generateSecret();
+          setSecret(newSecret);
+          const otpauth = window.otplib.authenticator.keyuri(user.username, 'Vesak System', newSecret);
+          setQrCodeData(otpauth);
+        }
+      }, [step]);
+
+      useEffect(() => {
+        if (qrCodeData && document.getElementById('2fa-qrcode')) {
+          document.getElementById('2fa-qrcode').innerHTML = "";
+          new QRCode(document.getElementById('2fa-qrcode'), {
+            text: qrCodeData,
+            width: 200,
+            height: 200,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+          });
+        }
+      }, [qrCodeData]);
+
+      const handleVerifyAndSave = async () => {
+        setLoading(true);
+        setError('');
+        try {
+          const isValid = window.otplib.authenticator.check(token, secret);
+          if (!isValid) {
+            throw new Error("Invalid code. Please try again.");
+          }
+
+          const { error: updateErr } = await supabase
+            .from('app_users')
+            .update({ 
+              two_factor_enabled: true, 
+              two_factor_secret: secret 
+            })
+            .eq('id', user.id);
+          
+          if (updateErr) throw updateErr;
+
+          onComplete(secret);
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+          <div className="glass p-8 rounded-3xl max-w-sm w-full text-center border border-brand-500/30">
+            <h3 className="text-2xl font-bold text-white mb-2">Set Up 2FA</h3>
+            <p className="text-sm text-slate-400 mb-6">පද්ධතියට ඇතුල් වීමට අමතර ආරක්ෂාවක් එක් කරන්න.</p>
+
+            {step === 1 && (
+              <div className="animate-fade-in">
+                <div className="bg-white p-4 rounded-2xl inline-block mb-6 shadow-[0_0_20px_rgba(255,255,255,0.1)]" id="2fa-qrcode"></div>
+                <p className="text-xs text-slate-300 mb-4">Scan this QR code with Google Authenticator or any TOTP app.</p>
+                <div className="bg-slate-900 p-3 rounded-xl border border-slate-700 mb-6 text-xs font-mono text-brand-400 break-all select-all">
+                  {secret}
+                </div>
+                <button onClick={() => setStep(2)} className="w-full bg-brand-600 hover:bg-brand-500 text-white font-bold py-3.5 rounded-xl transition">
+                  Next / ඉදිරියට
+                </button>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="animate-fade-in">
+                <p className="text-xs text-slate-300 mb-4">Enter the 6-digit code from your app to verify.</p>
+                <input 
+                  type="text" 
+                  maxLength="6"
+                  placeholder="000000"
+                  value={token}
+                  onChange={(e) => setToken(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 text-white text-center text-2xl font-bold tracking-[0.5em] rounded-xl p-4 mb-4 outline-none focus:border-brand-500"
+                />
+                {error && <p className="text-red-400 text-xs mb-4">{error}</p>}
+                <button 
+                  onClick={handleVerifyAndSave} 
+                  disabled={loading || token.length !== 6}
+                  className="w-full bg-brand-600 hover:bg-brand-500 text-white font-bold py-3.5 rounded-xl transition disabled:opacity-50"
+                >
+                  {loading ? 'Verifying...' : 'Verify & Enable / තහවුරු කරන්න'}
+                </button>
+                <button onClick={() => setStep(1)} className="mt-4 text-slate-500 text-xs hover:text-slate-300">Back / ආපසු</button>
+              </div>
+            )}
+            
+            <button onClick={onCancel} className="mt-8 text-slate-500 text-xs hover:text-slate-300 block w-full">Cancel / අවලංගු කරන්න</button>
+          </div>
+        </div>
+      );
+    }
+
+    function TwoFactorVerify({ secret, onVerify, onCancel }) {
+      const [token, setToken] = useState('');
+      const [error, setError] = useState('');
+
+      const handleVerify = () => {
+        const isValid = window.otplib.authenticator.check(token, secret);
+        if (isValid) {
+          onVerify();
+        } else {
+          setError("Invalid code. Please try again.");
+        }
+      };
+
+      return (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+          <div className="glass p-8 rounded-3xl max-w-sm w-full text-center border border-brand-500/30">
+            <div className="w-16 h-16 mx-auto bg-brand-500/10 text-brand-400 rounded-2xl flex items-center justify-center mb-6">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-2">2FA Verification</h3>
+            <p className="text-sm text-slate-400 mb-8">Enter the code from your authenticator app.</p>
+            
+            <input 
+              type="text" 
+              maxLength="6"
+              placeholder="000000"
+              autoFocus
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              className="w-full bg-slate-900 border border-slate-700 text-white text-center text-3xl font-bold tracking-[0.3em] rounded-xl p-4 mb-4 outline-none focus:border-brand-500"
+            />
+            {error && <p className="text-red-400 text-xs mb-4">{error}</p>}
+            
+            <button 
+              type="button"
+              onClick={handleVerify} 
+              disabled={token.length !== 6}
+              className="w-full bg-brand-600 hover:bg-brand-500 text-white font-bold py-4 rounded-xl transition shadow-[0_0_20px_rgba(34,197,94,0.3)] disabled:opacity-50"
+            >
+              Verify & Login
+            </button>
+            <button type="button" onClick={onCancel} className="mt-6 text-slate-500 text-xs hover:text-slate-300">Cancel / අවලංගු කරන්න</button>
+          </div>
+        </div>
+      );
+    }
 
     function ProfileView({ currentUser, incomes, expenses, userTotalContribution, balanceToPay, users }) {
       const [viewCategory, setViewCategory] = useState(null);
       const [profileData, setProfileData] = useState({ phone_number: currentUser?.phone_number || '', address: currentUser?.address || '' });
       const [savingProfile, setSavingProfile] = useState(false);
       const [isEditingProfile, setIsEditingProfile] = useState(false);
+      const [show2FASetup, setShow2FASetup] = useState(false);
+      const [userPasskeys, setUserPasskeys] = useState([]);
 
       const [sessions, setSessions] = useState([]);
       const [loadingSessions, setLoadingSessions] = useState(true);
@@ -1034,7 +1246,14 @@
       useEffect(() => {
         if(!currentUser) return;
         fetchSessions();
+        fetchUserPasskeys();
       }, [currentUser]);
+
+      const fetchUserPasskeys = async () => {
+        const { data, error } = await supabase.from('user_passkeys').select('*').eq('user_id', currentUser.id);
+        if (!error && data) setUserPasskeys(data);
+      };
+
 
       const fetchSessions = async () => {
          setLoadingSessions(true);
@@ -1171,31 +1390,103 @@
             </div>
 
             <div className="glass p-6 rounded-2xl border border-slate-800 mb-6">
-               <h3 className="text-lg font-semibold text-white mb-4">Security Settings</h3>
-               <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-700/50">
-                  <div className="flex items-center gap-3">
-                     <div className="w-10 h-10 rounded-full bg-brand-500/10 text-brand-400 flex items-center justify-center">
-                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" /></svg>
-                     </div>
-                     <div className="flex flex-col">
-                        <span className="font-semibold text-white">Face ID / Passkey</span>
-                        <span className="text-[10px] text-slate-400">{currentUser.passkey_id ? 'Setup Completed' : 'Not Setup Yet'}</span>
-                     </div>
-                  </div>
-                  <button onClick={async () => {
-                     try {
-                       const newPasskeyId = await registerFaceId(currentUser);
-                       const updatedUser = {...currentUser, passkey_id: newPasskeyId};
-                       localStorage.setItem('vesak_current_user', JSON.stringify(updatedUser));
-                       window.location.reload();
-                     } catch(e) {
-                       alert("Setup failed: " + e.message);
-                     }
-                  }} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-xs font-semibold text-white transition whitespace-nowrap">
-                     {currentUser.passkey_id ? 'Update / වෙනස් කරන්න' : 'Set Up / සකසන්න'}
-                  </button>
+               <div className="flex justify-between items-center mb-4">
+                 <h3 className="text-lg font-semibold text-white">Security & Devices</h3>
+                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">ආරක්ෂක සැකසුම්</span>
                </div>
+
+               <div className="space-y-4">
+                  {/* Multiple Passkeys Section */}
+                  <div className="flex flex-col gap-3 p-4 bg-slate-900/50 rounded-xl border border-slate-700/50">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                         <div className="w-10 h-10 rounded-full bg-brand-500/10 text-brand-400 flex items-center justify-center">
+                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" /></svg>
+                         </div>
+                         <div className="flex flex-col">
+                            <span className="font-semibold text-white">Passkeys (Face ID / Fingerprint)</span>
+                            <span className="text-[10px] text-slate-400">Registered devices: {userPasskeys.length} / 5</span>
+                         </div>
+                      </div>
+                      {userPasskeys.length < 5 && (
+                        <button onClick={async () => {
+                           const deviceName = getDeviceName();
+                           try {
+                             await registerFaceId(currentUser, deviceName);
+                             fetchUserPasskeys();
+                           } catch(e) { alert("Setup failed: " + e.message); }
+                        }} className="px-3 py-1.5 bg-brand-600/20 text-brand-400 border border-brand-500/30 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-brand-600/30 transition">
+                           Add New
+                        </button>
+                      )}
+                    </div>
+                    
+                    {userPasskeys.length > 0 && (
+                      <div className="mt-2 space-y-2">
+                        {userPasskeys.map(pk => (
+                          <div key={pk.id} className="flex items-center justify-between bg-slate-800/50 p-2 px-3 rounded-lg border border-slate-700/50">
+                            <div className="flex items-center gap-2">
+                              <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                              <span className="text-xs text-slate-200">{pk.passkey_name}</span>
+                            </div>
+                            <button onClick={async () => {
+                              if(!confirm("Remove this passkey?")) return;
+                              await supabase.from('user_passkeys').delete().eq('id', pk.id);
+                              fetchUserPasskeys();
+                            }} className="text-slate-500 hover:text-red-400 transition p-1">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 2FA Section */}
+                  <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-700/50">
+                    <div className="flex items-center gap-3">
+                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${currentUser.two_factor_enabled ? 'bg-brand-500/10 text-brand-400' : 'bg-slate-800 text-slate-500'}`}>
+                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                       </div>
+                       <div className="flex flex-col">
+                          <span className="font-semibold text-white">2-Factor Authentication (2FA)</span>
+                          <span className="text-[10px] text-slate-400">{currentUser.two_factor_enabled ? 'Enabled' : 'Disabled'}</span>
+                       </div>
+                    </div>
+                    {currentUser.two_factor_enabled ? (
+                      <button onClick={async () => {
+                        if (!confirm("Disable 2FA? This will reduce your account security.")) return;
+                        const { error } = await supabase.from('app_users').update({ two_factor_enabled: false, two_factor_secret: null }).eq('id', currentUser.id);
+                        if (!error) {
+                          const updated = {...currentUser, two_factor_enabled: false, two_factor_secret: null};
+                          localStorage.setItem('vesak_current_user', JSON.stringify(updated));
+                          window.location.reload();
+                        }
+                      }} className="px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg text-xs font-semibold hover:bg-red-500/20 transition">
+                        Disable
+                      </button>
+                    ) : (
+                      <button onClick={() => setShow2FASetup(true)} className="px-4 py-2 bg-brand-600/20 text-brand-400 border border-brand-500/30 rounded-lg text-xs font-semibold hover:bg-brand-600/30 transition">
+                        Enable
+                      </button>
+                    )}
+                  </div>
+               </div>
+
+               {show2FASetup && (
+                 <TwoFactorSetup 
+                   user={currentUser} 
+                   onComplete={(secret) => {
+                     const updated = {...currentUser, two_factor_enabled: true, two_factor_secret: secret};
+                     localStorage.setItem('vesak_current_user', JSON.stringify(updated));
+                     setShow2FASetup(false);
+                     alert("2FA Enabled Successfully!");
+                   }}
+                   onCancel={() => setShow2FASetup(false)}
+                 />
+               )}
             </div>
+
 
             <div className="glass p-6 rounded-2xl border border-slate-800 mb-6">
                <div className="flex justify-between items-center mb-4">
@@ -1403,6 +1694,8 @@
     }
 
     function DashboardView({ incomes, expenses, setActiveTab, currentUser, userTotalContribution, balanceToPay, users }) {
+      const [summaryType, setSummaryType] = useState(null); // 'income', 'expense', 'balance', 'goods'
+      const [selectedActivity, setSelectedActivity] = useState(null);
       const totalIncome = useMemo(() => 
         incomes.filter(i => i.status === 'Received Today' && i.donation_type === 'Cash').reduce((sum, item) => sum + Number(item.amount || 0), 0)
       , [incomes]);
@@ -1552,10 +1845,10 @@
           })()}
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-            <DashboardCard title="Total Cash Income" sTitle="මුළු මුදල් ආදායම" amount={totalIncome} icon={<IconTrendingUp />} />
-            <DashboardCard title="Total Expenses" sTitle="මුළු වියදම්" amount={totalExpense} icon={<IconTrendingDown />} isExpense={true} />
-            <DashboardCard title="Current Balance" sTitle="ඉතිරි මුදල" amount={currentBalance} icon={<IconWallet />} />
-            <div className="glass-card rounded-3xl p-6 border border-slate-800/50 hover:border-purple-500/30 transition-all group relative overflow-hidden">
+            <DashboardCard title="Total Cash Income" sTitle="මුළු මුදල් ආදායම" amount={totalIncome} icon={<IconTrendingUp />} onClick={() => setSummaryType('income')} />
+            <DashboardCard title="Total Expenses" sTitle="මුළු වියදම්" amount={totalExpense} icon={<IconTrendingDown />} isExpense={true} onClick={() => setSummaryType('expense')} />
+            <DashboardCard title="Current Balance" sTitle="ඉතිරි මුදල" amount={currentBalance} icon={<IconWallet />} onClick={() => setSummaryType('balance')} />
+            <div onClick={() => setSummaryType('goods')} className="glass-card rounded-3xl p-6 border border-slate-800/50 hover:border-purple-500/30 transition-all group relative overflow-hidden cursor-pointer hover:-translate-y-2 duration-500">
               <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 blur-2xl rounded-full"></div>
               <div className="flex justify-between items-start mb-6 relative z-10">
                 <div className="flex flex-col">
@@ -1641,7 +1934,7 @@
               ) : (
                 <div className="space-y-4 flex-1">
                   {recentActivities.map((act, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-4 rounded-xl bg-slate-800/50 hover:bg-slate-800 transition">
+                    <div key={idx} onClick={() => setSelectedActivity(act)} className="flex items-center justify-between p-4 rounded-xl bg-slate-800/50 hover:bg-slate-800 transition cursor-pointer group">
                       <div className="flex items-center gap-4">
                         <div className={`w-2 h-10 rounded-full shrink-0 ${act.type === 'income' ? (act.status === 'Promised' ? 'bg-yellow-500' : 'bg-brand-500') : 'bg-red-500'}`}></div>
                         <div className="flex flex-col overflow-hidden max-w-[150px] sm:max-w-xs md:max-w-sm">
@@ -1679,6 +1972,154 @@
           </div>
 
           <DailyBarChart incomes={incomes} expenses={expenses} />
+
+          {summaryType && (() => {
+             let data = [];
+             let title = '';
+             let sTitle = '';
+             let accentColor = 'brand';
+
+             if (summaryType === 'income') {
+               data = incomes.filter(i => i.status === 'Received Today' && i.donation_type === 'Cash').map(i => ({...i, displayAmount: `Rs. ${Math.round(i.amount).toLocaleString()}`, type: 'income'}));
+               title = 'Cash Income Summary';
+               sTitle = 'මුදල් ආදායම් සාරාංශය';
+               accentColor = 'brand';
+             } else if (summaryType === 'expense') {
+               data = expenses.map(e => ({...e, name: e.reason, displayAmount: `Rs. ${Math.round(e.amount_taken).toLocaleString()}`, type: 'expense'}));
+               title = 'Expense Summary';
+               sTitle = 'වියදම් සාරාංශය';
+               accentColor = 'red';
+             } else if (summaryType === 'goods') {
+               data = incomes.filter(i => i.status === 'Received Today' && i.donation_type === 'Goods').map(i => ({...i, displayAmount: `${i.item_description} (x${i.quantity})`, type: 'goods'}));
+               title = 'Goods Contribution Summary';
+               sTitle = 'ද්‍රව්‍ය ආධාර සාරාංශය';
+               accentColor = 'purple';
+             } else if (summaryType === 'balance') {
+               const inc = incomes.filter(i => i.status === 'Received Today' && i.donation_type === 'Cash').map(i => ({...i, displayAmount: `+ Rs. ${Math.round(i.amount).toLocaleString()}`, type: 'income'}));
+               const exp = expenses.map(e => ({...e, name: e.reason, displayAmount: `- Rs. ${Math.round(e.amount_taken).toLocaleString()}`, type: 'expense'}));
+               data = [...inc, ...exp].sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date)).slice(0, 20);
+               title = 'Current Balance Details';
+               sTitle = 'වත්මන් ශේෂ විස්තර';
+               accentColor = 'blue';
+             }
+
+             const colorClasses = {
+               brand: 'text-brand-400 border-brand-500/30',
+               red: 'text-red-400 border-red-500/30',
+               purple: 'text-purple-400 border-purple-500/30',
+               blue: 'text-blue-400 border-blue-500/30'
+             };
+
+             return (
+               <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in" onClick={() => setSummaryType(null)}>
+                 <div className={`glass p-6 rounded-[2rem] max-w-2xl w-full border ${colorClasses[accentColor]} max-h-[85vh] flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.5)]`} onClick={e => e.stopPropagation()}>
+                    <div className="flex justify-between items-center mb-6">
+                      <div className="flex flex-col">
+                        <h3 className="text-xl font-bold text-white tracking-tight">{title}</h3>
+                        <p className="text-xs text-slate-400 mt-0.5">{sTitle}</p>
+                      </div>
+                      <button onClick={() => setSummaryType(null)} className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-800/50 text-slate-400 hover:text-white transition-all">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+
+                    <div className="overflow-y-auto flex-1 custom-scrollbar pr-2 space-y-3">
+                       {data.length === 0 ? (
+                         <div className="text-center py-12 text-slate-500 font-medium">No records found. / වාර්තා කිසිවක් නැත.</div>
+                       ) : (
+                         data.map((item, idx) => (
+                           <div key={idx} className="bg-slate-900/40 p-4 rounded-2xl border border-slate-800/50 flex justify-between items-center group hover:bg-slate-800/50 transition-colors">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${item.type === 'income' ? 'bg-brand-500/10 text-brand-400' : item.type === 'expense' ? 'bg-red-500/10 text-red-400' : 'bg-purple-500/10 text-purple-400'}`}>
+                                  {item.type === 'income' ? <IconTrendingUp className="w-5 h-5" /> : item.type === 'expense' ? <IconTrendingDown className="w-5 h-5" /> : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>}
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="font-bold text-white text-sm group-hover:text-brand-400 transition-colors">{item.name}</span>
+                                  <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{formatDate(item.date)} {item.reported_by && `• By ${item.reported_by}`}</span>
+                                </div>
+                              </div>
+                              <div className={`font-black text-sm tracking-tight ${item.type === 'income' ? 'text-brand-400' : item.type === 'expense' ? 'text-red-400' : 'text-purple-400'}`}>
+                                {item.displayAmount}
+                              </div>
+                           </div>
+                         ))
+                       )}
+                    </div>
+                    
+                    <div className="mt-6 pt-4 border-t border-slate-800 flex justify-between items-center">
+                       <div className="text-xs text-slate-500 font-medium">Showing {data.length} records</div>
+                       <button onClick={() => setSummaryType(null)} className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold transition-all active:scale-95">Close / වසන්න</button>
+                    </div>
+                 </div>
+               </div>
+             );
+          })()}
+
+          {selectedActivity && (() => {
+             const act = selectedActivity;
+             const isIncome = act.type === 'income';
+             const title = isIncome ? 'Income Details' : 'Expense Details';
+             const sTitle = isIncome ? 'ආදායම් විස්තර' : 'වියදම් විස්තර';
+             const accentColor = isIncome ? (act.status === 'Promised' ? 'text-yellow-400' : 'text-brand-400') : 'text-red-400';
+             
+             const details = isIncome ? [
+               { label: 'Donor Name (නම)', value: act.name },
+               { label: 'Date (දිනය)', value: formatDate(act.date) },
+               { label: 'Donation Type (වර්ගය)', value: act.donation_type },
+               { label: 'Details (විස්තර)', value: act.donation_type === 'Cash' ? formatCurrency(act.amount) : `${act.item_description} (x${act.quantity})` },
+               { label: 'Reported By (වාර්තා කළේ)', value: act.reported_by },
+               { label: 'Status (තත්ත්වය)', value: act.status }
+             ] : [
+               { label: 'Reason (හේතුව)', value: act.reason },
+               { label: 'Date (දිනය)', value: formatDate(act.date) },
+               { label: 'Time (වේලාව)', value: act.time || 'N/A' },
+               { label: 'Amount (මුදල)', value: formatCurrency(act.amount_taken) },
+               { label: 'Recorded By (වාර්තා කළේ)', value: act.withdrawer_name }
+             ];
+
+             return (
+               <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in" onClick={() => setSelectedActivity(null)}>
+                 <div className="glass p-8 rounded-[2.5rem] max-w-sm w-full border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.8)] relative overflow-hidden" onClick={e => e.stopPropagation()}>
+                    <div className={`absolute top-0 left-0 w-full h-1.5 ${isIncome ? (act.status === 'Promised' ? 'bg-yellow-500' : 'bg-brand-500') : 'bg-red-500'}`}></div>
+                    
+                    <button onClick={() => setSelectedActivity(null)} className="absolute top-6 right-6 text-slate-400 hover:text-white bg-slate-800/50 w-8 h-8 flex items-center justify-center rounded-full transition">&times;</button>
+                    
+                    <div className="mb-6">
+                      <h3 className="text-xl font-black text-white tracking-tight">{title}</h3>
+                      <p className={`text-xs font-bold uppercase tracking-widest mt-1 ${accentColor}`}>{sTitle}</p>
+                    </div>
+
+                    <div className="space-y-4">
+                      {details.map((d, i) => (
+                        <div key={i} className="flex flex-col gap-1 border-b border-slate-800/50 pb-3 last:border-0">
+                          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{d.label}</span>
+                          <span className="text-sm text-slate-200 font-semibold">{d.value || '-'}</span>
+                        </div>
+                      ))}
+                      
+                      {!isIncome && act.receipt_url && (
+                        <div className="pt-2">
+                           <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest block mb-2">Receipt (බිල්පත)</span>
+                           <div className="rounded-xl overflow-hidden border border-slate-700 bg-slate-900 aspect-video relative group cursor-pointer" onClick={() => {
+                             const w = window.open("");
+                             w.document.write(`<img src="${act.receipt_url}" style="max-width:100%; height:auto;" />`);
+                           }}>
+                              <img src={act.receipt_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                 <span className="text-xs text-white font-bold bg-black/60 px-3 py-1.5 rounded-full">View Full Bill</span>
+                              </div>
+                           </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <button onClick={() => setSelectedActivity(null)} className={`mt-8 w-full py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg ${isIncome ? 'bg-brand-600 hover:bg-brand-500' : 'bg-red-600 hover:bg-red-500'} text-white`}>
+                      Got It / හරි
+                    </button>
+                 </div>
+               </div>
+             );
+          })()}
         </div>
       );
     }
@@ -2796,6 +3237,10 @@
       const [confirmPassword, setConfirmPassword] = useState('');
       const [currentUserData, setCurrentUserData] = useState(null);
       const [usePasswordFallback, setUsePasswordFallback] = useState(false);
+      const [show2FAVerify, setShow2FAVerify] = useState(false);
+      const [pendingUser, setPendingUser] = useState(null);
+      const [userPasskeys, setUserPasskeys] = useState([]);
+
 
       useEffect(() => {
         fetchUsers();
@@ -2822,6 +3267,29 @@
         const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,20}$/;
         return regex.test(pass);
       };
+
+      const fetchUserPasskeys = async (userId) => {
+        const { data, error } = await supabase.from('user_passkeys').select('*').eq('user_id', userId);
+        if (!error && data) setUserPasskeys(data);
+        else setUserPasskeys([]);
+      };
+
+      useEffect(() => {
+        if (username) {
+          const user = users.find(u => u.username === username);
+          if (user) fetchUserPasskeys(user.id);
+        }
+      }, [username, users]);
+
+      const processLogin = (user) => {
+        if (user.two_factor_enabled) {
+          setPendingUser(user);
+          setShow2FAVerify(true);
+        } else {
+          onLogin(user);
+        }
+      };
+
 
       const handleLogin = async (e) => {
         e.preventDefault();
@@ -2851,7 +3319,7 @@
             return;
           }
           
-          onLogin(user);
+          processLogin(user);
         } catch (err) {
           setError('Login failed: ' + err.message);
         } finally {
@@ -2859,15 +3327,16 @@
         }
       };
 
+
       const handleFaceIdLogin = async () => {
         const user = users.find(u => u.username === username);
-        if (!user || !user.passkey_id) return;
+        if (!user || userPasskeys.length === 0) return;
         setLoading(true);
         setError('');
         try {
-          const success = await authenticateWithFaceId(user.passkey_id);
+          const success = await authenticateWithFaceId(userPasskeys);
           if (success) {
-            onLogin(user);
+            processLogin(user);
           } else {
             setError("Face ID verification failed.");
             setUsePasswordFallback(true);
@@ -2879,6 +3348,7 @@
           setLoading(false);
         }
       };
+
 
       const handleChangePassword = async (e) => {
         e.preventDefault();
@@ -2939,8 +3409,17 @@
              
              {error && <div className="bg-red-500/20 text-red-300 p-2 text-xs rounded mb-4">{error}</div>}
 
+             {show2FAVerify && pendingUser && (
+               <TwoFactorVerify 
+                 secret={pendingUser.two_factor_secret} 
+                 onVerify={() => onLogin(pendingUser)} 
+                 onCancel={() => setShow2FAVerify(false)} 
+               />
+             )}
+
              {view === 'login' && (
                <form onSubmit={handleLogin} className="space-y-4">
+
                  <div className="flex flex-col gap-4 mb-6">
                    <div className="flex justify-center gap-4">
                      {users.filter(u => !u.username.toLowerCase().includes('isara') && !u.username.toLowerCase().includes('imesh')).map(u => (
@@ -2966,14 +3445,14 @@
                  
                  {username && (() => {
                    const selectedUser = users.find(u => u.username === username);
-                   const hasPasskey = selectedUser && selectedUser.passkey_id;
+                   const hasPasskeys = userPasskeys.length > 0;
 
-                   if (hasPasskey && !usePasswordFallback) {
+                   if (hasPasskeys && !usePasswordFallback) {
                      return (
                        <div className="animate-fade-in space-y-4">
                          <button type="button" onClick={handleFaceIdLogin} disabled={loading} className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold py-3 rounded-xl transition border border-slate-600 disabled:opacity-50">
                            <svg className="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" /></svg>
-                           {loading ? 'Verifying...' : 'Login with Face ID / Fingerprint'}
+                           {loading ? 'Verifying...' : `Login with Passkey (${userPasskeys.length})`}
                          </button>
                          <button type="button" onClick={() => setUsePasswordFallback(true)} className="text-xs text-slate-400 hover:text-slate-300 w-full">
                            Use Password Instead
@@ -3151,15 +3630,6 @@
         const handleFCM = async (e) => {
           const { title, body } = e.detail;
 
-          // Insert into DB so this device's user always sees it in history
-          // (the Edge Function also does a global insert, so we skip duplicates by checking)
-          await supabase.from('notifications').insert([{
-            title: title || 'Vesak System Update',
-            body: body || '',
-            type: 'broadcast',
-            user_id: null   // global
-          }]).then(() => {});   // fire-and-forget, ignore duplicates
-
           setHasUnreadNotifications(true);
           fetchData(); // Refresh notification list
 
@@ -3308,6 +3778,25 @@
         window.touchStartY = null;
       };
 
+      const navigateTabs = (direction) => {
+        const MAIN_TABS = ['dashboard', 'income-page', 'expense-page', 'pledges', 'profile'];
+        // Special case for subpages
+        let currentBase = activeTab;
+        if (['income-list', 'goods-list'].includes(activeTab)) currentBase = 'income-page';
+        if (activeTab === 'expense-list') currentBase = 'expense-page';
+
+        const currentIndex = MAIN_TABS.indexOf(currentBase);
+        if (direction === 'next' && currentIndex < MAIN_TABS.length - 1) {
+          setActiveTab(MAIN_TABS[currentIndex + 1]);
+        } else if (direction === 'prev' && currentIndex > 0) {
+          setActiveTab(MAIN_TABS[currentIndex - 1]);
+        } else if (direction === 'prev' && currentIndex === -1) {
+          // Fallback if somehow stuck
+          setActiveTab('dashboard');
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+
       // Desktop Top Navigation Button
       const NavigationButton = ({ id, label, sLabel, icon }) => (
         <button
@@ -3429,7 +3918,7 @@
                 >
                   Clear All
                 </button>
-                <button onClick={() => { setIsNotificationModalOpen(false); setHasUnreadNotifications(false); }} className="text-slate-400 hover:text-white transition">
+                <button type="button" onClick={() => { setIsNotificationModalOpen(false); setHasUnreadNotifications(false); }} className="text-slate-400 hover:text-white transition">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
@@ -3483,7 +3972,8 @@
                 <p className="text-sm text-slate-400 mb-8 leading-relaxed">ඊලඟ වතාවේ මුරපදය නොමැතිව පහසුවෙන් ලොග් වීමට Face ID හෝ Fingerprint සකසන්න.</p>
                 <button onClick={async () => {
                    try {
-                     const newPasskeyId = await registerFaceId(currentUser);
+                     const deviceName = getDeviceName();
+                     const newPasskeyId = await registerFaceId(currentUser, deviceName);
                      const updatedUser = {...currentUser, passkey_id: newPasskeyId};
                      setCurrentUser(updatedUser);
                      localStorage.setItem('vesak_current_user', JSON.stringify(updatedUser));
@@ -3706,6 +4196,22 @@
               ? <div className={`w-5 h-5 rounded-full overflow-hidden border ${activeTab === 'profile' ? 'border-brand-400' : 'border-slate-500'}`}><img src={currentUser.avatar_url} alt="Profile" className="w-full h-full object-cover" /></div>
               : <IconProfile />
             } />
+          </div>
+
+          {/* Floating Mobile Nav Arrows */}
+          <div className="md:hidden fixed bottom-24 left-0 right-0 pointer-events-none flex justify-between px-4 z-[40]">
+             <button 
+               onClick={() => navigateTabs('prev')}
+               className="w-12 h-12 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/10 text-white flex items-center justify-center shadow-xl pointer-events-auto active:scale-90 transition-transform"
+             >
+               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+             </button>
+             <button 
+               onClick={() => navigateTabs('next')}
+               className="w-12 h-12 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/10 text-white flex items-center justify-center shadow-xl pointer-events-auto active:scale-90 transition-transform"
+             >
+               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+             </button>
           </div>
         </div>
       );
