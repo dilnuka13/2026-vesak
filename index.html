@@ -11,9 +11,9 @@
   <link rel="manifest" href="manifest.json" />
   <title>Vesak Lantern Project - Finance Dashboard</title>
 
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Material Symbols Rounded -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
+  <!-- Google Fonts: Outfit -->
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Tailwind CSS -->
@@ -27,15 +27,35 @@
         extend: {
           colors: {
             brand: {
-              400: '#4ade80', // green-400
-              500: '#22c55e', // green-500
-              600: '#16a34a', // green-600
-              900: '#14532d', // green-900
+              400: '#D2E8FF', // M3 Primary Container (Tonal)
+              500: '#D2E8FF', // M3 Primary
+              600: '#004A77', // M3 On Primary Container
             },
-            dark: {
-              900: '#0f172a', // slate-900
-              950: '#020617'  // slate-950
+            m3: {
+              primary: '#A8C7FF',
+              onPrimary: '#003062',
+              primaryContainer: '#00468B',
+              onPrimaryContainer: '#D6E3FF',
+              secondary: '#BEC6DC',
+              onSecondary: '#283141',
+              secondaryContainer: '#3E4759',
+              onSecondaryContainer: '#DAE2F9',
+              tertiary: '#DDBCE0',
+              onTertiary: '#3F2844',
+              tertiaryContainer: '#573E5C',
+              onTertiaryContainer: '#FAD8FD',
+              surface: '#111318',
+              onSurface: '#E2E2E9',
+              surfaceContainerLowest: '#0C0E13',
+              surfaceContainerLow: '#191C20',
+              surfaceContainer: '#1D2024',
+              surfaceContainerHigh: '#282A2F',
+              surfaceContainerHighest: '#33353A',
+              outline: '#8E9199',
             }
+          },
+          borderRadius: {
+            'm3-xl': '28px',
           }
         }
       }
@@ -55,81 +75,150 @@
   <!-- PDF Libraries (jsPDF + autoTable) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-  <!-- QR Code Generation (Using a more reliable CDN version) -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.1/qrcode.min.js"></script>
-  <!-- TOTP Library -->
-  <script src="https://cdn.jsdelivr.net/npm/otplib@12.0.1/otplib-browser.js"></script>
+  <!-- QR Code Generator (Using api.qrserver.com directly to avoid library issues) -->
+  <!-- TOTP Library Removed (Using Native Web Crypto API) -->
 
 
   <style>
-    /* Glassmorphism utilities */
-    .glass {
-      background: rgba(30, 41, 59, 0.7);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+    :root {
+      --m3-surface: #111318;
+      --m3-on-surface: #E2E2E9;
+      --m3-primary: #A8C7FF;
+      --m3-on-primary: #003062;
+      --m3-primary-container: #00468B;
+      --m3-on-primary-container: #D6E3FF;
+      --m3-secondary-container: #3E4759;
+      --m3-on-secondary-container: #DAE2F9;
+      --m3-surface-container: #1D2024;
+      --m3-surface-container-low: #191C20;
+      --m3-surface-container-high: #282A2F;
+      --m3-surface-container-highest: #33353A;
+      --m3-outline: #8E9199;
     }
-    .neon-text {
-      text-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
-    }
-    .neon-border {
-      box-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
-    }
-    
+
     body {
-      background-color: #020617; /* Tailwind slate-950 */
-      background-image: radial-gradient(circle at 20% 0%, rgba(34, 197, 94, 0.05), transparent 30%),
-                        radial-gradient(circle at 80% 100%, rgba(59, 130, 246, 0.05), transparent 30%);
-      background-attachment: fixed;
-      color: #e2e8f0; /* slate-200 */
+      background-color: var(--m3-surface);
+      color: var(--m3-on-surface);
       font-family: 'Outfit', system-ui, sans-serif;
-      /* Mobile safe areas handling for body scrolling */
-      padding-bottom: env(safe-area-inset-bottom);
-      padding-left: env(safe-area-inset-left);
-      padding-right: env(safe-area-inset-right);
-      touch-action: manipulation; /* Prevents double-tap zoom */
-      -webkit-text-size-adjust: 100%; /* Prevents font scaling in landscape */
-      overscroll-behavior-y: none; /* Prevents pull-to-refresh */
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      overscroll-behavior-y: none;
+      -webkit-text-size-adjust: 100%;
     }
+
+    /* Neural-Flow Background */
+    .neural-flow {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      background: radial-gradient(circle at 50% 50%, #0d1117 0%, #050505 100%);
+      overflow: hidden;
+    }
+    .neural-flow::after {
+      content: '';
+      position: absolute;
+      width: 200%;
+      height: 200%;
+      top: -50%;
+      left: -50%;
+      background-image: 
+        radial-gradient(circle at 20% 30%, rgba(168, 199, 255, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(190, 198, 220, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 50% 20%, rgba(221, 188, 224, 0.04) 0%, transparent 40%);
+      animation: flow 25s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @keyframes flow {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      100% { transform: translate(2%, 2%) rotate(3deg); }
+    }
+
+    /* Glassmorphism 2.0 */
+    .glass-m3 {
+      background: rgba(29, 32, 36, 0.65);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Tonal Palette Surfaces */
+    .surface-container { background: var(--m3-surface-container); }
+    .surface-container-low { background: var(--m3-surface-container-low); }
+    .surface-container-high { background: var(--m3-surface-container-high); }
+
+    /* M3 Typography */
+    .display-large { font-size: 57px; line-height: 64px; font-weight: 800; letter-spacing: -0.25px; }
+    .headline-medium { font-size: 28px; line-height: 36px; font-weight: 700; }
+    .title-medium { font-size: 16px; line-height: 24px; font-weight: 500; letter-spacing: 0.15px; }
+    .label-large { font-size: 14px; line-height: 20px; font-weight: 500; letter-spacing: 0.1px; }
+
+    /* M3 Components */
+    .m3-button {
+      position: relative;
+      overflow: hidden;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      height: 40px;
+      padding: 0 24px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s cubic-bezier(0.05, 0.7, 0.1, 1.0);
+      cursor: pointer;
+    }
+    .m3-button:active { transform: scale(0.95); }
+    .m3-button-filled { background: var(--m3-primary); color: var(--m3-on-primary); }
+    .m3-button-filled:hover { box-shadow: 0 1px 3px rgba(0,0,0,0.3); background: #96B5FF; }
     
-    /* Custom Scrollbar for dark theme */
+    .m3-button-tonal { background: var(--m3-secondary-container); color: var(--m3-on-secondary-container); }
+    .m3-button-tonal:hover { background: #4D576B; }
+
+    .m3-card-elevated {
+      background: var(--m3-surface-container-low);
+      border-radius: 28px;
+      transition: all 0.4s cubic-bezier(0.05, 0.7, 0.1, 1.0);
+    }
+    .m3-card-elevated:hover {
+      background: var(--m3-surface-container-high);
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+    }
+
+    /* Luminous Effect */
+    .luminous {
+      position: relative;
+    }
+    .luminous::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      background: linear-gradient(135deg, rgba(168, 199, 255, 0.4) 0%, transparent 50%);
+      border-radius: inherit;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    /* Custom Scrollbar */
     ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #475569; }
-    
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(15px) scale(0.98); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    .animate-fade-in {
-      animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-    .delay-100 { animation-delay: 100ms; }
-    .delay-200 { animation-delay: 200ms; }
-    
-    /* Advanced Glassmorphism */
-    .glass {
-      background: rgba(15, 23, 42, 0.6);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-    }
-    .glass-card {
-      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-    }
+    ::-webkit-scrollbar-thumb { background: var(--m3-outline); border-radius: 10px; }
+
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    /* Material Symbol helper */
+    .material-symbols-rounded {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
   </style>
 </head>
-<body class="min-h-screen text-slate-200 antialiased overflow-x-hidden selection:bg-brand-500/30 selection:text-brand-300 relative">
-  <!-- Dynamic Background Orbs -->
-  <div class="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
-    <div class="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-brand-500/10 blur-[150px] animate-pulse" style="animation-duration: 8s;"></div>
+<body class="min-h-screen text-slate-200 antialiased overflow-x-hidden selection:bg-m3-primary/30 selection:text-m3-onPrimaryContainer relative">
+  <div class="neural-flow"></div>
     <div class="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-blue-500/10 blur-[150px] animate-pulse" style="animation-duration: 12s;"></div>
   </div>
   
@@ -185,7 +274,11 @@
           }
           
           if (permission === 'granted') {
-            const currentToken = await messaging.getToken({ vapidKey: 'BD7bBsXr1AmUvaNDpjoHXfivdwA9lMNuXCLQHV3XRf2_RhaUZcThK1-583BRRFUnzprE6SyfMt_umreDFHT0TS8' });
+            const registration = await navigator.serviceWorker.ready;
+            const currentToken = await messaging.getToken({ 
+              vapidKey: 'BD7bBsXr1AmUvaNDpjoHXfivdwA9lMNuXCLQHV3XRf2_RhaUZcThK1-583BRRFUnzprE6SyfMt_umreDFHT0TS8',
+              serviceWorkerRegistration: registration
+            });
             if (currentToken) {
               // Always save/update — this keeps the token fresh for the current browser
               await supabase.from('app_users').update({ fcm_token: currentToken }).eq('id', userId);
@@ -200,35 +293,32 @@
 
       // Handle foreground messages (app is open and in focus)
       messaging.onMessage((payload) => {
-         const title = payload.notification?.title || payload.data?.title || 'Notification';
-         const body  = payload.notification?.body  || payload.data?.body  || '';
-         window.dispatchEvent(new CustomEvent('fcm-message', { detail: { title, body } }));
+         // Silently ignored in UI to prevent duplicate toasts, 
+         // since Supabase Realtime Listener already shows the toast.
+         console.log('Foreground Push received:', payload);
       });
     }
 
     // Handle background messages relayed from Service Worker (app open but not focused)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data && event.data.type === 'FCM_MESSAGE') {
-          window.dispatchEvent(new CustomEvent('fcm-message', {
-            detail: { title: event.data.title, body: event.data.body }
-          }));
-        }
-      });
+      // Intentionally empty to prevent duplicate notifications
     }
 
 
     // --- ICONS ---
-    const IconDashboard = () => <svg className="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>;
-    const IconIncome = () => <svg className="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>;
-    const IconExpense = () => <svg className="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>;
-    const IconPledges = () => <svg className="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
-    const IconWallet = () => <svg className="w-6 h-6 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>;
-    const IconTrendingUp = () => <svg className="w-6 h-6 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>;
-    const IconTrendingDown = () => <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" /></svg>;
-    const IconCheck = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>;
-    const IconDownload = () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>;
-    const IconProfile = () => <svg className="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>;
+    const MaterialIcon = ({ name, className = "" }) => (
+      <span className={`material-symbols-rounded ${className}`} style={{ fontSize: 'inherit', display: 'inline-block', verticalAlign: 'middle' }}>{name}</span>
+    );
+    const IconDashboard = () => <MaterialIcon name="dashboard" />;
+    const IconIncome = () => <MaterialIcon name="add" />;
+    const IconExpense = () => <MaterialIcon name="remove" />;
+    const IconPledges = () => <MaterialIcon name="history" />;
+    const IconWallet = () => <MaterialIcon name="account_balance_wallet" />;
+    const IconTrendingUp = () => <MaterialIcon name="trending_up" />;
+    const IconTrendingDown = () => <MaterialIcon name="trending_down" />;
+    const IconCheck = () => <MaterialIcon name="check" />;
+    const IconDownload = () => <MaterialIcon name="download" />;
+    const IconProfile = () => <MaterialIcon name="person" />;
 
     // --- CRYPTO UTILS ---
     const hashPassword = async (password) => {
@@ -368,19 +458,75 @@
       }
     };
 
-    // --- 2FA UTILS ---
-    if (window.otplib) {
-      window.otplib.authenticator.options = { window: 1 };
-    }
-    const verifyTOTP = (secret, token) => {
-      try {
-        // Use otplib from CDN
-        return window.otplib.authenticator.check(token, secret);
-      } catch (err) {
-        console.error('TOTP verification error:', err);
-        return false;
+    // --- 2FA UTILS (Native Web Crypto API) ---
+    const base32chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    
+    function generateBase32Secret(length = 16) {
+      const array = new Uint8Array(length);
+      window.crypto.getRandomValues(array);
+      let secret = "";
+      for (let i = 0; i < length; i++) {
+        secret += base32chars[array[i] % 32];
       }
-    };
+      return secret;
+    }
+
+    function base32ToBuffer(base32) {
+      base32 = base32.toUpperCase().replace(/=+$/, '');
+      const buffer = new ArrayBuffer(Math.ceil((base32.length * 5) / 8));
+      const view = new Uint8Array(buffer);
+      let bits = 0, value = 0, index = 0;
+      for (let i = 0; i < base32.length; i++) {
+        value = (value << 5) | base32chars.indexOf(base32[i]);
+        bits += 5;
+        if (bits >= 8) {
+          view[index++] = (value >>> (bits - 8)) & 255;
+          bits -= 8;
+        }
+      }
+      return buffer;
+    }
+
+    async function generateTOTP(secret, windowOffset = 0) {
+      try {
+        const keyBuffer = base32ToBuffer(secret);
+        const cryptoKey = await window.crypto.subtle.importKey(
+          "raw", keyBuffer, { name: "HMAC", hash: "SHA-1" }, false, ["sign"]
+        );
+
+        const epoch = Math.floor(Date.now() / 1000);
+        const time = Math.floor(epoch / 30) + windowOffset;
+        
+        const timeBuffer = new ArrayBuffer(8);
+        const timeView = new DataView(timeBuffer);
+        timeView.setUint32(4, time, false); // big-endian
+        
+        const signature = await window.crypto.subtle.sign("HMAC", cryptoKey, timeBuffer);
+        const hash = new Uint8Array(signature);
+        
+        const offset = hash[hash.length - 1] & 0xf;
+        const binary =
+          ((hash[offset] & 0x7f) << 24) |
+          ((hash[offset + 1] & 0xff) << 16) |
+          ((hash[offset + 2] & 0xff) << 8) |
+          (hash[offset + 3] & 0xff);
+          
+        const otp = binary % 1000000;
+        return otp.toString().padStart(6, "0");
+      } catch (err) {
+        console.error("TOTP Generation Error:", err);
+        return null;
+      }
+    }
+
+    async function verifyTOTP(secret, token) {
+      if(!secret || !token || token.length !== 6) return false;
+      for (let offset = -1; offset <= 1; offset++) {
+        const generatedToken = await generateTOTP(secret, offset);
+        if (generatedToken === token) return true;
+      }
+      return false;
+    }
 
 
     // --- UTILS ---
@@ -1195,10 +1341,7 @@
       useEffect(() => {
         if (step === 2 && !secret) {
           try {
-            if (!window.otplib) {
-              throw new Error("Security library (otplib) not loaded. Please check your internet connection.");
-            }
-            const newSecret = window.otplib.authenticator.generateSecret();
+            const newSecret = generateBase32Secret();
             setSecret(newSecret);
             // Optimized URI for better app compatibility
             const issuer = 'VesakFinance';
@@ -1211,52 +1354,14 @@
         }
       }, [step, secret, user.username]);
 
-      useEffect(() => {
-        if (qrCodeData && step === 2) {
-          let retryCount = 0;
-          const renderQR = () => {
-            if (qrRef.current) {
-              // Clear previous content
-              qrRef.current.innerHTML = "";
-              try {
-                if (typeof window.QRCode === 'undefined') {
-                  if (retryCount < 10) {
-                    retryCount++;
-                    setTimeout(renderQR, 300);
-                  } else {
-                    setError("QR Code library failed to load.");
-                  }
-                  return;
-                }
-                
-                new window.QRCode(qrRef.current, {
-                  text: qrCodeData,
-                  width: 200,
-                  height: 200,
-                  colorDark: "#020617",
-                  colorLight: "#ffffff",
-                  correctLevel: window.QRCode.CorrectLevel ? window.QRCode.CorrectLevel.H : 1
-                });
-              } catch (err) {
-                console.error("QR Render Error:", err);
-                setError("Failed to render QR code. Please use the manual key below.");
-              }
-            } else {
-              // If ref not ready, retry in a bit
-              setTimeout(renderQR, 100);
-            }
-          };
-          renderQR();
-        }
-      }, [qrCodeData, step]);
-
+      // QR Code rendering handled natively via img tag
       const handleVerifyAndSave = async () => {
         if (token.length !== 6) return;
         setLoading(true);
         setError('');
         try {
           // Check token
-          const isValid = window.otplib.authenticator.check(token, secret);
+          const isValid = await verifyTOTP(secret, token);
           if (!isValid) throw new Error("Invalid code. Please ensure your device time is correct.");
 
           const { error: updateErr } = await supabase
@@ -1335,13 +1440,14 @@
 
                 {step === 2 && (
                   <div className="animate-fade-in flex flex-col items-center">
-                    <div 
-                      ref={qrRef}
-                      className="bg-white p-4 rounded-[2rem] inline-block mb-6 shadow-[0_0_40px_rgba(255,255,255,0.1)] relative overflow-hidden"
-                    >
-                       <div className="w-[200px] h-[200px] bg-slate-100 rounded-xl animate-pulse flex items-center justify-center">
-                         <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Generating QR...</span>
-                       </div>
+                    <div className="bg-white p-4 rounded-[2rem] inline-block mb-6 shadow-[0_0_40px_rgba(255,255,255,0.1)] relative overflow-hidden min-w-[232px] min-h-[232px] flex items-center justify-center">
+                       {qrCodeData ? (
+                         <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCodeData)}`} alt="QR Code" width="200" height="200" className="rounded-xl" />
+                       ) : (
+                         <div className="w-[200px] h-[200px] bg-slate-100 rounded-xl animate-pulse flex items-center justify-center">
+                           <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Generating QR...</span>
+                         </div>
+                       )}
                     </div>
                     <p className="text-xs text-slate-400 mb-4 text-center">Scan this with your Authenticator app</p>
                     <div className="w-full bg-slate-950/50 p-4 rounded-xl border border-white/5 mb-8 flex items-center justify-between group/key">
@@ -1423,7 +1529,7 @@
           // Add a small delay for premium feel
           await new Promise(r => setTimeout(r, 600));
           
-          const isValid = window.otplib.authenticator.check(token, secret);
+          const isValid = await verifyTOTP(secret, token);
           if (isValid) {
             onVerify();
           } else {
@@ -1510,7 +1616,8 @@
       );
     }
 
-    function ProfileView({ currentUser, incomes, expenses, userTotalContribution, balanceToPay, users }) {
+    function ProfileView({ currentUser, incomes, expenses, userTotalContribution, balanceToPay, users, projectSettings, onUpdateAccess }) {
+      const [activeAccessModal, setActiveAccessModal] = useState(null); // 'income', 'expense', 'pending'
       const [viewCategory, setViewCategory] = useState(null);
       const [profileData, setProfileData] = useState({ phone_number: currentUser?.phone_number || '', address: currentUser?.address || '' });
       const [savingProfile, setSavingProfile] = useState(false);
@@ -1632,6 +1739,17 @@
             <span>My Profile & Contributions</span>
             <span className="text-sm text-slate-400 font-normal">මගේ දායකත්ව වාර්තා</span>
           </h2>
+
+          {activeAccessModal && (
+            <SectionAccessModal 
+              type={activeAccessModal} 
+              settings={projectSettings} 
+              onSave={onUpdateAccess} 
+              onClose={() => setActiveAccessModal(null)} 
+              currentUser={currentUser} 
+              users={users}
+            />
+          )}
 
           <div className="glass p-6 rounded-2xl border border-slate-800">
             <div className="flex items-center gap-4 mb-6">
@@ -1862,6 +1980,38 @@
                )}
             </div>
 
+            {currentUser?.role === 'admin' && (
+              <div className="glass p-6 rounded-2xl border border-slate-800 mb-6 animate-fade-in">
+                 <div className="flex justify-between items-center mb-4">
+                   <h3 className="text-lg font-semibold text-white">System Settings</h3>
+                   <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">පද්ධති සැකසුම්</span>
+                 </div>
+                 
+                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <button onClick={() => setActiveAccessModal('income')} className="bg-slate-900/80 hover:bg-slate-800 p-4 rounded-xl border border-slate-700/50 flex flex-col items-center justify-center gap-2 transition group">
+                      <div className="w-10 h-10 rounded-full bg-brand-500/10 text-brand-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                         <IconIncome />
+                      </div>
+                      <span className="text-sm font-semibold text-brand-400">Income Access</span>
+                    </button>
+                    
+                    <button onClick={() => setActiveAccessModal('expense')} className="bg-slate-900/80 hover:bg-slate-800 p-4 rounded-xl border border-slate-700/50 flex flex-col items-center justify-center gap-2 transition group">
+                      <div className="w-10 h-10 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                         <IconExpense />
+                      </div>
+                      <span className="text-sm font-semibold text-red-400">Expense Access</span>
+                    </button>
+
+                    <button onClick={() => setActiveAccessModal('pending')} className="bg-slate-900/80 hover:bg-slate-800 p-4 rounded-xl border border-slate-700/50 flex flex-col items-center justify-center gap-2 transition group">
+                      <div className="w-10 h-10 rounded-full bg-yellow-500/10 text-yellow-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                         <IconPledges />
+                      </div>
+                      <span className="text-sm font-semibold text-yellow-500">Pledges Access</span>
+                    </button>
+                 </div>
+              </div>
+            )}
+
             <h3 className="text-lg font-semibold text-white mb-4 mt-8">My Recorded Data / මා වාර්තා කල දත්ත</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
                <button onClick={() => setViewCategory('income')} className="bg-slate-900/80 hover:bg-slate-800 p-4 rounded-xl border border-slate-700/50 flex flex-col items-center justify-center gap-2 transition">
@@ -1974,7 +2124,6 @@
     }
 
     function DashboardView({ incomes, expenses, setActiveTab, currentUser, userTotalContribution, balanceToPay, users, onViewReceipt, projectSettings, onUpdateAccess, handleTabSwitch }) {
-      const [activeAccessModal, setActiveAccessModal] = useState(null); // 'income', 'expense', 'pending'
       const [summaryType, setSummaryType] = useState(null); // 'income', 'expense', 'balance', 'goods'
       const [selectedActivity, setSelectedActivity] = useState(null);
       const totalIncome = useMemo(() => 
@@ -2004,17 +2153,6 @@
             <span>Overview</span>
             <span className="text-sm text-slate-400 font-normal">සාරාංශය</span>
           </h2>
-          
-          {activeAccessModal && (
-            <SectionAccessModal 
-              type={activeAccessModal} 
-              settings={projectSettings} 
-              onSave={onUpdateAccess} 
-              onClose={() => setActiveAccessModal(null)} 
-              currentUser={currentUser} 
-              users={users}
-            />
-          )}
 
           <VesakCountdown currentUser={currentUser} />
 
@@ -2143,11 +2281,6 @@
               amount={totalIncome} 
               icon={<IconTrendingUp />} 
               onClick={() => setSummaryType('income')} 
-              settingsButton={
-                <button onClick={(e) => { e.stopPropagation(); setActiveAccessModal('income'); }} className="p-1.5 rounded-lg bg-slate-800/80 text-slate-400 hover:text-white transition shadow-sm border border-slate-700/50">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                </button>
-              }
             />
             <DashboardCard 
               title="Total Expenses" 
@@ -2156,11 +2289,6 @@
               icon={<IconTrendingDown />} 
               isExpense={true} 
               onClick={() => setSummaryType('expense')} 
-              settingsButton={
-                <button onClick={(e) => { e.stopPropagation(); setActiveAccessModal('expense'); }} className="p-1.5 rounded-lg bg-slate-800/80 text-slate-400 hover:text-white transition shadow-sm border border-slate-700/50">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                </button>
-              }
             />
             <DashboardCard title="Current Balance" sTitle="ඉතිරි මුදල" amount={currentBalance} icon={<IconWallet />} onClick={() => setSummaryType('balance')} />
             <div onClick={() => setSummaryType('goods')} className="glass-card rounded-3xl p-6 border border-slate-800/50 hover:border-purple-500/30 transition-all group relative overflow-hidden cursor-pointer hover:-translate-y-2 duration-500">
@@ -2213,9 +2341,6 @@
             </button>
 
             <button onClick={() => handleTabSwitch('pledges')} className="glass-card rounded-3xl p-5 flex flex-col items-center justify-center gap-3 hover:bg-slate-800/80 border border-slate-700/30 hover:border-yellow-500/50 transition-all group relative animate-fade-in delay-200">
-              <button onClick={(e) => { e.stopPropagation(); setActiveAccessModal('pending'); }} className="absolute top-4 right-4 z-20 p-1.5 rounded-lg bg-slate-800/80 text-slate-400 hover:text-white transition shadow-sm border border-slate-700/50">
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-              </button>
               <div className="w-14 h-14 rounded-2xl bg-yellow-500/10 text-yellow-500 flex items-center justify-center group-hover:bg-yellow-500 group-hover:text-white transition-all duration-500 shadow-inner group-hover:shadow-[0_0_20px_rgba(234,179,8,0.4)]">
                 <IconPledges />
               </div>
@@ -2352,8 +2477,15 @@
                                   {item.type === 'income' ? <IconTrendingUp className="w-5 h-5" /> : item.type === 'expense' ? <IconTrendingDown className="w-5 h-5" /> : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>}
                                 </div>
                                 <div className="flex flex-col">
-                                  <span className="font-bold text-white text-sm group-hover:text-brand-400 transition-colors">{item.name}</span>
-                                  <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{formatDate(item.date)} {item.reported_by && `• By ${item.reported_by}`}</span>
+                                  <span className="font-bold text-white text-sm group-hover:text-brand-400 transition-colors"><ReporterBadge name={item.name} users={users} showFullName={true} /></span>
+                                  <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider flex items-center gap-1 mt-1">
+                                    {formatDate(item.date)} 
+                                    {item.reported_by && (
+                                      <>
+                                        <span className="mx-1 text-slate-700">•</span> By <ReporterBadge name={item.reported_by} users={users} />
+                                      </>
+                                    )}
+                                  </span>
                                 </div>
                               </div>
                               <div className={`font-black text-sm tracking-tight ${item.type === 'income' ? 'text-brand-400' : item.type === 'expense' ? 'text-red-400' : 'text-purple-400'}`}>
@@ -2381,18 +2513,18 @@
              const accentColor = isIncome ? (act.status === 'Promised' ? 'text-yellow-400' : 'text-brand-400') : 'text-red-400';
              
              const details = isIncome ? [
-               { label: 'Donor Name (නම)', value: act.name },
+               { label: 'Donor Name (නම)', value: <div className="mt-1 inline-block"><ReporterBadge name={act.name} users={users} showFullName={true} /></div> },
                { label: 'Date (දිනය)', value: formatDate(act.date) },
                { label: 'Donation Type (වර්ගය)', value: act.donation_type },
                { label: 'Details (විස්තර)', value: act.donation_type === 'Cash' ? formatCurrency(act.amount) : `${act.item_description} (x${act.quantity})` },
-               { label: 'Reported By (වාර්තා කළේ)', value: act.reported_by },
+               { label: 'Reported By (වාර්තා කළේ)', value: <div className="mt-1 inline-block"><ReporterBadge name={act.reported_by} users={users} showFullName={true} /></div> },
                { label: 'Status (තත්ත්වය)', value: act.status }
              ] : [
                { label: 'Reason (හේතුව)', value: act.reason },
                { label: 'Date (දිනය)', value: formatDate(act.date) },
                { label: 'Time (වේලාව)', value: act.time || 'N/A' },
                { label: 'Amount (මුදල)', value: formatCurrency(act.amount_taken) },
-               { label: 'Recorded By (වාර්තා කළේ)', value: act.withdrawer_name }
+               { label: 'Recorded By (වාර්තා කළේ)', value: <div className="mt-1 inline-block"><ReporterBadge name={act.withdrawer_name} users={users} showFullName={true} /></div> }
              ];
 
              return (
@@ -3073,8 +3205,7 @@
                  <div className="flex flex-col gap-1.5 mb-4">
                    <label className="text-sm font-medium text-slate-300">Recorded By / වාර්තා කළේ</label>
                    <div className="bg-slate-900 border border-slate-700 text-slate-400 text-sm rounded-lg p-2.5 outline-none font-semibold flex items-center gap-2">
-                     <svg className="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                     {currentUser.username}
+                     <ReporterBadge name={currentUser.username} users={users} showFullName={true} />
                    </div>
                  </div>
 
@@ -3811,24 +3942,25 @@
              {view === 'login' && (
                <form onSubmit={handleLogin} className="space-y-4">
 
-                 <div className="flex flex-col gap-4 mb-6">
-                   <div className="flex justify-center gap-4">
+                 <div className="flex flex-col gap-6 mb-8">
+                   <div className="flex flex-wrap justify-center gap-5">
                      {users.filter(u => !u.username.toLowerCase().includes('isara') && !u.username.toLowerCase().includes('imesh')).map(u => (
-                       <div key={u.id} onClick={() => setUsername(u.username)} className={`flex flex-col items-center cursor-pointer transition-all duration-300 ${username === u.username ? 'scale-110 opacity-100' : 'opacity-50 hover:opacity-100 hover:scale-105'}`}>
-                          <div className={`w-14 h-14 rounded-full overflow-hidden border-2 ${username === u.username ? 'border-brand-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'border-slate-700'}`}>
+                       <div key={u.id} onClick={() => setUsername(u.username)} className={`flex flex-col items-center cursor-pointer transition-all duration-300 ${username === u.username ? 'scale-110 opacity-100' : 'opacity-60 hover:opacity-100 hover:scale-105'}`}>
+                          <div className={`w-14 h-14 rounded-full overflow-hidden border-[3px] ${username === u.username ? 'border-brand-500 shadow-[0_0_15px_rgba(34,197,94,0.6)]' : 'border-slate-800'}`}>
                             <img src={u.avatar_url || 'logo.png'} alt={u.username} className="w-full h-full object-cover" />
                           </div>
-                          <span className="text-[10px] mt-1 text-slate-300 font-medium">{u.username.split(' ')[0]}</span>
+                          <span className="text-[10px] mt-2 text-slate-300 font-bold tracking-wide">{u.username.split(' ')[0]}</span>
                        </div>
                      ))}
                    </div>
-                   <div className="flex justify-center gap-4">
+                   <div className="flex flex-wrap justify-center gap-5 pt-5 border-t border-white/5 relative">
+                     <span className="absolute -top-2 bg-[#0f172a] px-3 text-[8px] font-black tracking-widest uppercase text-brand-400/50 rounded-full">System Admins</span>
                      {users.filter(u => u.username.toLowerCase().includes('isara') || u.username.toLowerCase().includes('imesh')).map(u => (
-                       <div key={u.id} onClick={() => setUsername(u.username)} className={`flex flex-col items-center cursor-pointer transition-all duration-300 ${username === u.username ? 'scale-110 opacity-100' : 'opacity-50 hover:opacity-100 hover:scale-105'}`}>
-                          <div className={`w-14 h-14 rounded-full overflow-hidden border-2 ${username === u.username ? 'border-brand-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'border-slate-700'}`}>
+                       <div key={u.id} onClick={() => setUsername(u.username)} className={`flex flex-col items-center cursor-pointer transition-all duration-300 ${username === u.username ? 'scale-110 opacity-100' : 'opacity-60 hover:opacity-100 hover:scale-105'}`}>
+                          <div className={`w-14 h-14 rounded-full overflow-hidden border-[3px] ${username === u.username ? 'border-brand-500 shadow-[0_0_15px_rgba(34,197,94,0.6)]' : 'border-slate-800'}`}>
                             <img src={u.avatar_url || 'logo.png'} alt={u.username} className="w-full h-full object-cover" />
                           </div>
-                          <span className="text-[10px] mt-1 text-slate-300 font-medium">{u.username.split(' ')[0]}</span>
+                          <span className="text-[10px] mt-2 text-brand-400 font-bold tracking-wide">{u.username.split(' ')[0]}</span>
                        </div>
                      ))}
                    </div>
@@ -3841,11 +3973,11 @@
                    if (hasPasskeys && !usePasswordFallback) {
                      return (
                        <div className="animate-fade-in space-y-4">
-                         <button type="button" onClick={handleFaceIdLogin} disabled={loading} className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold py-3 rounded-xl transition border border-slate-600 disabled:opacity-50">
+                         <button type="button" onClick={handleFaceIdLogin} disabled={loading} className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold py-4 rounded-xl transition border border-slate-600 disabled:opacity-50">
                            <svg className="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" /></svg>
                            {loading ? 'Verifying...' : `Login with Passkey (${userPasskeys.length})`}
                          </button>
-                         <button type="button" onClick={() => setUsePasswordFallback(true)} className="text-xs text-slate-400 hover:text-slate-300 w-full">
+                         <button type="button" onClick={() => setUsePasswordFallback(true)} className="text-xs text-slate-400 hover:text-slate-300 w-full pt-2">
                            Use Password Instead
                          </button>
                        </div>
@@ -3854,16 +3986,16 @@
 
                    return (
                      <div className="animate-fade-in space-y-4">
-                       <input type="password" placeholder={`Password for ${username.split(' ')[0]}`} value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-3 outline-none focus:border-brand-500" required />
-                       <button type="submit" disabled={loading} className="w-full bg-brand-600 hover:bg-brand-500 text-white font-semibold py-3 rounded-xl transition shadow-[0_0_15px_rgba(34,197,94,0.3)] disabled:opacity-50">
-                         {loading ? 'Logging in...' : 'Login'}
+                       <input type="password" placeholder={`Password for ${username.split(' ')[0]}`} value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-4 outline-none focus:border-brand-500 font-medium" required />
+                       <button type="submit" disabled={loading} className="w-full bg-brand-600 hover:bg-brand-500 text-white font-black uppercase tracking-widest text-xs py-4 rounded-xl transition shadow-[0_10px_20px_rgba(34,197,94,0.3)] hover:shadow-[0_15px_30px_rgba(34,197,94,0.4)] hover:-translate-y-0.5 disabled:opacity-50">
+                         {loading ? 'Logging in...' : 'Secure Login'}
                        </button>
                      </div>
                    );
                  })()}
-                 <div className="flex justify-between mt-4">
-                   <button type="button" onClick={() => setView('forgot_password')} className="text-xs text-brand-400 hover:text-brand-300">Forgot Password?</button>
-                   <button type="button" onClick={onShowBalance} className="text-xs text-slate-400 hover:text-slate-300 border-b border-slate-600 pb-0.5">View Current Balance</button>
+                 <div className="flex flex-col items-center gap-3 mt-8 pt-6 border-t border-white/5">
+                   <button type="button" onClick={() => setView('forgot_password')} className="text-xs text-brand-400 font-bold hover:text-brand-300 transition-colors">Forgot Password?</button>
+                   <button type="button" onClick={onShowBalance} className="text-[10px] text-slate-400 hover:text-white transition-colors uppercase tracking-widest">View Current Balance</button>
                  </div>
                </form>
              )}
@@ -4187,23 +4319,9 @@
         window.location.hash = activeTab;
       }, [activeTab]);
 
-      useEffect(() => {
-        const handleFCM = async (e) => {
-          const { title, body } = e.detail;
-
-          setHasUnreadNotifications(true);
-          fetchData(); // Refresh notification list
-
-          showNotification({
-            title: title || 'New Notification',
-            sTitle: 'Vesak System Update',
-            details: body ? [{ label: 'Message', value: body }] : []
-          });
-        };
-        window.addEventListener('fcm-message', handleFCM);
-        return () => window.removeEventListener('fcm-message', handleFCM);
-      }, []);
-
+      // FCM Foreground Handler removed to prevent duplicate toasts.
+      // Notifications are handled by onComplete callbacks and Supabase DB polling.
+      
       // Scheduled Reminders (8 AM & 8 PM)
       useEffect(() => {
         if (!currentUser) return;
@@ -4589,264 +4707,201 @@
       );
 
       return (
-        <div className="flex flex-col min-h-screen pb-20 md:pb-0 relative">
+        <div className="flex flex-col md:flex-row min-h-screen relative overflow-hidden">
+          <div className="neural-flow"></div>
+          
           <NotificationToast show={!!notification} data={notification} onClose={() => setNotification(null)} />
           {isNotificationModalOpen && <NotificationModal />}
           
           {showFaceIdSetup && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
-              <div className="glass p-8 rounded-2xl max-w-sm w-full text-center border border-brand-500/30 shadow-[0_0_40px_rgba(34,197,94,0.15)]">
-                <div className="w-20 h-20 mx-auto bg-brand-500/20 text-brand-400 rounded-full flex items-center justify-center mb-6">
-                  <svg className="w-10 h-10 drop-shadow-[0_0_10px_rgba(34,197,94,0.5)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" /></svg>
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 animate-fade-in">
+              <div className="surface-container p-10 rounded-m3-xl max-w-sm w-full text-center border border-white/5 shadow-2xl luminous">
+                <div className="w-20 h-20 mx-auto bg-m3-primaryContainer text-m3-onPrimaryContainer rounded-2xl flex items-center justify-center mb-8 shadow-lg">
+                  <MaterialIcon name="faceid" className="text-4xl" />
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">Set Up Face ID</h3>
-                <p className="text-sm text-slate-400 mb-8 leading-relaxed">ඊලඟ වතාවේ මුරපදය නොමැතිව පහසුවෙන් ලොග් වීමට Face ID හෝ Fingerprint සකසන්න.</p>
-                <button onClick={async () => {
-                   try {
-                     const deviceName = getDeviceName();
-                     const newPasskeyId = await registerFaceId(currentUser, deviceName);
-                     const updatedUser = {...currentUser, passkey_id: newPasskeyId};
-                     setCurrentUser(updatedUser);
-                     localStorage.setItem('vesak_current_user', JSON.stringify(updatedUser));
-                     setShowFaceIdSetup(false);
-                     showNotification({ type: 'success', title: 'Face ID Setup Successful!', sTitle: 'සාර්ථකව සැකසුනි.' });
-                   } catch(e) {
-                     alert("Setup Failed: " + e.message);
-                   }
-                }} className="w-full bg-brand-600 hover:bg-brand-500 text-white font-bold py-3.5 rounded-xl mb-4 transition shadow-[0_0_15px_rgba(34,197,94,0.3)]">
-                  Set Up Now / සකසන්න
-                </button>
-                <button onClick={() => setShowFaceIdSetup(false)} className="text-slate-400 hover:text-slate-200 text-xs font-medium transition border-b border-transparent hover:border-slate-500 pb-0.5">
-                  Skip for now / පසුවට කල් දමන්න
-                </button>
+                <h3 className="text-2xl font-black text-white mb-2 tracking-tight">Set Up Face ID</h3>
+                <p className="text-sm text-slate-400 mb-8 leading-relaxed px-4">ඊලඟ වතාවේ මුරපදය නොමැතිව පහසුවෙන් පිවිසීමට Face ID හෝ Fingerprint සකසන්න.</p>
+                <div className="flex flex-col gap-3">
+                  <button onClick={async () => {
+                    try {
+                      const deviceName = getDeviceName();
+                      const newPasskeyId = await registerFaceId(currentUser, deviceName);
+                      const updatedUser = {...currentUser, passkey_id: newPasskeyId};
+                      setCurrentUser(updatedUser);
+                      localStorage.setItem('vesak_current_user', JSON.stringify(updatedUser));
+                      setShowFaceIdSetup(false);
+                      showNotification({ type: 'success', title: 'Face ID Setup Successful!', sTitle: 'සාර්ථකව සැකසුනි.' });
+                    } catch(e) {
+                      alert("Setup Failed: " + e.message);
+                    }
+                  }} className="m3-button m3-button-filled h-14 !rounded-2xl w-full shadow-lg font-black uppercase tracking-widest">
+                    Set Up Now / සකසන්න
+                  </button>
+                  <button onClick={() => setShowFaceIdSetup(false)} className="m3-button m3-button-tonal w-full text-xs font-bold uppercase tracking-widest opacity-70">
+                    Skip / පසුවට
+                  </button>
+                </div>
               </div>
             </div>
           )}
-          
-          {/* Top Navigation with Safe Area (env) for Notch / Dynamic Island */}
-          <header className="glass sticky top-0 z-50 border-b border-slate-800 shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-saturate-150" style={{ paddingTop: 'max(env(safe-area-inset-top), 0.75rem)' }}>
-            <div className="absolute inset-0 bg-gradient-to-b from-brand-500/5 to-transparent pointer-events-none"></div>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 pb-2">
-              <div className="flex items-center justify-between h-20 md:h-24">
-                <div className="flex items-center gap-3 md:gap-5">
-                  <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-slate-900/80 backdrop-blur-md flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(34,197,94,0.3)] border border-brand-500/20 overflow-hidden relative group cursor-pointer">
-                    <div className="absolute inset-0 bg-brand-500/20 animate-pulse pointer-events-none"></div>
-                    <img src="logo.png" alt="App Logo" className="w-[75%] h-[75%] object-contain relative z-10 group-hover:scale-110 transition-transform duration-500 drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]" />
-                  </div>
-                  <div className="flex flex-col justify-center">
-                    <h1 className="text-xl md:text-2xl font-extrabold tracking-tight text-white m-0 leading-tight drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">Vesak Lantern Project</h1>
-                    <p className="text-brand-400 text-[11px] md:text-xs font-semibold tracking-wider mt-0.5 drop-shadow-[0_0_5px_rgba(34,197,94,0.5)]">වෙසක් කූඩු ව්‍යාපෘතිය</p>
-                    <p className="text-slate-300 text-[10px] md:text-xs font-medium uppercase tracking-widest mt-1 opacity-80 flex items-center gap-2">
-                      Financial Dashboard <span className="w-1 h-1 rounded-full bg-brand-500"></span> <span className="text-[9px] md:text-[10px] tracking-widest">මූල්‍ය පාලක පුවරුව</span>
-                    </p>
-                  </div>
+
+          {/* M3 Navigation Rail (Desktop) */}
+          <aside className="hidden md:flex flex-col w-20 bg-m3-surfaceContainerLow border-r border-white/5 fixed left-0 top-0 h-screen z-40 items-center py-8 gap-6">
+            <div className="w-12 h-12 bg-m3-primaryContainer rounded-2xl flex items-center justify-center text-m3-onPrimaryContainer shadow-lg mb-4">
+              <img src="logo.png" className="w-8 h-8 object-contain" />
+            </div>
+            
+            <nav className="flex flex-col gap-4 flex-1">
+              {[
+                { id: 'dashboard', icon: 'dashboard', tooltip: 'Dashboard' },
+                { id: 'income-page', icon: 'payments', tooltip: 'Income' },
+                { id: 'expense-page', icon: 'account_balance_wallet', tooltip: 'Expense' },
+                { id: 'pledges', icon: 'history', tooltip: 'Pledges' }
+              ].map(item => (
+                <button 
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`w-14 h-14 flex items-center justify-center rounded-2xl transition-all duration-300 ${activeTab === item.id ? 'bg-m3-secondaryContainer text-m3-onSecondaryContainer' : 'text-m3-onSurface hover:bg-white/5'}`}
+                  title={item.tooltip}
+                >
+                  <MaterialIcon name={item.icon} className={activeTab === item.id ? 'FILL' : ''} />
+                </button>
+              ))}
+            </nav>
+            
+            <button onClick={() => setActiveTab('profile')} className="w-12 h-12 rounded-full overflow-hidden border-2 border-transparent hover:border-m3-primary transition-all duration-300">
+               <img src={currentUser?.avatar_url || 'logo.png'} className="w-full h-full object-cover" />
+            </button>
+          </aside>
+
+          <div className="flex-1 md:ml-20 flex flex-col min-h-screen relative z-10 overflow-x-hidden">
+             {/* Header */}
+             <header className="px-6 py-6 md:px-12 md:py-8 flex justify-between items-center sticky top-0 bg-m3-surface/60 backdrop-blur-xl z-30">
+                <div className="flex items-center gap-4">
+                   <div className="md:hidden w-10 h-10 bg-m3-primaryContainer rounded-xl flex items-center justify-center text-m3-onPrimaryContainer shadow-md">
+                      <img src="logo.png" className="w-6 h-6 object-contain" />
+                   </div>
+                   <div className="flex flex-col">
+                      <h1 className="text-xl md:text-2xl font-black text-white m-0 tracking-tight">Vesak Lantern 2026</h1>
+                      <p className="text-m3-primary text-[10px] md:text-xs font-bold tracking-[0.3em] uppercase opacity-80">Finance Control Center</p>
+                   </div>
                 </div>
                 
-                {currentUser && (
-                  <div className="flex flex-col items-end gap-1">
-                    <div className="text-xs font-medium text-slate-300 flex items-center gap-2">
-                      <div className="flex items-center gap-2 bg-slate-800/50 pr-3 rounded-full border border-slate-700/50 hidden sm:flex">
-                        <label className="relative cursor-pointer group">
-                           <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                             const file = e.target.files[0];
-                             if(!file) return;
-                             const path = `avatars/${currentUser.id}_${Date.now()}.jpg`;
-                             const { error } = await supabase.storage.from('receipts').upload(path, file);
-                             if (!error) {
-                               const { data } = supabase.storage.from('receipts').getPublicUrl(path);
-                               await supabase.from('app_users').update({ avatar_url: data.publicUrl }).eq('id', currentUser.id);
-                               setCurrentUser({...currentUser, avatar_url: data.publicUrl});
-                             }
-                           }} />
-                           <div className="w-7 h-7 rounded-full overflow-hidden bg-slate-700 border border-slate-600">
-                             <img src={currentUser.avatar_url || 'logo.png'} alt="Avatar" className="w-full h-full object-cover group-hover:opacity-50 transition" />
-                           </div>
-                           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition pointer-events-none">
-                             <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                           </div>
-                        </label>
-                        <span className="text-slate-200 font-semibold cursor-pointer hover:text-brand-400 transition" onClick={() => document.getElementById('btn-profile').click()}>{currentUser.username}</span>
-                      </div>
-                      <button 
-                        onClick={() => { setIsNotificationModalOpen(true); setHasUnreadNotifications(false); }}
-                        className="relative p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition border border-slate-700/50 group"
-                      >
-                        <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                        {hasUnreadNotifications && (
-                          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-slate-800 animate-pulse"></span>
-                        )}
-                      </button>
-                      <button onClick={() => setCurrentUser(null)} className="text-[10px] bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition px-2 py-1 rounded flex items-center gap-1">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                        Logout
-                      </button>
-                    </div>
+                <div className="flex items-center gap-2">
+                   <button 
+                     onClick={() => { setIsNotificationModalOpen(true); setHasUnreadNotifications(false); }}
+                     className="relative w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-2xl bg-m3-surfaceContainerHigh text-m3-onSurface hover:bg-white/10 transition-all"
+                   >
+                     <MaterialIcon name="notifications" className={hasUnreadNotifications ? 'animate-bounce' : ''} />
+                     {hasUnreadNotifications && <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-m3-surfaceContainerHigh"></span>}
+                   </button>
+                   
+                   <button onClick={() => setCurrentUser(null)} className="m3-button m3-button-tonal !h-10 md:!h-12 !px-4 md:!px-6 !rounded-2xl">
+                      <MaterialIcon name="logout" className="text-red-400" />
+                      <span className="hidden sm:inline">Logout</span>
+                   </button>
+                </div>
+             </header>
+
+             <main 
+               className="flex-1 px-4 md:px-12 pb-32 md:pb-8"
+               onTouchStart={handleTouchStart}
+               onTouchEnd={handleTouchEnd}
+             >
+                <div className="animate-fade-in max-w-5xl mx-auto">
+                    {activeTab === 'profile' && <ProfileView currentUser={currentUser} incomes={incomes} expenses={expenses} userTotalContribution={userTotalContribution} balanceToPay={balanceToPay} users={users} projectSettings={projectSettings} onUpdateAccess={updateProjectAccess} />}
+                    {activeTab === 'dashboard' && <DashboardView incomes={incomes} expenses={expenses} setActiveTab={setActiveTab} currentUser={currentUser} userTotalContribution={userTotalContribution} balanceToPay={balanceToPay} users={users} projectSettings={projectSettings} onUpdateAccess={updateProjectAccess} handleTabSwitch={handleTabSwitch} />}
                     
-                    {currentUser && currentUser.is_contributor && (
-                      <div className="hidden sm:flex mt-1 bg-slate-900/80 border border-slate-700/50 px-3 py-1.5 rounded-lg flex-col items-end min-w-[140px] shadow-md">
-                         <div className="flex justify-between w-full text-[10px] text-slate-400 mb-0.5 gap-3">
-                           <span>Your Contribution:</span>
-                           <span className="font-bold text-white">Rs. {Math.round(userTotalContribution).toLocaleString()}</span>
-                         </div>
-                         {balanceToPay > 0 ? (
-                           <div className="text-[9px] text-yellow-400 font-medium animate-pulse mt-0.5">
-                             කරුණාකර ඉතිරි මුදල ලබා දෙන්න (Rs. {Math.round(balanceToPay).toLocaleString()})
-                           </div>
-                         ) : balanceToPay < 0 ? (
-                           <div className="flex items-center gap-1 mt-0.5 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 px-2 py-0.5 rounded border border-amber-500/30">
-                             <span className="text-[12px]">🏆</span>
-                             <span className="text-[9px] text-amber-400 font-bold tracking-wide">Top Contributor! Thank You!</span>
-                           </div>
-                         ) : (
-                           <div className="text-[9px] text-brand-400 font-bold mt-0.5">
-                             Target Reached! Thank you! 🎉
-                           </div>
-                         )}
+                    {activeTab === 'income-page' && (
+                      <div className="space-y-8 animate-fade-in">
+                        <IncomeForm currentUser={currentUser} users={users} projectSettings={projectSettings} onComplete={(data) => {
+                          fetchData();
+                          if(data) showNotification({
+                            type: 'success',
+                            title: 'Donation Added successfully!',
+                            sTitle: 'ආධාර වාර්තාව සාර්ථකව එකතු කරන ලදි!',
+                            details: [
+                              { label: 'Name (නම)', value: data.name },
+                              { label: 'Type (වර්ගය)', value: data.donation_type === 'Cash' ? 'Cash (මුදල්)' : 'Goods (ද්‍රව්‍ය)' },
+                              { label: 'Amount/Qty (ප්‍රමාණය)', value: data.donation_type === 'Cash' ? formatCurrency(data.amount) : `${data.item_description} (x${data.quantity})` }
+                            ]
+                          });
+                        }} />
                       </div>
                     )}
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {/* Desktop Navigation */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4 hidden md:block">
-              <nav className="flex flex-wrap gap-2">
-                <NavigationButton id="dashboard" label="Dashboard" sLabel="පාලක පුවරුව" icon={<IconDashboard />} />
-                <NavigationButton id="income-page" label="Income" sLabel="ආදායම්" icon={<IconIncome />} />
-                <NavigationButton id="expense-page" label="Expense" sLabel="වියදම්" icon={<IconExpense />} />
-                <NavigationButton id="pledges" label="Pending Pledges" sLabel="පොරොන්දු" icon={<IconPledges />} />
-              </nav>
-            </div>
-          </header>
 
-          {/* Main Area with Safe Area Bottom Padding to prevent overlapping with bottom bar */}
-          <main 
-            className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 w-full z-10 relative" 
-            style={{ paddingBottom: 'calc(max(env(safe-area-inset-bottom), 1rem) + 6rem)' }}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-          >
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-500/10 blur-[120px] rounded-full pointer-events-none"></div>
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-blue-500/10 blur-[120px] pointer-events-none"></div>
-            
-            <div className="relative z-10 animate-fade-in">
-                {activeTab === 'profile' && <ProfileView currentUser={currentUser} incomes={incomes} expenses={expenses} userTotalContribution={userTotalContribution} balanceToPay={balanceToPay} users={users} />}
-                {activeTab === 'dashboard' && <DashboardView incomes={incomes} expenses={expenses} setActiveTab={setActiveTab} currentUser={currentUser} userTotalContribution={userTotalContribution} balanceToPay={balanceToPay} users={users} projectSettings={projectSettings} onUpdateAccess={updateProjectAccess} handleTabSwitch={handleTabSwitch} />}
+                    {activeTab === 'income-list' && (
+                      <div className="space-y-8 animate-fade-in">
+                        <IncomeList incomes={incomes} users={users} setActiveTab={setActiveTab} />
+                      </div>
+                    )}
+                    
+                    {activeTab === 'goods-list' && (
+                      <div className="space-y-8 animate-fade-in">
+                        <GoodsList incomes={incomes} users={users} setActiveTab={setActiveTab} />
+                      </div>
+                    )}
+                    
+                    {activeTab === 'expense-page' && (
+                      <div className="space-y-8 animate-fade-in">
+                        <ExpenseForm currentUser={currentUser} users={users} projectSettings={projectSettings} onComplete={(data) => {
+                          fetchData();
+                          if(data) showNotification({
+                            type: 'blue',
+                            title: 'Expense Recorded successfully!',
+                            sTitle: 'වියදම් වාර්තාව සාර්ථකව එකතු කරන ලදි!',
+                            details: [
+                              { label: 'Reason (හේතුව)', value: data.reason },
+                              { label: 'Amount (මුදල)', value: formatCurrency(data.amount_taken) },
+                              { label: 'Withdrawer (ලබාගත්තේ)', value: data.withdrawer_name }
+                            ]
+                          });
+                        }} />
+                      </div>
+                    )}
+
+                    {activeTab === 'expense-list' && (
+                      <div className="space-y-8 animate-fade-in">
+                        <ExpenseList expenses={expenses} onRefresh={fetchData} users={users} onViewReceipt={setViewingReceipt} setActiveTab={setActiveTab} />
+                      </div>
+                    )}
+
+                    {activeTab === 'pledges' && <PromisedList incomes={incomes} onRefresh={fetchData} showNotification={showNotification} users={users} setActiveTab={setActiveTab} projectSettings={projectSettings} />}
+                </div>
                 
-                {activeTab === 'income-page' && (
-                  <div className="space-y-8 animate-fade-in">
-                    <IncomeForm currentUser={currentUser} users={users} projectSettings={projectSettings} onComplete={(data) => {
-                      fetchData();
-                      if(data) showNotification({
-                        type: 'success',
-                        title: 'Donation Added successfully!',
-                        sTitle: 'ආධාර වාර්තාව සාර්ථකව එකතු කරන ලදි!',
-                        details: [
-                          { label: 'Name (නම)', value: data.name },
-                          { label: 'Type (වර්ගය)', value: data.donation_type === 'Cash' ? 'Cash (මුදල්)' : 'Goods (ද්‍රව්‍ය)' },
-                          { label: 'Amount/Qty (ප්‍රමාණය)', value: data.donation_type === 'Cash' ? formatCurrency(data.amount) : `${data.item_description} (x${data.quantity})` }
-                        ]
-                      });
-                    }} />
-                  </div>
-                )}
-
-                {activeTab === 'income-list' && (
-                  <div className="space-y-8 animate-fade-in">
-                    <IncomeList incomes={incomes} users={users} setActiveTab={setActiveTab} />
-                  </div>
-                )}
+                {viewingReceipt && <ReceiptModal url={viewingReceipt} onClose={() => setViewingReceipt(null)} />}
                 
-                {activeTab === 'goods-list' && (
-                  <div className="space-y-8 animate-fade-in">
-                    <GoodsList incomes={incomes} users={users} setActiveTab={setActiveTab} />
+                {currentUser?.role === 'admin' && (
+                  <div className="text-center mt-12 mb-8 flex justify-center animate-fade-in">
+                     <a href="admin.html" className="m3-button m3-button-tonal !h-14 !rounded-2xl !px-8 border border-white/5 hover:border-m3-primary/30 shadow-xl group">
+                       <MaterialIcon name="shield" className="text-m3-primary group-hover:scale-110 transition-transform" />
+                       <span className="font-black uppercase tracking-widest text-xs">System Admin Portal</span>
+                       <MaterialIcon name="chevron_right" />
+                     </a>
                   </div>
                 )}
-                
-                {activeTab === 'expense-page' && (
-                  <div className="space-y-8 animate-fade-in">
-                    <ExpenseForm currentUser={currentUser} users={users} projectSettings={projectSettings} onComplete={(data) => {
-                      fetchData();
-                      if(data) showNotification({
-                        type: 'blue',
-                        title: 'Expense Recorded successfully!',
-                        sTitle: 'වියදම් වාර්තාව සාර්ථකව එකතු කරන ලදි!',
-                        details: [
-                          { label: 'Reason (හේතුව)', value: data.reason },
-                          { label: 'Amount (මුදල)', value: formatCurrency(data.amount_taken) },
-                          { label: 'Withdrawer (ලබාගත්තේ)', value: data.withdrawer_name }
-                        ]
-                      });
-                    }} />
-                  </div>
-                )}
+             </main>
 
-                {activeTab === 'expense-list' && (
-                  <div className="space-y-8 animate-fade-in">
-                    <ExpenseList expenses={expenses} onRefresh={fetchData} users={users} onViewReceipt={setViewingReceipt} setActiveTab={setActiveTab} />
-                  </div>
-                )}
-
-                {activeTab === 'pledges' && <PromisedList incomes={incomes} onRefresh={fetchData} showNotification={showNotification} users={users} setActiveTab={setActiveTab} projectSettings={projectSettings} />}
-            </div>
-            
-            {viewingReceipt && <ReceiptModal url={viewingReceipt} onClose={() => setViewingReceipt(null)} />}
-           
-           {currentUser?.role === 'admin' && (
-              <div className="text-center mt-12 mb-8 pb-24 md:pb-8 flex justify-center animate-fade-in delay-200">
-                 <a href="admin.html" className="group relative px-6 py-3 bg-slate-900/40 hover:bg-brand-500/10 rounded-2xl border border-white/5 hover:border-brand-500/30 transition-all duration-500 flex items-center gap-3 overflow-hidden shadow-xl shadow-black/20">
-                   <div className="absolute inset-0 bg-gradient-to-r from-brand-500/0 via-brand-500/5 to-brand-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-                   <div className="w-8 h-8 rounded-xl bg-brand-500/10 flex items-center justify-center text-brand-400 group-hover:scale-110 transition-transform">
-                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                   </div>
-                   <span className="text-xs font-black text-slate-400 group-hover:text-white uppercase tracking-widest transition-colors">System Admin Dashboard</span>
-                   <svg className="w-3.5 h-3.5 text-slate-600 group-hover:text-brand-400 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                 </a>
-              </div>
-            )}
-          </main>
-
-          {/* Mobile Footer Navigation with Bottom Safe Area for iPhone Home Indicator */}
-          <div className="md:hidden fixed bottom-0 left-0 right-0 glass border-t border-slate-800/80 z-50 flex justify-between px-2 pt-2 bg-slate-950/90 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_-10px_40px_rgba(0,0,0,0.6)]" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 1rem)' }}>
-            <MobileNavButton id="dashboard" label="Dashboard" sLabel="ආරම්භය" icon={<IconDashboard />} />
-            <MobileNavButton id="income-page" label="Income" sLabel="ආදායම්" icon={<IconIncome />} />
-            <MobileNavButton id="expense-page" label="Expense" sLabel="වියදම්" icon={<IconExpense />} />
-            <button
-              onClick={() => { setIsNotificationModalOpen(true); setHasUnreadNotifications(false); }}
-              className={`flex flex-col items-center justify-center flex-1 py-2 rounded-2xl transition-all duration-500 relative group overflow-hidden ${isNotificationModalOpen ? 'text-brand-400 bg-brand-500/10' : 'text-slate-400 hover:text-slate-200'}`}
-            >
-              <div className={`mb-1 relative ${hasUnreadNotifications ? 'animate-bounce' : ''}`}>
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                {hasUnreadNotifications && (
-                  <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border border-slate-900 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
-                )}
-              </div>
-              <span className="text-[10px] uppercase tracking-wider leading-none font-bold">Alerts</span>
-              <span className="text-[8px] mt-1 opacity-60">දැනුම්දීම්</span>
-            </button>
-            <div id="btn-profile" className="hidden" onClick={() => setActiveTab('profile')}></div>
-            <MobileNavButton id="profile" label="Profile" sLabel="ගිණුම" icon={
-              currentUser?.avatar_url 
-              ? <div className={`w-5 h-5 rounded-full overflow-hidden border ${activeTab === 'profile' ? 'border-brand-400' : 'border-slate-500'}`}><img src={currentUser.avatar_url} alt="Profile" className="w-full h-full object-cover" /></div>
-              : <IconProfile />
-            } />
-          </div>
-
-          {/* Floating Mobile Nav Arrows */}
-          <div className="md:hidden fixed bottom-24 left-0 right-0 pointer-events-none flex justify-between px-4 z-[40]">
-             <button 
-               onClick={() => navigateTabs('prev')}
-               className="w-12 h-12 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/10 text-white flex items-center justify-center shadow-xl pointer-events-auto active:scale-90 transition-transform"
-             >
-               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
-             </button>
-             <button 
-               onClick={() => navigateTabs('next')}
-               className="w-12 h-12 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/10 text-white flex items-center justify-center shadow-xl pointer-events-auto active:scale-90 transition-transform"
-             >
-               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
-             </button>
+             {/* M3 Navigation Bar (Mobile) */}
+             <footer className="md:hidden fixed bottom-0 left-0 right-0 glass-m3 border-t border-white/5 z-50 flex justify-around items-center px-4 pt-3" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 1.25rem)' }}>
+                {[
+                  { id: 'dashboard', icon: 'dashboard', label: 'Home' },
+                  { id: 'income-page', icon: 'payments', label: 'Income' },
+                  { id: 'expense-page', icon: 'account_balance_wallet', label: 'Expense' },
+                  { id: 'profile', icon: 'person', label: 'Profile' }
+                ].map(item => (
+                  <button 
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className={`flex flex-col items-center gap-1 flex-1 py-1 transition-all duration-300 ${activeTab === item.id ? 'text-m3-primary' : 'text-m3-outline'}`}
+                  >
+                    <div className={`w-12 h-8 rounded-full flex items-center justify-center transition-all ${activeTab === item.id ? 'bg-m3-secondaryContainer text-m3-onSecondaryContainer' : ''}`}>
+                      <MaterialIcon name={item.icon} className={activeTab === item.id ? 'FILL' : ''} />
+                    </div>
+                    <span className="text-[10px] font-bold tracking-wider">{item.label}</span>
+                  </button>
+                ))}
+             </footer>
           </div>
         </div>
       );

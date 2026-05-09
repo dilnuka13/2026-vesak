@@ -13,42 +13,32 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(fetch(event.request).catch(() => new Response('Offline')));
 });
 
-// ── FCM Push Handler ─────────────────────────────────────────────────────────
-self.addEventListener('push', (event) => {
-  let payload = { title: 'Vesak System Update', body: '' };
+importScripts('https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/9.22.2/firebase-messaging-compat.js');
 
-  if (event.data) {
-    try {
-      const json = event.data.json();
-      // FCM wraps in notification object
-      payload.title = json.notification?.title || json.title || payload.title;
-      payload.body  = json.notification?.body  || json.body  || '';
-    } catch (_) {
-      payload.body = event.data.text();
-    }
-  }
+const firebaseConfig = {
+  apiKey: "AIzaSyD6yXDHsOaqVplfhsXZV8nWvMuioDulwYg",
+  authDomain: "edu-login-4d05f.firebaseapp.com",
+  projectId: "edu-login-4d05f",
+  storageBucket: "edu-login-4d05f.firebasestorage.app",
+  messagingSenderId: "197092856272",
+  appId: "1:197092856272:web:444ea56fdc6f248dcca9d5"
+};
 
-  // Relay to all open app tabs so the in-app popup fires
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-      clientList.forEach(client => {
-        client.postMessage({ type: 'FCM_MESSAGE', title: payload.title, body: payload.body });
-      });
+firebase.initializeApp(firebaseConfig);
+const messaging = firebase.messaging();
 
-      // Show OS-level notification only if no focused window is visible
-      const hasFocused = clientList.some(c => c.focused);
-      if (!hasFocused) {
-        return self.registration.showNotification(payload.title, {
-          body: payload.body,
-          icon: '/logo.png',
-          badge: '/logo.png',
-          tag: 'vesak-update',
-          renotify: true,
-          data: { url: '/#dashboard' }
-        });
-      }
-    })
-  );
+// Handle background messages
+messaging.onBackgroundMessage((payload) => {
+  const notificationTitle = payload.notification?.title || "Vesak System Update";
+  const notificationOptions = {
+    body: payload.notification?.body || "New activity detected.",
+    icon: '/logo.png',
+    badge: '/logo.png',
+    data: { url: '/#dashboard' }
+  };
+
+  self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 // When user taps the OS notification, open/focus the app
