@@ -55,8 +55,8 @@
   <!-- PDF Libraries (jsPDF + autoTable) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-  <!-- QR Code Generation -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- QR Code Generation (Using a more reliable CDN version) -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.1/qrcode.min.js"></script>
   <!-- TOTP Library -->
   <script src="https://cdn.jsdelivr.net/npm/otplib@12.0.1/otplib-browser.js"></script>
 
@@ -232,10 +232,25 @@
 
     // --- CRYPTO UTILS ---
     const hashPassword = async (password) => {
-      const msgUint8 = new TextEncoder().encode(password);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      try {
+        if (!window.crypto || !window.crypto.subtle) {
+          // If not in a secure context (HTTPS/localhost), crypto.subtle is unavailable
+          if (window.location.protocol === 'file:') {
+            throw new Error("Security Error: Password hashing requires a Secure Context. Please run the app using a local server (VS Code Live Server) instead of opening the file directly.");
+          }
+          // Simple fallback for non-secure contexts (less secure but allows the app to function for testing)
+          // Note: In production, you MUST use HTTPS.
+          console.warn("Secure context not detected. Using a less secure hashing fallback.");
+          return btoa(password); // Simple fallback for testing only
+        }
+        const msgUint8 = new TextEncoder().encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      } catch (err) {
+        console.error("Hash Error:", err);
+        throw err;
+      }
     };
 
     // --- WEBAUTHN / FACE ID UTILS ---
@@ -650,10 +665,17 @@
       );
     };
 
-    function DashboardCard({ title, sTitle, amount, icon, isExpense, delay = 'delay-100', onClick }) {
+    function DashboardCard({ title, sTitle, amount, icon, isExpense, delay = 'delay-100', onClick, settingsButton }) {
       return (
         <div onClick={onClick} className={`glass-card rounded-3xl p-6 transition-all transform hover:-translate-y-2 duration-500 relative overflow-hidden group animate-fade-in cursor-pointer ${delay} ${isExpense ? 'hover:shadow-[0_10px_30px_rgba(239,68,68,0.2)] hover:border-red-500/30' : 'hover:shadow-[0_10px_30px_rgba(34,197,94,0.2)] hover:border-brand-500/30'}`}>
           <div className={`absolute top-0 right-0 -mr-8 -mt-8 w-40 h-40 rounded-full blur-[50px] transition-opacity duration-500 ${isExpense ? 'bg-red-500/20 group-hover:bg-red-500/30' : 'bg-brand-500/20 group-hover:bg-brand-500/30'}`}></div>
+          
+          {settingsButton && (
+            <div className="absolute top-4 right-4 z-20" onClick={e => e.stopPropagation()}>
+              {settingsButton}
+            </div>
+          )}
+
           <div className="flex items-start justify-between mb-6 relative z-10">
             <h3 className="font-medium uppercase flex flex-col gap-1">
               <span className="text-sm tracking-widest font-bold text-slate-300 group-hover:text-white transition-colors">{title}</span>
@@ -1173,6 +1195,9 @@
       useEffect(() => {
         if (step === 2 && !secret) {
           try {
+            if (!window.otplib) {
+              throw new Error("Security library (otplib) not loaded. Please check your internet connection.");
+            }
             const newSecret = window.otplib.authenticator.generateSecret();
             setSecret(newSecret);
             // Optimized URI for better app compatibility
@@ -1181,27 +1206,40 @@
             const otpauth = `otpauth://totp/${issuer}:${account}?secret=${newSecret}&issuer=${issuer}`;
             setQrCodeData(otpauth);
           } catch (e) {
-            setError("Failed to generate security key.");
+            setError(e.message || "Failed to generate security key.");
           }
         }
       }, [step, secret, user.username]);
 
       useEffect(() => {
         if (qrCodeData && step === 2) {
+          let retryCount = 0;
           const renderQR = () => {
             if (qrRef.current) {
+              // Clear previous content
               qrRef.current.innerHTML = "";
               try {
-                new QRCode(qrRef.current, {
+                if (typeof window.QRCode === 'undefined') {
+                  if (retryCount < 10) {
+                    retryCount++;
+                    setTimeout(renderQR, 300);
+                  } else {
+                    setError("QR Code library failed to load.");
+                  }
+                  return;
+                }
+                
+                new window.QRCode(qrRef.current, {
                   text: qrCodeData,
                   width: 200,
                   height: 200,
                   colorDark: "#020617",
                   colorLight: "#ffffff",
-                  correctLevel: QRCode.CorrectLevel.H
+                  correctLevel: window.QRCode.CorrectLevel ? window.QRCode.CorrectLevel.H : 1
                 });
               } catch (err) {
                 console.error("QR Render Error:", err);
+                setError("Failed to render QR code. Please use the manual key below.");
               }
             } else {
               // If ref not ready, retry in a bit
@@ -1616,17 +1654,19 @@
                 <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-1">Total Contribution</p>
                 <p className="text-2xl font-bold text-brand-400 drop-shadow-[0_0_10px_rgba(34,197,94,0.3)]">Rs. {Math.round(userTotalContribution).toLocaleString()}</p>
               </div>
-              <div className="glass-card p-5 rounded-2xl border border-slate-700/30 flex-1 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 blur-xl rounded-full"></div>
-                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-1">Payment Status</p>
-                {balanceToPay > 0 ? (
-                  <p className="text-lg font-bold text-yellow-400 drop-shadow-[0_0_10px_rgba(234,179,8,0.3)]">Pending: Rs. {Math.round(balanceToPay).toLocaleString()}</p>
-                ) : balanceToPay < 0 ? (
-                  <p className="text-lg font-bold text-amber-500 drop-shadow-[0_0_10px_rgba(245,158,11,0.3)]">Top Contributor 🏆</p>
-                ) : (
-                  <p className="text-lg font-bold text-brand-400 drop-shadow-[0_0_10px_rgba(34,197,94,0.3)]">Target Reached 🎉</p>
-                )}
-              </div>
+              {currentUser?.is_contributor && (
+                <div className="glass-card p-5 rounded-2xl border border-slate-700/30 flex-1 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 blur-xl rounded-full"></div>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-1">Payment Status</p>
+                  {balanceToPay > 0 ? (
+                    <p className="text-lg font-bold text-yellow-400 drop-shadow-[0_0_10px_rgba(234,179,8,0.3)]">Pending: Rs. {Math.round(balanceToPay).toLocaleString()}</p>
+                  ) : balanceToPay < 0 ? (
+                    <p className="text-lg font-bold text-amber-500 drop-shadow-[0_0_10px_rgba(245,158,11,0.3)]">Top Contributor 🏆</p>
+                  ) : (
+                    <p className="text-lg font-bold text-brand-400 drop-shadow-[0_0_10px_rgba(34,197,94,0.3)]">Target Reached 🎉</p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="glass p-6 rounded-2xl border border-slate-800 mb-6">
@@ -1933,7 +1973,8 @@
       );
     }
 
-    function DashboardView({ incomes, expenses, setActiveTab, currentUser, userTotalContribution, balanceToPay, users, onViewReceipt }) {
+    function DashboardView({ incomes, expenses, setActiveTab, currentUser, userTotalContribution, balanceToPay, users, onViewReceipt, projectSettings, onUpdateAccess, handleTabSwitch }) {
+      const [activeAccessModal, setActiveAccessModal] = useState(null); // 'income', 'expense', 'pending'
       const [summaryType, setSummaryType] = useState(null); // 'income', 'expense', 'balance', 'goods'
       const [selectedActivity, setSelectedActivity] = useState(null);
       const totalIncome = useMemo(() => 
@@ -1964,10 +2005,21 @@
             <span className="text-sm text-slate-400 font-normal">සාරාංශය</span>
           </h2>
           
+          {activeAccessModal && (
+            <SectionAccessModal 
+              type={activeAccessModal} 
+              settings={projectSettings} 
+              onSave={onUpdateAccess} 
+              onClose={() => setActiveAccessModal(null)} 
+              currentUser={currentUser} 
+              users={users}
+            />
+          )}
+
           <VesakCountdown currentUser={currentUser} />
 
           {/* Mobile Only - User Contribution Tracker */}
-          {currentUser && (
+          {currentUser && currentUser.is_contributor && (
              <div className="sm:hidden glass-card rounded-3xl p-6 border border-slate-800 shadow-[0_10px_30px_rgba(0,0,0,0.4)] mb-8 relative overflow-hidden group animate-fade-in">
                <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 blur-3xl rounded-full pointer-events-none group-hover:scale-110 transition-transform duration-700"></div>
                <div className="flex justify-between items-center mb-4 relative z-10 cursor-pointer" onClick={() => setActiveTab('profile')}>
@@ -2016,7 +2068,7 @@
 
           {/* Target Goal Tracker */}
           {(() => {
-            const targetGoal = 80000;
+            const targetGoal = projectSettings?.project_financial_goal || 100000;
             const rawPercent = targetGoal > 0 ? (totalIncome / targetGoal) * 100 : 0;
             const progressPercent = Math.min(rawPercent, 100);
             const isSuccess = totalIncome >= targetGoal;
@@ -2085,8 +2137,31 @@
           })()}
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-            <DashboardCard title="Total Cash Income" sTitle="මුළු මුදල් ආදායම" amount={totalIncome} icon={<IconTrendingUp />} onClick={() => setSummaryType('income')} />
-            <DashboardCard title="Total Expenses" sTitle="මුළු වියදම්" amount={totalExpense} icon={<IconTrendingDown />} isExpense={true} onClick={() => setSummaryType('expense')} />
+            <DashboardCard 
+              title="Total Cash Income" 
+              sTitle="මුළු මුදල් ආදායම" 
+              amount={totalIncome} 
+              icon={<IconTrendingUp />} 
+              onClick={() => setSummaryType('income')} 
+              settingsButton={
+                <button onClick={(e) => { e.stopPropagation(); setActiveAccessModal('income'); }} className="p-1.5 rounded-lg bg-slate-800/80 text-slate-400 hover:text-white transition shadow-sm border border-slate-700/50">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                </button>
+              }
+            />
+            <DashboardCard 
+              title="Total Expenses" 
+              sTitle="මුළු වියදම්" 
+              amount={totalExpense} 
+              icon={<IconTrendingDown />} 
+              isExpense={true} 
+              onClick={() => setSummaryType('expense')} 
+              settingsButton={
+                <button onClick={(e) => { e.stopPropagation(); setActiveAccessModal('expense'); }} className="p-1.5 rounded-lg bg-slate-800/80 text-slate-400 hover:text-white transition shadow-sm border border-slate-700/50">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                </button>
+              }
+            />
             <DashboardCard title="Current Balance" sTitle="ඉතිරි මුදල" amount={currentBalance} icon={<IconWallet />} onClick={() => setSummaryType('balance')} />
             <div onClick={() => setSummaryType('goods')} className="glass-card rounded-3xl p-6 border border-slate-800/50 hover:border-purple-500/30 transition-all group relative overflow-hidden cursor-pointer hover:-translate-y-2 duration-500">
               <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 blur-2xl rounded-full"></div>
@@ -2106,8 +2181,8 @@
             </div>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-8">
-            <button onClick={() => { setActiveTab('income-list'); window.scrollTo(0, 0); }} className="glass-card rounded-3xl p-5 flex flex-col items-center justify-center gap-3 hover:bg-slate-800/80 border border-slate-700/30 hover:border-brand-500/50 transition-all group animate-fade-in delay-100">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-8">
+            <button onClick={() => handleTabSwitch('income-list')} className="glass-card rounded-3xl p-5 flex flex-col items-center justify-center gap-3 hover:bg-slate-800/80 border border-slate-700/30 hover:border-brand-500/50 transition-all group animate-fade-in delay-100">
               <div className="w-14 h-14 rounded-2xl bg-brand-500/10 text-brand-400 flex items-center justify-center group-hover:bg-brand-500 group-hover:text-white transition-all duration-500 shadow-inner group-hover:shadow-[0_0_20px_rgba(34,197,94,0.4)]">
                 <IconIncome />
               </div>
@@ -2117,7 +2192,7 @@
               </div>
             </button>
             
-            <button onClick={() => { setActiveTab('expense-list'); window.scrollTo(0, 0); }} className="glass-card rounded-3xl p-5 flex flex-col items-center justify-center gap-3 hover:bg-slate-800/80 border border-slate-700/30 hover:border-red-500/50 transition-all group animate-fade-in delay-200">
+            <button onClick={() => handleTabSwitch('expense-list')} className="glass-card rounded-3xl p-5 flex flex-col items-center justify-center gap-3 hover:bg-slate-800/80 border border-slate-700/30 hover:border-red-500/50 transition-all group animate-fade-in delay-200">
               <div className="w-14 h-14 rounded-2xl bg-red-500/10 text-red-400 flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-all duration-500 shadow-inner group-hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]">
                 <IconExpense />
               </div>
@@ -2127,7 +2202,7 @@
               </div>
             </button>
 
-            <button onClick={() => { setActiveTab('goods-list'); window.scrollTo(0, 0); }} className="glass-card rounded-3xl p-5 flex flex-col items-center justify-center gap-3 hover:bg-slate-800/80 border border-slate-700/30 hover:border-purple-500/50 transition-all group animate-fade-in delay-100">
+            <button onClick={() => handleTabSwitch('goods-list')} className="glass-card rounded-3xl p-5 flex flex-col items-center justify-center gap-3 hover:bg-slate-800/80 border border-slate-700/30 hover:border-purple-500/50 transition-all group animate-fade-in delay-100">
               <div className="w-14 h-14 rounded-2xl bg-purple-500/10 text-purple-400 flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white transition-all duration-500 shadow-inner group-hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
               </div>
@@ -2137,7 +2212,10 @@
               </div>
             </button>
 
-            <button onClick={() => { setActiveTab('pledges'); window.scrollTo(0, 0); }} className="glass-card rounded-3xl p-5 flex flex-col items-center justify-center gap-3 hover:bg-slate-800/80 border border-slate-700/30 hover:border-yellow-500/50 transition-all group relative animate-fade-in delay-200">
+            <button onClick={() => handleTabSwitch('pledges')} className="glass-card rounded-3xl p-5 flex flex-col items-center justify-center gap-3 hover:bg-slate-800/80 border border-slate-700/30 hover:border-yellow-500/50 transition-all group relative animate-fade-in delay-200">
+              <button onClick={(e) => { e.stopPropagation(); setActiveAccessModal('pending'); }} className="absolute top-4 right-4 z-20 p-1.5 rounded-lg bg-slate-800/80 text-slate-400 hover:text-white transition shadow-sm border border-slate-700/50">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+              </button>
               <div className="w-14 h-14 rounded-2xl bg-yellow-500/10 text-yellow-500 flex items-center justify-center group-hover:bg-yellow-500 group-hover:text-white transition-all duration-500 shadow-inner group-hover:shadow-[0_0_20px_rgba(234,179,8,0.4)]">
                 <IconPledges />
               </div>
@@ -2146,7 +2224,7 @@
                 <span className="text-[10px] text-slate-400 group-hover:text-yellow-300 mt-0.5 font-medium">පොරොන්දු ලැයිස්තුව</span>
               </div>
               {incomes.filter(i => i.status === 'Promised').length > 0 && (
-                <span className="absolute top-4 right-4 w-5 h-5 text-[10px] flex items-center justify-center rounded-full bg-yellow-500 text-slate-900 font-black border-2 border-slate-900 shadow-[0_0_15px_rgba(234,179,8,0.6)]">
+                <span className="absolute top-4 right-12 w-5 h-5 text-[10px] flex items-center justify-center rounded-full bg-yellow-500 text-slate-900 font-black border-2 border-slate-900 shadow-[0_0_15px_rgba(234,179,8,0.6)]">
                   {incomes.filter(i => i.status === 'Promised').length}
                 </span>
               )}
@@ -2782,7 +2860,30 @@
       );
     }
 
-    function IncomeForm({ onComplete, currentUser, users }) {
+    function IncomeForm({ onComplete, currentUser, users, projectSettings }) {
+      const hasAccess = useMemo(() => {
+        if (currentUser?.role === 'admin') return true;
+        if (projectSettings?.allow_income_entry === false) return false;
+        const list = projectSettings?.income_access_list;
+        if (list && list.trim() !== '') {
+          return list.split(',').includes(currentUser?.username);
+        }
+        return true;
+      }, [currentUser, projectSettings]);
+
+      if (!hasAccess) {
+        return (
+          <div className="max-w-3xl mx-auto glass rounded-2xl p-12 border border-slate-800 text-center animate-fade-in">
+            <div className="w-20 h-20 bg-red-500/10 text-red-400 rounded-3xl flex items-center justify-center mx-auto mb-8">
+              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-4">Access Restricted</h2>
+            <p className="text-slate-400 leading-relaxed mb-0">මෙම අංශයට දත්ත ඇතුළත් කිරීමට ඔබට අවසර නොමැත.</p>
+            <p className="text-slate-500 text-xs mt-2 italic">Please contact your system administrator for permission.</p>
+          </div>
+        );
+      }
+
       const [step, setStep] = useState(1);
       const totalSteps = 3;
       const [formData, setFormData] = useState({
@@ -3028,7 +3129,30 @@
       );
     }
 
-    function ExpenseForm({ onComplete, currentUser, users }) {
+    function ExpenseForm({ onComplete, currentUser, users, projectSettings }) {
+      const hasAccess = useMemo(() => {
+        if (currentUser?.role === 'admin') return true;
+        if (projectSettings?.allow_expense_entry === false) return false;
+        const list = projectSettings?.expense_access_list;
+        if (list && list.trim() !== '') {
+          return list.split(',').includes(currentUser?.username);
+        }
+        return true;
+      }, [currentUser, projectSettings]);
+
+      if (!hasAccess) {
+        return (
+          <div className="max-w-3xl mx-auto glass rounded-2xl p-12 border border-slate-800 text-center animate-fade-in">
+            <div className="w-20 h-20 bg-red-500/10 text-red-400 rounded-3xl flex items-center justify-center mx-auto mb-8">
+              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-4">Access Restricted</h2>
+            <p className="text-slate-400 leading-relaxed mb-0">මෙම අංශයට දත්ත ඇතුළත් කිරීමට ඔබට අවසර නොමැත.</p>
+            <p className="text-slate-500 text-xs mt-2 italic">Please contact your system administrator for permission.</p>
+          </div>
+        );
+      }
+
       const [step, setStep] = useState(1);
       const [selectedMainWithdrawers, setSelectedMainWithdrawers] = useState([]);
       const [showOtherWithdrawer, setShowOtherWithdrawer] = useState(false);
@@ -3249,12 +3373,26 @@
       );
     }
 
-    function PromisedList({ incomes, onRefresh, showNotification, users, setActiveTab }) {
+    function PromisedList({ incomes, onRefresh, showNotification, users, setActiveTab, projectSettings }) {
       const promised = incomes.filter(i => i.status === 'Promised');
       const totalPromisedCash = promised.filter(i => i.donation_type === 'Cash').reduce((sum, item) => sum + Number(item.amount || 0), 0);
       const [loadingId, setLoadingId] = useState(null);
 
+      const hasAccess = useMemo(() => {
+        if (currentUser?.role === 'admin') return true;
+        if (projectSettings?.allow_pledge_entry === false) return false;
+        const list = projectSettings?.pledge_access_list;
+        if (list && list.trim() !== '') {
+          return list.split(',').includes(currentUser?.username);
+        }
+        return true;
+      }, [currentUser, projectSettings]);
+
       const confirmReceipt = async (id) => {
+        if (!hasAccess) {
+           alert("Unauthorized: You do not have permission to confirm pledges. / ඔබට මෙම ක්‍රියාව කිරීමට අවසර නොමැත.");
+           return;
+        }
         if(!window.confirm("Are you sure you received this donation? This will add it to the total balance.\nමෙම ආධාරය ලැබුණු බව තහවුරු කරනවාද?")) return;
         
         setLoadingId(id);
@@ -3348,7 +3486,7 @@
                         {p.donation_type === 'Cash' ? formatCurrency(p.amount) : 'Goods'}
                       </td>
                       <td className="px-4 py-4 text-center">
-                        <button onClick={() => confirmReceipt(p.id)} disabled={loadingId === p.id} className="inline-flex items-center gap-1.5 px-3 py-2 bg-brand-500/20 text-brand-400 hover:bg-brand-500/30 border border-brand-500/50 rounded-lg transition text-xs font-semibold disabled:opacity-50">
+                        <button onClick={() => confirmReceipt(p.id)} disabled={loadingId === p.id || !hasAccess} className="inline-flex items-center gap-1.5 px-3 py-2 bg-brand-500/20 text-brand-400 hover:bg-brand-500/30 border border-brand-500/50 rounded-lg transition text-xs font-semibold disabled:opacity-50">
                           <IconCheck /> 
                           <div className="flex flex-col text-left">
                             <span>{loadingId === p.id ? 'Confirming...' : 'Confirm'}</span>
@@ -3764,6 +3902,147 @@
       );
     }
 
+    function SectionAccessModal({ type, settings, onSave, onClose, currentUser, users }) {
+      const isAdmin = currentUser?.role === 'admin';
+      const fieldMap = {
+        'income': { label: 'Income Section', sLabel: 'ආදායම් අංශය', key: 'allow_income_entry', listKey: 'income_access_list' },
+        'expense': { label: 'Expense Section', sLabel: 'වියදම් අංශය', key: 'allow_expense_entry', listKey: 'expense_access_list' },
+        'pending': { label: 'Pending Pledges', sLabel: 'පොරොන්දු අංශය', key: 'allow_pledge_entry', listKey: 'pledge_access_list' }
+      };
+      
+      const config = fieldMap[type];
+      const [enabled, setEnabled] = useState(settings[config.key] !== false);
+      const [restricted, setRestricted] = useState(!!settings[config.listKey]);
+      const [selectedUsernames, setSelectedUsernames] = useState(settings[config.listKey] ? settings[config.listKey].split(',').filter(u => u.trim() !== '') : []);
+      const [searchTerm, setSearchTerm] = useState('');
+      const [saving, setSaving] = useState(false);
+
+      const handleSave = async () => {
+        setSaving(true);
+        try {
+          const listValue = restricted ? selectedUsernames.join(',') : '';
+          await onSave(config.key, enabled, config.listKey, listValue);
+          onClose();
+        } catch(err) {
+          alert("Error saving settings: " + err.message);
+        } finally {
+          setSaving(false);
+        }
+      };
+
+      const toggleUser = (username) => {
+        setSelectedUsernames(prev => 
+          prev.includes(username) ? prev.filter(u => u !== username) : [...prev, username]
+        );
+      };
+
+      const filteredUsers = users.filter(u => 
+        u.username.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      return (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onClick={onClose}>
+          <div className="glass p-8 rounded-[2.5rem] max-w-md w-full border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.8)] relative overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-brand-500/20">
+              <div className="h-full bg-brand-500" style={{ width: '100%' }}></div>
+            </div>
+            
+            <button onClick={onClose} className="absolute top-6 right-6 text-slate-400 hover:text-white bg-slate-800/50 w-8 h-8 flex items-center justify-center rounded-full transition">&times;</button>
+            
+            <div className="mb-6">
+              <h3 className="text-xl font-black text-white tracking-tight">{config.label} Access</h3>
+              <p className="text-[10px] font-bold text-brand-400 uppercase tracking-widest mt-1">{config.sLabel} පාලනය</p>
+            </div>
+
+            {isAdmin ? (
+              <div className="space-y-6 flex-1 flex flex-col overflow-hidden">
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-white">Enable Data Entry</span>
+                    <span className="text-[10px] text-slate-500">දත්ත ඇතුළත් කිරීමට ඉඩ දෙන්න</span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} className="sr-only peer" />
+                    <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
+                  </label>
+                </div>
+
+                {enabled && (
+                  <>
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-900/50 border border-slate-800 animate-fade-in">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-white">Specific Members Only</span>
+                        <span className="text-[10px] text-slate-500">නිශ්චිත සාමාජිකයින්ට පමණක් ඉඩ දෙන්න</span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" checked={restricted} onChange={e => setRestricted(e.target.checked)} className="sr-only peer" />
+                        <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
+                      </label>
+                    </div>
+
+                    {restricted && (
+                      <div className="flex-1 flex flex-col overflow-hidden animate-fade-in">
+                        <div className="relative mb-3">
+                          <input 
+                            type="text" 
+                            placeholder="Search users..." 
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            className="w-full bg-slate-900 border border-slate-800 text-xs rounded-xl p-3 outline-none focus:border-brand-500"
+                          />
+                        </div>
+                        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-2">
+                          {filteredUsers.map(u => (
+                            <div 
+                              key={u.id} 
+                              onClick={() => toggleUser(u.username)}
+                              className={`flex items-center gap-3 p-3 rounded-xl border transition cursor-pointer ${selectedUsernames.includes(u.username) ? 'bg-brand-500/10 border-brand-500/30' : 'bg-slate-900/30 border-slate-800 hover:border-slate-700'}`}
+                            >
+                              <div className={`w-8 h-8 rounded-full overflow-hidden border ${selectedUsernames.includes(u.username) ? 'border-brand-500' : 'border-slate-700'}`}>
+                                <img src={u.avatar_url || 'logo.png'} className="w-full h-full object-cover" />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-xs font-bold text-white leading-tight">{u.username}</p>
+                                <p className="text-[9px] text-slate-500 uppercase font-medium">{u.role}</p>
+                              </div>
+                              <div className={`w-5 h-5 rounded-md flex items-center justify-center border transition ${selectedUsernames.includes(u.username) ? 'bg-brand-500 border-brand-500' : 'border-slate-700'}`}>
+                                {selectedUsernames.includes(u.username) && (
+                                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-3 p-3 rounded-xl bg-slate-800/50 text-[10px] text-slate-400 font-medium">
+                          Selected: {selectedUsernames.length} users
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                <div className="flex gap-3 pt-4 border-t border-slate-800">
+                  <button onClick={onClose} className="flex-1 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all">Cancel</button>
+                  <button onClick={handleSave} disabled={saving} className="flex-1 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-brand-600 hover:bg-brand-500 text-white transition-all shadow-lg shadow-brand-500/20 disabled:opacity-50">
+                    {saving ? 'Saving...' : 'Save Settings'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center py-6 text-center">
+                <div className="w-16 h-16 bg-blue-500/10 text-blue-400 rounded-2xl flex items-center justify-center mb-6">
+                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                </div>
+                <p className="text-sm text-slate-300 font-bold mb-2">Access controlled by admin</p>
+                <p className="text-xs text-slate-500 leading-relaxed">මෙම අංශයේ දත්ත ඇතුළත් කිරීමේ අවසරය ප්‍රධාන පාලක (Admin) විසින් තීරණය කරනු ලැබේ.</p>
+                <button onClick={onClose} className="mt-8 w-full py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-slate-800 text-white hover:bg-slate-700 transition-all">Got It</button>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     // --- MAIN APP COMPONENT ---
     function App() {
       const [currentUser, setCurrentUser] = useState(() => {
@@ -3772,6 +4051,12 @@
       });
       const [showBalanceOnly, setShowBalanceOnly] = useState(false);
       const [activeTab, setActiveTab] = useState('dashboard');
+      const [projectSettings, setProjectSettings] = useState({ 
+        project_financial_goal: 100000,
+        allow_income_entry: true,
+        allow_expense_entry: true,
+        allow_pledge_entry: true
+      });
       const [showFaceIdSetup, setShowFaceIdSetup] = useState(false);
 
       useEffect(() => {
@@ -3967,15 +4252,17 @@
       const fetchData = async () => {
         setLoading(true);
         try {
-          const [incRes, expRes, usersRes, notifRes] = await Promise.all([
+          const [incRes, expRes, usersRes, notifRes, settingsRes] = await Promise.all([
             supabase.from('incomes').select('*').order('created_at', { ascending: false }),
             supabase.from('expenses').select('*').order('created_at', { ascending: false }),
             supabase.from('app_users').select('*'),
-            supabase.from('notifications').select('*').or(`user_id.is.null,user_id.eq.${currentUser?.id}`).order('created_at', { ascending: false }).limit(50)
+            supabase.from('notifications').select('*').or(`user_id.is.null,user_id.eq.${currentUser?.id}`).order('created_at', { ascending: false }).limit(50),
+            supabase.from('project_settings').select('*').maybeSingle()
           ]);
           
           if(!usersRes.error) setUsers(usersRes.data || []);
           if(!notifRes.error) setNotifications(notifRes.data || []);
+          if(!settingsRes.error && settingsRes.data) setProjectSettings(settingsRes.data);
 
           if(incRes.error) console.error(incRes.error);
           else {
@@ -4062,21 +4349,92 @@
         if (activeTab === 'expense-list') currentBase = 'expense-page';
 
         const currentIndex = MAIN_TABS.indexOf(currentBase);
+        
+        const checkAccess = (tab) => {
+          if (currentUser?.role === 'admin') return true;
+          
+          const mapping = {
+            'income-page': { key: 'allow_income_entry', list: 'income_access_list' },
+            'expense-page': { key: 'allow_expense_entry', list: 'expense_access_list' },
+            'pledges': { key: 'allow_pledge_entry', list: 'pledge_access_list' }
+          };
+
+          const config = mapping[tab];
+          if (!config) return true;
+
+          if (projectSettings[config.key] === false) return false;
+          
+          const list = projectSettings[config.list];
+          if (list && list.trim() !== '') {
+            const allowedUsers = list.split(',');
+            return allowedUsers.includes(currentUser?.username);
+          }
+          
+          return true;
+        };
+
+        const trySetTab = (newTab) => {
+          if (!checkAccess(newTab)) {
+             alert("Access Restricted: You do not have permission to enter data in this section. / මෙම අංශයට දත්ත ඇතුළත් කිරීමට ඔබට අවසර නොමැත.");
+             return;
+          }
+          setActiveTab(newTab);
+        };
+
         if (direction === 'next' && currentIndex < MAIN_TABS.length - 1) {
-          setActiveTab(MAIN_TABS[currentIndex + 1]);
+          trySetTab(MAIN_TABS[currentIndex + 1]);
         } else if (direction === 'prev' && currentIndex > 0) {
-          setActiveTab(MAIN_TABS[currentIndex - 1]);
+          trySetTab(MAIN_TABS[currentIndex - 1]);
         } else if (direction === 'prev' && currentIndex === -1) {
-          // Fallback if somehow stuck
           setActiveTab('dashboard');
         }
         window.scrollTo({ top: 0, behavior: 'smooth' });
       };
 
+      const handleTabSwitch = (id) => {
+        const mapping = {
+          'income-page': { key: 'allow_income_entry', list: 'income_access_list' },
+          'expense-page': { key: 'allow_expense_entry', list: 'expense_access_list' },
+          'pledges': { key: 'allow_pledge_entry', list: 'pledge_access_list' }
+        };
+
+        const config = mapping[id];
+        if (config && currentUser?.role !== 'admin') {
+          if (projectSettings[config.key] === false) {
+             alert("Access Restricted: This section is currently disabled by admin. / මෙම අංශය Admin විසින් අත්හිටුවා ඇත.");
+             return;
+          }
+          const list = projectSettings[config.list];
+          if (list && list.trim() !== '') {
+            const allowedUsers = list.split(',');
+            if (!allowedUsers.includes(currentUser?.username)) {
+               alert("Access Restricted: You are not authorized to enter data in this section. / මෙම අංශයට දත්ත ඇතුළත් කිරීමට ඔබට අවසර නොමැත.");
+               return;
+            }
+          }
+        }
+        setActiveTab(id);
+      };
+
+      const updateProjectAccess = async (key, value, listKey, listValue) => {
+        const updateObj = { [key]: value };
+        if (listKey) updateObj[listKey] = listValue;
+
+        const { error } = await supabase
+          .from('project_settings')
+          .update(updateObj)
+          .eq('id', projectSettings.id || 1); // Assuming ID 1 for global settings
+        
+        if (!error) {
+           setProjectSettings(prev => ({ ...prev, ...updateObj }));
+           showNotification({ type: 'success', title: 'Access Updated!', sTitle: 'අවසරයන් යාවත්කාලීන කරන ලදි.' });
+        } else throw error;
+      };
+
       // Desktop Top Navigation Button
       const NavigationButton = ({ id, label, sLabel, icon }) => (
         <button
-          onClick={() => setActiveTab(id)}
+          onClick={() => handleTabSwitch(id)}
           className={`flex items-start gap-3 px-5 py-3.5 rounded-2xl transition-all duration-500 w-auto group relative overflow-hidden ${
             activeTab === id 
             ? 'bg-gradient-to-r from-brand-600/20 to-brand-500/10 text-white shadow-[0_0_20px_rgba(34,197,94,0.15)] border border-brand-500/30' 
@@ -4104,7 +4462,7 @@
       // Mobile Bottom Fixed Navigation Button
       const MobileNavButton = ({ id, label, sLabel, icon }) => (
         <button
-          onClick={() => setActiveTab(id)}
+          onClick={() => handleTabSwitch(id)}
           className={`flex flex-col items-center justify-center flex-1 py-2 rounded-2xl transition-all duration-500 relative group overflow-hidden ${
             activeTab === id 
             ? 'text-brand-400 font-bold bg-brand-500/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] border border-brand-500/20' 
@@ -4158,10 +4516,7 @@
         return <LoginScreen onLogin={handleLoginSuccess} onShowBalance={() => setShowBalanceOnly(true)} showNotification={showNotification} />;
       }
 
-      let targetAmount = 10000;
-      if (currentUser?.username?.includes('Chamuditha')) {
-         targetAmount = 6000;
-      }
+      const targetAmount = currentUser?.contribution_goal || 10000;
       
       const userTotalContribution = incomes
         .filter(i => {
@@ -4327,26 +4682,28 @@
                       </button>
                     </div>
                     
-                    <div className="hidden sm:flex mt-1 bg-slate-900/80 border border-slate-700/50 px-3 py-1.5 rounded-lg flex-col items-end min-w-[140px] shadow-md">
-                       <div className="flex justify-between w-full text-[10px] text-slate-400 mb-0.5 gap-3">
-                         <span>Your Contribution:</span>
-                         <span className="font-bold text-white">Rs. {Math.round(userTotalContribution).toLocaleString()}</span>
-                       </div>
-                       {balanceToPay > 0 ? (
-                         <div className="text-[9px] text-yellow-400 font-medium animate-pulse mt-0.5">
-                           කරුණාකර ඉතිරි මුදල ලබා දෙන්න (Rs. {Math.round(balanceToPay).toLocaleString()})
+                    {currentUser && currentUser.is_contributor && (
+                      <div className="hidden sm:flex mt-1 bg-slate-900/80 border border-slate-700/50 px-3 py-1.5 rounded-lg flex-col items-end min-w-[140px] shadow-md">
+                         <div className="flex justify-between w-full text-[10px] text-slate-400 mb-0.5 gap-3">
+                           <span>Your Contribution:</span>
+                           <span className="font-bold text-white">Rs. {Math.round(userTotalContribution).toLocaleString()}</span>
                          </div>
-                       ) : balanceToPay < 0 ? (
-                         <div className="flex items-center gap-1 mt-0.5 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 px-2 py-0.5 rounded border border-amber-500/30">
-                           <span className="text-[12px]">🏆</span>
-                           <span className="text-[9px] text-amber-400 font-bold tracking-wide">Top Contributor! Thank You!</span>
-                         </div>
-                       ) : (
-                         <div className="text-[9px] text-brand-400 font-bold mt-0.5">
-                           Target Reached! Thank you! 🎉
-                         </div>
-                       )}
-                    </div>
+                         {balanceToPay > 0 ? (
+                           <div className="text-[9px] text-yellow-400 font-medium animate-pulse mt-0.5">
+                             කරුණාකර ඉතිරි මුදල ලබා දෙන්න (Rs. {Math.round(balanceToPay).toLocaleString()})
+                           </div>
+                         ) : balanceToPay < 0 ? (
+                           <div className="flex items-center gap-1 mt-0.5 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 px-2 py-0.5 rounded border border-amber-500/30">
+                             <span className="text-[12px]">🏆</span>
+                             <span className="text-[9px] text-amber-400 font-bold tracking-wide">Top Contributor! Thank You!</span>
+                           </div>
+                         ) : (
+                           <div className="text-[9px] text-brand-400 font-bold mt-0.5">
+                             Target Reached! Thank you! 🎉
+                           </div>
+                         )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -4375,11 +4732,11 @@
             
             <div className="relative z-10 animate-fade-in">
                 {activeTab === 'profile' && <ProfileView currentUser={currentUser} incomes={incomes} expenses={expenses} userTotalContribution={userTotalContribution} balanceToPay={balanceToPay} users={users} />}
-                {activeTab === 'dashboard' && <DashboardView incomes={incomes} expenses={expenses} setActiveTab={setActiveTab} currentUser={currentUser} userTotalContribution={userTotalContribution} balanceToPay={balanceToPay} users={users} />}
+                {activeTab === 'dashboard' && <DashboardView incomes={incomes} expenses={expenses} setActiveTab={setActiveTab} currentUser={currentUser} userTotalContribution={userTotalContribution} balanceToPay={balanceToPay} users={users} projectSettings={projectSettings} onUpdateAccess={updateProjectAccess} handleTabSwitch={handleTabSwitch} />}
                 
                 {activeTab === 'income-page' && (
                   <div className="space-y-8 animate-fade-in">
-                    <IncomeForm currentUser={currentUser} users={users} onComplete={(data) => {
+                    <IncomeForm currentUser={currentUser} users={users} projectSettings={projectSettings} onComplete={(data) => {
                       fetchData();
                       if(data) showNotification({
                         type: 'success',
@@ -4409,7 +4766,7 @@
                 
                 {activeTab === 'expense-page' && (
                   <div className="space-y-8 animate-fade-in">
-                    <ExpenseForm currentUser={currentUser} users={users} onComplete={(data) => {
+                    <ExpenseForm currentUser={currentUser} users={users} projectSettings={projectSettings} onComplete={(data) => {
                       fetchData();
                       if(data) showNotification({
                         type: 'blue',
@@ -4431,7 +4788,7 @@
                   </div>
                 )}
 
-                {activeTab === 'pledges' && <PromisedList incomes={incomes} onRefresh={fetchData} showNotification={showNotification} users={users} setActiveTab={setActiveTab} />}
+                {activeTab === 'pledges' && <PromisedList incomes={incomes} onRefresh={fetchData} showNotification={showNotification} users={users} setActiveTab={setActiveTab} projectSettings={projectSettings} />}
             </div>
             
             {viewingReceipt && <ReceiptModal url={viewingReceipt} onClose={() => setViewingReceipt(null)} />}
