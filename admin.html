@@ -19,20 +19,32 @@
       theme: {
         extend: {
           colors: {
+            brand: {
+              400: '#4ade80',
+              500: '#22c55e',
+              600: '#16a34a',
+            },
             m3: {
-              primary: '#A8C7FF',
-              onPrimary: '#003062',
-              primaryContainer: '#00468B',
-              onPrimaryContainer: '#D6E3FF',
-              secondary: '#BEC6DC',
-              onSecondary: '#283141',
-              secondaryContainer: '#3E4759',
-              onSecondaryContainer: '#DAE2F9',
-              surface: '#111318',
-              onSurface: '#E2E2E9',
-              surfaceContainer: '#1D2024',
-              surfaceContainerHigh: '#282A2F',
-              outline: '#8E9199',
+              primary: '#22c55e',
+              onPrimary: '#022c15',
+              primaryContainer: '#14532d',
+              onPrimaryContainer: '#86efac',
+              secondary: '#94a3b8',
+              onSecondary: '#0f172a',
+              secondaryContainer: '#1e293b',
+              onSecondaryContainer: '#cbd5e1',
+              tertiary: '#2dd4bf',
+              onTertiary: '#042f2e',
+              tertiaryContainer: '#115e59',
+              onTertiaryContainer: '#5eead4',
+              surface: '#020617',
+              onSurface: '#f8fafc',
+              surfaceContainerLowest: '#020617',
+              surfaceContainerLow: '#0f172a',
+              surfaceContainer: '#1e293b',
+              surfaceContainerHigh: '#334155',
+              surfaceContainerHighest: '#475569',
+              outline: '#475569',
             }
           },
           borderRadius: {
@@ -59,19 +71,19 @@
 
   <style>
     :root {
-      --m3-surface: #111318;
-      --m3-on-surface: #E2E2E9;
-      --m3-primary: #A8C7FF;
-      --m3-on-primary: #003062;
-      --m3-primary-container: #00468B;
-      --m3-on-primary-container: #D6E3FF;
-      --m3-secondary-container: #3E4759;
-      --m3-on-secondary-container: #DAE2F9;
-      --m3-surface-container: #1D2024;
-      --m3-surface-container-low: #191C20;
-      --m3-surface-container-high: #282A2F;
-      --m3-surface-container-highest: #33353A;
-      --m3-outline: #8E9199;
+      --m3-surface: #020617;
+      --m3-on-surface: #f8fafc;
+      --m3-primary: #22c55e;
+      --m3-on-primary: #022c15;
+      --m3-primary-container: #14532d;
+      --m3-on-primary-container: #86efac;
+      --m3-secondary-container: #1e293b;
+      --m3-on-secondary-container: #cbd5e1;
+      --m3-surface-container: #1e293b;
+      --m3-surface-container-low: #0f172a;
+      --m3-surface-container-high: #334155;
+      --m3-surface-container-highest: #475569;
+      --m3-outline: #475569;
     }
 
     body {
@@ -92,7 +104,7 @@
       width: 100vw;
       height: 100vh;
       z-index: -1;
-      background: radial-gradient(circle at 50% 50%, #0d1117 0%, #050505 100%);
+      background: radial-gradient(circle at 50% 50%, #020617 0%, #000000 100%);
       overflow: hidden;
     }
     .neural-flow::after {
@@ -103,9 +115,9 @@
       top: -50%;
       left: -50%;
       background-image: 
-        radial-gradient(circle at 20% 30%, rgba(168, 199, 255, 0.04) 0%, transparent 40%),
-        radial-gradient(circle at 80% 70%, rgba(190, 198, 220, 0.04) 0%, transparent 40%),
-        radial-gradient(circle at 50% 20%, rgba(221, 188, 224, 0.04) 0%, transparent 40%);
+        radial-gradient(circle at 20% 30%, rgba(34, 197, 94, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(45, 212, 191, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 50% 20%, rgba(59, 130, 246, 0.03) 0%, transparent 40%);
       animation: flow 25s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
     }
     @keyframes flow {
@@ -130,7 +142,13 @@
       cursor: pointer;
     }
     .m3-button-filled { background: var(--m3-primary); color: var(--m3-on-primary); }
+    .m3-button-filled:hover { box-shadow: 0 4px 12px rgba(34,197,94,0.3); background: #4ade80; transform: scale(1.02); }
     .m3-button-tonal { background: var(--m3-secondary-container); color: var(--m3-on-secondary-container); }
+    .m3-button-tonal:hover { background: var(--m3-surface-container-highest); transform: scale(1.02); }
+    .m3-button-elevated { background: var(--m3-surface-container-low); color: var(--m3-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+    .m3-button-elevated:hover { background: var(--m3-surface-container-high); box-shadow: 0 4px 12px rgba(34,197,94,0.2); transform: scale(1.02); }
+    .m3-button-outlined { background: transparent; border: 1px solid var(--m3-outline); color: var(--m3-primary); }
+    .m3-button-outlined:hover { background: rgba(34, 197, 94, 0.08); border-color: var(--m3-primary); transform: scale(1.02); }
     
     .m3-card-elevated {
       background: var(--m3-surface-container-low);
@@ -145,12 +163,16 @@
     }
 
     .glass-m3 {
-      background: rgba(29, 32, 36, 0.7);
+      background: rgba(2, 6, 23, 0.7);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
       border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
+    /* Magnetic Button Effect */
+    .magnetic-button { transition: transform 0.3s cubic-bezier(0.05, 0.7, 0.1, 1.0); }
+    .magnetic-button:hover { transform: scale(1.05) translateY(-2px); }
+    
     /* Custom Scrollbar */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-thumb { background: var(--m3-outline); border-radius: 10px; }
@@ -235,7 +257,7 @@
       .responsive-table tr { 
         margin-bottom: 1.5rem; 
         padding: 1rem; 
-        background: rgba(15, 23, 42, 0.6);
+        background: rgba(2, 6, 23, 0.7);
         border-radius: 1.25rem;
         border: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -281,8 +303,8 @@
 <body class="min-h-screen relative overflow-x-hidden selection:bg-brand-500/30 selection:text-brand-300">
   <!-- Dynamic Background Orbs -->
   <div class="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
-    <div class="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-brand-500/10 blur-[150px] animate-pulse" style="animation-duration: 8s;"></div>
-    <div class="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-blue-500/10 blur-[150px] animate-pulse" style="animation-duration: 12s;"></div>
+    <div class="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-green-500/10 blur-[150px] animate-pulse" style="animation-duration: 8s;"></div>
+    <div class="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-500/10 blur-[150px] animate-pulse" style="animation-duration: 12s;"></div>
   </div>
   
   <div id="root"></div>
@@ -1310,22 +1332,6 @@
 
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
               <div className="w-full lg:w-auto">
-                {/* Mobile Dropdown */}
-                <div className="lg:hidden w-full relative">
-                  <select 
-                    value={activeTab} 
-                    onChange={(e) => setActiveTab(e.target.value)}
-                    className="w-full bg-m3-surfaceContainerHigh border border-white/10 text-white rounded-2xl px-6 py-4 font-bold appearance-none shadow-xl"
-                  >
-                    {ADMIN_TABS.map(tab => (
-                      <option key={tab.id} value={tab.id}>{tab.label}</option>
-                    ))}
-                  </select>
-                  <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <MaterialIcon name="expand_more" />
-                  </div>
-                </div>
-
                 {/* Desktop Choice Chips */}
                 <div className="hidden lg:flex flex-wrap gap-2">
                   {ADMIN_TABS.map(tab => (
@@ -1346,13 +1352,13 @@
                   <input type="date" value={filterDate} onChange={e=>setFilterDate(e.target.value)} className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500 outline-none w-full sm:w-auto" />
                   <input type="text" placeholder="Search..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500 outline-none w-full sm:w-48" />
                   <div className="flex gap-2">
-                    <button onClick={(activeTab === 'incomes' || activeTab === 'cash_incomes' || activeTab === 'goods_incomes' || activeTab === 'main_donors' || activeTab === 'regular_donors') ? exportIncomesCSV : exportExpensesCSV} className="flex-1 px-3 py-2 bg-slate-800 rounded-lg hover:bg-slate-700 text-sm font-medium transition border border-slate-700">CSV</button>
-                    <button onClick={(activeTab === 'incomes' || activeTab === 'cash_incomes' || activeTab === 'goods_incomes' || activeTab === 'main_donors' || activeTab === 'regular_donors') ? exportIncomesPDF : exportExpensesPDF} className="flex-1 px-3 py-2 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 text-sm font-medium transition border border-red-500/20">PDF</button>
+                    <button onClick={(activeTab === 'incomes' || activeTab === 'cash_incomes' || activeTab === 'goods_incomes' || activeTab === 'main_donors' || activeTab === 'regular_donors') ? exportIncomesCSV : exportExpensesCSV} className="m3-button m3-button-tonal flex-1">CSV</button>
+                    <button onClick={(activeTab === 'incomes' || activeTab === 'cash_incomes' || activeTab === 'goods_incomes' || activeTab === 'main_donors' || activeTab === 'regular_donors') ? exportIncomesPDF : exportExpensesPDF} className="m3-button m3-button-tonal !text-red-400 !bg-red-500/10 hover:!bg-red-500/20 flex-1 border border-red-500/20">PDF</button>
                   </div>
                 </>
               )}
               {activeTab === 'users' && (
-                <button onClick={() => setAddUserModal(true)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition font-medium text-sm flex items-center justify-center gap-2 w-full sm:w-auto shadow-[0_0_15px_rgba(79,70,229,0.3)]">
+                <button onClick={() => setAddUserModal(true)} className="m3-button m3-button-filled magnetic-button w-full sm:w-auto shadow-[0_0_15px_rgba(34,197,94,0.3)]">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
                   Add New User
                 </button>
@@ -1473,7 +1479,7 @@
                         <td className="p-4 text-slate-500 font-medium" data-label="Donations Count">{group.records.length} Times</td>
                         <td className="p-4 text-brand-400 font-black" data-label="Total Amount">Rs. {Math.round(group.total).toLocaleString()}</td>
                         <td className="p-4 text-right rounded-r-2xl" data-label="Details">
-                          <button className="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded-md border border-slate-700 transition">
+                          <button className="m3-button m3-button-tonal flex-1">
                             {expandedDonors.has(group.key) ? 'Hide' : 'View Details'}
                           </button>
                         </td>
@@ -1762,7 +1768,7 @@
                     <button 
                       type="submit" 
                       disabled={actionLoading} 
-                      className="w-full bg-brand-600 hover:bg-brand-500 text-white font-black uppercase tracking-widest py-5 rounded-2xl transition-all shadow-[0_15px_30px_rgba(34,197,94,0.3)] hover:shadow-[0_20px_40px_rgba(34,197,94,0.4)] hover:-translate-y-1 disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="w-full bg-brand-600 hover:bg-brand-500 text-white font-black uppercase tracking-widest py-5 rounded-2xl transition-all shadow-[0_15px_30px_rgba(34,197,94,0.3)] hover:shadow-[0_20px_40px_rgba(34,197,94,0.4)] hover:-translate-y-1 disabled:opacity-50 flex items-center justify-center gap-2 m3-button m3-button-filled magnetic-button"
                     >
                       {actionLoading ? 'Saving...' : 'Save All Settings / සියල්ල සුරකින්න'}
                     </button>
@@ -1771,6 +1777,27 @@
               </div>
             )}
           </div>
+          </main>
+             <footer className="lg:hidden fixed bottom-0 left-0 right-0 glass-m3 border-t border-white/5 z-50 flex justify-between items-center px-2 pt-3 pb-[max(env(safe-area-inset-bottom),_1rem)] overflow-x-auto no-scrollbar">
+                {[
+                  { id: 'incomes', icon: 'payments', label: 'Incomes' },
+                  { id: 'expenses', icon: 'account_balance_wallet', label: 'Expenses' },
+                  { id: 'users', icon: 'group', label: 'Users' },
+                  { id: 'project_settings', icon: 'settings', label: 'Settings' }
+                ].map(item => (
+                  <button 
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className={`flex flex-col items-center gap-1 min-w-[70px] py-1 transition-all duration-300 ${activeTab === item.id ? 'text-m3-primary' : 'text-m3-outline'}`}
+                  >
+                    <div className={`w-12 h-8 rounded-full flex items-center justify-center transition-all ${activeTab === item.id ? 'bg-m3-secondaryContainer text-m3-onSecondaryContainer' : ''}`}>
+                      <MaterialIcon name={item.icon} className={activeTab === item.id ? 'FILL' : ''} />
+                    </div>
+                    <span className="text-[10px] font-bold tracking-wider">{item.label}</span>
+                  </button>
+                ))}
+             </footer>
+        
 
           {/* Edit Income Modal */}
           {editIncome && (
@@ -1802,8 +1829,8 @@
                   </div>
                 </div>
                 <div className="flex gap-3 mt-4">
-                  <button type="button" onClick={() => setEditIncome(null)} className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-white font-bold transition">Cancel</button>
-                  <button type="submit" disabled={actionLoading} className="flex-1 bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-lg transition disabled:opacity-50">Save Changes</button>
+                  <button type="button" onClick={() => setEditIncome(null)} className="m3-button m3-button-tonal flex-1 h-12 m3-button m3-button-tonal">Cancel</button>
+                  <button type="submit" disabled={actionLoading} className="m3-button m3-button-filled magnetic-button flex-1 h-12 disabled:opacity-50 m3-button m3-button-filled magnetic-button">Save Changes</button>
                 </div>
               </form>
             </Modal>
@@ -1836,7 +1863,7 @@
                           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                         </div>
                       )}
-                      <label className="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg p-4 cursor-pointer transition flex flex-col items-center justify-center gap-1 text-slate-300">
+                      <label className="m3-button m3-button-tonal flex-1">
                         <input type="file" accept="image/*" className="hidden" onChange={(e) => handleReceiptUpload(editExpense.id, e.target.files[0])} />
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                         <span className="text-xs font-bold">{editExpense.receipt_url ? 'Change Receipt' : 'Upload Receipt'}</span>
@@ -1845,8 +1872,8 @@
                   </div>
                 </div>
                 <div className="flex gap-3 mt-6">
-                  <button type="button" onClick={() => setEditExpense(null)} className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-white font-bold transition">Cancel</button>
-                  <button type="submit" disabled={actionLoading} className="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-lg transition disabled:opacity-50">Save Changes</button>
+                  <button type="button" onClick={() => setEditExpense(null)} className="m3-button m3-button-tonal flex-1 h-12 m3-button m3-button-tonal">Cancel</button>
+                  <button type="submit" disabled={actionLoading} className="m3-button m3-button-filled !bg-red-600 hover:!bg-red-500 !text-white magnetic-button flex-1 h-12 disabled:opacity-50">Save Changes</button>
                 </div>
               </form>
             </Modal>
@@ -2028,8 +2055,8 @@
                   </div>
                 </div>
                 <div className="flex gap-3 mt-4">
-                  <button type="button" onClick={() => setEditUser(null)} className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-white font-bold transition">Cancel</button>
-                  <button type="submit" disabled={actionLoading} className="flex-1 bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-lg transition disabled:opacity-50">Save Details</button>
+                  <button type="button" onClick={() => setEditUser(null)} className="m3-button m3-button-tonal flex-1 h-12 m3-button m3-button-tonal">Cancel</button>
+                  <button type="submit" disabled={actionLoading} className="m3-button m3-button-filled magnetic-button flex-1 h-12 disabled:opacity-50 m3-button m3-button-filled magnetic-button">Save Details</button>
                 </div>
               </form>
             </Modal>
@@ -2090,8 +2117,8 @@
                   <p className="text-[10px] text-slate-400">Note: New users will be forced to change this temporary password upon their first login. Since they are added here, they will instantly appear as selectable Main Donors and Withdrawers.</p>
                 </div>
                 <div className="flex gap-3 mt-4">
-                  <button type="button" onClick={() => setAddUserModal(false)} className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-white font-bold transition">Cancel</button>
-                  <button type="submit" disabled={actionLoading} className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-lg transition disabled:opacity-50 shadow-[0_0_15px_rgba(79,70,229,0.3)]">Create User</button>
+                  <button type="button" onClick={() => setAddUserModal(false)} className="m3-button m3-button-tonal flex-1 h-12 m3-button m3-button-tonal">Cancel</button>
+                  <button type="submit" disabled={actionLoading} className="m3-button m3-button-filled magnetic-button w-full sm:w-auto shadow-[0_0_15px_rgba(34,197,94,0.3)]">Create User</button>
                 </div>
               </form>
             </Modal>

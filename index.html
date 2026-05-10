@@ -27,31 +27,31 @@
         extend: {
           colors: {
             brand: {
-              400: '#D2E8FF', // M3 Primary Container (Tonal)
-              500: '#D2E8FF', // M3 Primary
-              600: '#004A77', // M3 On Primary Container
+              400: '#4ade80',
+              500: '#22c55e',
+              600: '#16a34a',
             },
             m3: {
-              primary: '#A8C7FF',
-              onPrimary: '#003062',
-              primaryContainer: '#00468B',
-              onPrimaryContainer: '#D6E3FF',
-              secondary: '#BEC6DC',
-              onSecondary: '#283141',
-              secondaryContainer: '#3E4759',
-              onSecondaryContainer: '#DAE2F9',
-              tertiary: '#DDBCE0',
-              onTertiary: '#3F2844',
-              tertiaryContainer: '#573E5C',
-              onTertiaryContainer: '#FAD8FD',
-              surface: '#111318',
-              onSurface: '#E2E2E9',
-              surfaceContainerLowest: '#0C0E13',
-              surfaceContainerLow: '#191C20',
-              surfaceContainer: '#1D2024',
-              surfaceContainerHigh: '#282A2F',
-              surfaceContainerHighest: '#33353A',
-              outline: '#8E9199',
+              primary: '#22c55e',
+              onPrimary: '#022c15',
+              primaryContainer: '#14532d',
+              onPrimaryContainer: '#86efac',
+              secondary: '#94a3b8',
+              onSecondary: '#0f172a',
+              secondaryContainer: '#1e293b',
+              onSecondaryContainer: '#cbd5e1',
+              tertiary: '#2dd4bf',
+              onTertiary: '#042f2e',
+              tertiaryContainer: '#115e59',
+              onTertiaryContainer: '#5eead4',
+              surface: '#020617',
+              onSurface: '#f8fafc',
+              surfaceContainerLowest: '#020617',
+              surfaceContainerLow: '#0f172a',
+              surfaceContainer: '#1e293b',
+              surfaceContainerHigh: '#334155',
+              surfaceContainerHighest: '#475569',
+              outline: '#475569',
             }
           },
           borderRadius: {
@@ -81,19 +81,19 @@
 
   <style>
     :root {
-      --m3-surface: #111318;
-      --m3-on-surface: #E2E2E9;
-      --m3-primary: #A8C7FF;
-      --m3-on-primary: #003062;
-      --m3-primary-container: #00468B;
-      --m3-on-primary-container: #D6E3FF;
-      --m3-secondary-container: #3E4759;
-      --m3-on-secondary-container: #DAE2F9;
-      --m3-surface-container: #1D2024;
-      --m3-surface-container-low: #191C20;
-      --m3-surface-container-high: #282A2F;
-      --m3-surface-container-highest: #33353A;
-      --m3-outline: #8E9199;
+      --m3-surface: #020617;
+      --m3-on-surface: #f8fafc;
+      --m3-primary: #22c55e;
+      --m3-on-primary: #022c15;
+      --m3-primary-container: #14532d;
+      --m3-on-primary-container: #86efac;
+      --m3-secondary-container: #1e293b;
+      --m3-on-secondary-container: #cbd5e1;
+      --m3-surface-container: #1e293b;
+      --m3-surface-container-low: #0f172a;
+      --m3-surface-container-high: #334155;
+      --m3-surface-container-highest: #475569;
+      --m3-outline: #475569;
     }
 
     body {
@@ -115,7 +115,7 @@
       width: 100vw;
       height: 100vh;
       z-index: -1;
-      background: radial-gradient(circle at 50% 50%, #0d1117 0%, #050505 100%);
+      background: radial-gradient(circle at 50% 50%, #020617 0%, #000000 100%);
       overflow: hidden;
     }
     .neural-flow::after {
@@ -126,9 +126,9 @@
       top: -50%;
       left: -50%;
       background-image: 
-        radial-gradient(circle at 20% 30%, rgba(168, 199, 255, 0.04) 0%, transparent 40%),
-        radial-gradient(circle at 80% 70%, rgba(190, 198, 220, 0.04) 0%, transparent 40%),
-        radial-gradient(circle at 50% 20%, rgba(221, 188, 224, 0.04) 0%, transparent 40%);
+        radial-gradient(circle at 20% 30%, rgba(34, 197, 94, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(45, 212, 191, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 50% 20%, rgba(59, 130, 246, 0.03) 0%, transparent 40%);
       animation: flow 25s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
     }
     @keyframes flow {
@@ -138,7 +138,7 @@
 
     /* Glassmorphism 2.0 */
     .glass-m3 {
-      background: rgba(29, 32, 36, 0.65);
+      background: rgba(2, 6, 23, 0.7);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -173,10 +173,14 @@
     }
     .m3-button:active { transform: scale(0.95); }
     .m3-button-filled { background: var(--m3-primary); color: var(--m3-on-primary); }
-    .m3-button-filled:hover { box-shadow: 0 1px 3px rgba(0,0,0,0.3); background: #96B5FF; }
+    .m3-button-filled:hover { box-shadow: 0 4px 12px rgba(34,197,94,0.3); background: #4ade80; transform: scale(1.02); }
     
     .m3-button-tonal { background: var(--m3-secondary-container); color: var(--m3-on-secondary-container); }
-    .m3-button-tonal:hover { background: #4D576B; }
+    .m3-button-elevated { background: var(--m3-surface-container-low); color: var(--m3-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+    .m3-button-elevated:hover { background: var(--m3-surface-container-high); box-shadow: 0 4px 12px rgba(34,197,94,0.2); transform: scale(1.02); }
+    .m3-button-outlined { background: transparent; border: 1px solid var(--m3-outline); color: var(--m3-primary); }
+    .m3-button-outlined:hover { background: rgba(34, 197, 94, 0.08); border-color: var(--m3-primary); transform: scale(1.02); }
+    .m3-button-tonal:hover { background: var(--m3-surface-container-highest); transform: scale(1.02); }
 
     .m3-card-elevated {
       background: var(--m3-surface-container-low);
@@ -197,13 +201,17 @@
       content: '';
       position: absolute;
       inset: -1px;
-      background: linear-gradient(135deg, rgba(168, 199, 255, 0.4) 0%, transparent 50%);
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.4) 0%, transparent 50%);
       border-radius: inherit;
       mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       mask-composite: exclude;
       pointer-events: none;
     }
 
+    /* Magnetic Button Effect */
+    .magnetic-button { transition: transform 0.3s cubic-bezier(0.05, 0.7, 0.1, 1.0); }
+    .magnetic-button:hover { transform: scale(1.05) translateY(-2px); }
+    
     /* Custom Scrollbar */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-thumb { background: var(--m3-outline); border-radius: 10px; }
@@ -219,7 +227,7 @@
 </head>
 <body class="min-h-screen text-slate-200 antialiased overflow-x-hidden selection:bg-m3-primary/30 selection:text-m3-onPrimaryContainer relative">
   <div class="neural-flow"></div>
-    <div class="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-blue-500/10 blur-[150px] animate-pulse" style="animation-duration: 12s;"></div>
+    <div class="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-500/10 blur-[150px] animate-pulse" style="animation-duration: 12s;"></div>
   </div>
   
   <div id="root"></div>
@@ -584,171 +592,412 @@
       canvas.width = width;
       canvas.height = height;
 
-      // Full Background
-      ctx.fillStyle = '#0f172a';
+      // Canvas roundRect Polyfill
+      if (!ctx.roundRect) {
+        ctx.roundRect = function (x, y, w, h, r) {
+          if (!Array.isArray(r)) { r = [r, r, r, r]; }
+          this.beginPath();
+          this.moveTo(x + r[0], y);
+          this.lineTo(x + w - r[1], y);
+          this.quadraticCurveTo(x + w, y, x + w, y + r[1]);
+          this.lineTo(x + w, y + h - r[2]);
+          this.quadraticCurveTo(x + w, y + h, x + w - r[2], y + h);
+          this.lineTo(x + r[3], y + h);
+          this.quadraticCurveTo(x, y + h, x, y + h - r[3]);
+          this.lineTo(x, y + r[0]);
+          this.quadraticCurveTo(x, y, x + r[0], y);
+          this.closePath();
+          return this;
+        };
+      }
+
+      // Material Design 3 Dark Theme Palette (Green Tone)
+      const theme = {
+        surface: '#1A1C18',              // Background
+        surfaceContainer: '#21251E',     // Main Card
+        surfaceContainerHigh: '#2B2F27', // Inner Cards
+        primary: '#9CD67D',              // Main Accent Green
+        onPrimaryContainer: '#D7F5C4',   // Header Text
+        primaryContainer: '#1F510D',     // Header / Amount Background
+        onSurface: '#E2E3DD',            // Main Values
+        onSurfaceVariant: '#C2C9BD',     // Labels & Subtitles
+        outlineVariant: '#43483E'        // Dividers
+      };
+
+      // 1. Full Background
+      ctx.fillStyle = theme.surface;
       ctx.fillRect(0, 0, width, height);
 
       const drawContent = () => {
-        // Aesthetic Top Bar
-        ctx.fillStyle = '#22c55e';
-        ctx.fillRect(0, 0, width, 15);
+        // 2. MD3 Main Elevated Card (Large 32px border radius)
+        ctx.fillStyle = theme.surfaceContainer;
+        ctx.roundRect(40, 40, width - 80, height - 80, 32);
+        ctx.fill();
 
-        // Outer Double Border Effect
-        ctx.strokeStyle = '#1e293b';
-        ctx.lineWidth = 6;
-        ctx.strokeRect(20, 35, width - 40, height - 55);
-
-        // Inner Dashed Border
-        ctx.setLineDash([8, 8]);
-        ctx.strokeStyle = '#334155';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(32, 47, width - 64, height - 79);
-        ctx.setLineDash([]); // Reset line dash
+        // 3. Header Accent Shape (Top rounded corners only)
+        ctx.fillStyle = theme.primaryContainer;
+        ctx.roundRect(40, 40, width - 80, 165, [32, 32, 0, 0]);
+        ctx.fill();
 
         // Watermark Logo
-        ctx.globalAlpha = 0.04;
-        const logoSize = 500;
-        ctx.drawImage(img, (width - logoSize) / 2, (height - logoSize) / 2, logoSize, logoSize);
+        ctx.globalAlpha = 0.03;
+        const logoSize = 450;
+        ctx.drawImage(img, (width - logoSize) / 2, (height - logoSize) / 2 + 50, logoSize, logoSize);
         ctx.globalAlpha = 1.0;
 
-        // Header Section
+        // 4. Typography - Header Section
         ctx.textAlign = 'center';
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 42px sans-serif';
-        ctx.fillText('VESAK LANTERN 2026', width/2, 110);
         
-        ctx.fillStyle = '#22c55e';
-        ctx.font = 'bold 26px sans-serif';
-        ctx.letterSpacing = '2px';
-        ctx.fillText('OFFICIAL DONATION RECEIPT', width/2, 155);
+        ctx.fillStyle = theme.onPrimaryContainer;
+        ctx.font = '900 40px sans-serif'; // Black/Heavy weight
+        ctx.fillText('VESAK LANTERN 2026', width / 2, 105);
 
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = '22px sans-serif';
+        ctx.fillStyle = theme.primary;
+        ctx.font = '600 20px sans-serif'; // Semi-bold
+        ctx.letterSpacing = '1px';
+        ctx.fillText('OFFICIAL DONATION RECEIPT', width / 2, 140);
+
+        ctx.fillStyle = theme.onPrimaryContainer;
+        ctx.font = '400 18px sans-serif'; // Regular
         ctx.letterSpacing = '0px';
-        ctx.fillText('මහා වෙසක් කූඩු ව්‍යාපෘතිය', width/2, 190);
+        ctx.fillText('මහා වෙසක් කූඩු ව්‍යාපෘතිය', width / 2, 170);
 
-        // Divider Line
-        ctx.beginPath();
-        ctx.moveTo(100, 230);
-        ctx.lineTo(width-100, 230);
-        ctx.strokeStyle = '#334155';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        // Top Logos 
+        ctx.drawImage(img, 70, 60, 80, 80);
+        ctx.drawImage(img, width - 150, 60, 80, 80);
 
-        // Details Section (Tabular alignment)
-        let currentY = 310;
-        const rowSpacing = 65;
-        const leftColX = width / 2 - 20;
-        const rightColX = width / 2 + 20;
+        // MD3 Divider Line Function
+        const drawDivider = (y) => {
+          ctx.fillStyle = theme.outlineVariant;
+          ctx.roundRect(100, y, width - 200, 2, 1);
+          ctx.fill();
+        };
+
+        drawDivider(230);
+
+        // 5. Details Section (MD3 List Layout: Label Left, Value Right)
+        let currentY = 295;
+        const rowSpacing = 60;
+        const leftX = 100;
+        const rightX = width - 100;
 
         const drawRow = (label, value, isHighlight = false) => {
-          // Label
-          ctx.textAlign = 'right';
-          ctx.fillStyle = '#64748b';
-          ctx.font = '22px sans-serif';
-          ctx.fillText(label, leftColX, currentY);
-          
-          // Value
+          // Label (Left Aligned, Muted Color)
           ctx.textAlign = 'left';
-          ctx.fillStyle = isHighlight ? '#22c55e' : '#e2e8f0';
+          ctx.fillStyle = theme.onSurfaceVariant;
+          ctx.font = '500 20px sans-serif';
+          ctx.fillText(label, leftX, currentY);
           
-          // --- FIX: Dynamic Font Sizing to prevent overflowing ---
+          // Value (Right Aligned, Bright Color)
+          ctx.textAlign = 'right';
+          ctx.fillStyle = isHighlight ? theme.primary : theme.onSurface;
+          
           let displayValue = String(value || '-');
-          if(displayValue.length > 35) {
-             ctx.font = isHighlight ? 'bold 16px sans-serif' : 'bold 15px sans-serif';
-          } else if(displayValue.length > 20) {
-             ctx.font = isHighlight ? 'bold 20px sans-serif' : 'bold 18px sans-serif';
+          if (displayValue.length > 35) {
+             ctx.font = isHighlight ? '700 16px sans-serif' : '500 16px sans-serif';
+          } else if (displayValue.length > 20) {
+             ctx.font = isHighlight ? '700 20px sans-serif' : '500 20px sans-serif';
           } else {
-             ctx.font = isHighlight ? 'bold 24px sans-serif' : 'bold 22px sans-serif';
+             ctx.font = isHighlight ? '700 22px sans-serif' : '500 22px sans-serif';
           }
           
-          ctx.fillText(displayValue, rightColX, currentY);
+          ctx.fillText(displayValue, rightX, currentY);
           currentY += rowSpacing;
         };
 
-        // --- FIX: Shorten UUIDs safely so they don't jump out of the page ---
         const rawId = donation.id ? String(donation.id) : String(Math.floor(Math.random() * 10000));
         const shortId = rawId.includes('-') ? rawId.split('-')[0].toUpperCase() : rawId.padStart(4, '0');
         const receiptId = 'VLP-' + shortId;
         
-        drawRow('Receipt ID :', receiptId, true);
-        drawRow('Date / දිනය :', donation.date);
-        drawRow('Donor Name / නම :', donation.name);
-        drawRow('Contact / දුරකථන :', donation.phone_number);
-        drawRow('Received By / සටහන් කළේ :', donation.reported_by);
+        drawRow('Receipt ID', receiptId, true);
+        drawRow('Date / දිනය', donation.date);
+        drawRow('Donor Name / නම', donation.name);
+        drawRow('Contact / දුරකථන', donation.phone_number);
+        drawRow('Received By / සටහන් කළේ', donation.reported_by);
         
         if (donation.donation_type === 'Cash') {
-          drawRow('Category / වර්ගය :', donation.donor_category);
+          drawRow('Category / වර්ගය', donation.donor_category);
         } else {
-          drawRow('Item / ද්‍රව්‍ය :', donation.item_description);
-          drawRow('Quantity / ප්‍රමාණය :', donation.quantity.toString());
+          drawRow('Item / ද්‍රව්‍ය', donation.item_description);
+          drawRow('Quantity / ප්‍රමාණය', donation.quantity.toString());
         }
 
-        // Amount Box
-        currentY += 20;
+        currentY += 15;
         
-        // Highlight Box Background
-        ctx.fillStyle = '#020617';
-        ctx.strokeStyle = '#22c55e';
-        ctx.lineWidth = 2;
-        ctx.roundRect ? ctx.roundRect(80, currentY, width - 160, 140, 15) : ctx.strokeRect(80, currentY, width - 160, 140);
+        // 6. Amount Box (MD3 Elevated Card)
+        ctx.fillStyle = theme.surfaceContainerHigh;
+        ctx.roundRect(100, currentY, width - 200, 150, 24);
         ctx.fill();
-        ctx.stroke();
 
         // Box Content
         ctx.textAlign = 'center';
-        ctx.fillStyle = '#4ade80';
-        ctx.font = '20px sans-serif';
-        ctx.fillText(donation.donation_type === 'Cash' ? 'TOTAL DONATION AMOUNT' : 'TOTAL DONATION VALUE', width/2, currentY + 45);
+        ctx.fillStyle = theme.onSurfaceVariant;
+        ctx.font = '500 18px sans-serif';
+        ctx.fillText(donation.donation_type === 'Cash' ? 'TOTAL DONATION AMOUNT' : 'TOTAL DONATION VALUE', width / 2, currentY + 45);
 
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 55px monospace';
+        ctx.fillStyle = theme.primary;
+        ctx.font = '700 55px monospace';
         const amountStr = donation.donation_type === 'Cash' ? `Rs. ${Math.round(Number(donation.amount)).toLocaleString()}` : 'GOODS / ද්‍රව්‍ය';
-        ctx.fillText(amountStr, width/2, currentY + 105);
+        ctx.fillText(amountStr, width / 2, currentY + 110);
 
-        currentY += 200;
+        currentY += 210;
 
-        // System Generated Stamp
+        drawDivider(currentY);
+        currentY += 45;
+
+        // 7. System Generated Stamp (MD3 Pill Shape)
+        ctx.fillStyle = theme.surfaceContainerHigh;
+        ctx.roundRect((width - 450)/2, currentY - 26, 450, 36, 18);
+        ctx.fill();
+
         ctx.textAlign = 'center';
-        ctx.fillStyle = '#334155';
-        ctx.font = 'bold 16px sans-serif';
-        ctx.fillText('★ SYSTEM GENERATED DIGITAL RECEIPT ★', width/2, currentY);
+        ctx.fillStyle = theme.onSurfaceVariant;
+        ctx.font = '600 14px sans-serif';
+        ctx.fillText('★ SYSTEM GENERATED DIGITAL RECEIPT ★', width/2, currentY - 3);
 
-        currentY += 60;
+        currentY += 75;
 
-        // Footer Contact Details
-        ctx.fillStyle = '#64748b';
-        ctx.font = '18px sans-serif';
+        // 8. Footer Contact Details
+        ctx.fillStyle = theme.onSurfaceVariant;
+        ctx.font = '400 18px sans-serif';
         ctx.fillText('විමසීම් : දික්හේනපුර නව බුදුමැදුර අසල', width/2, currentY);
         
         currentY += 30;
-        ctx.fillStyle = '#cbd5e1';
-        ctx.font = 'bold 18px sans-serif';
-        ctx.fillText('0716155666 - ඉසර දිල්නුක  |  0710846810 - ඉමේශ් නිල්හාන්', width/2, currentY);
+        ctx.fillStyle = theme.onSurface;
+        ctx.font = '600 18px sans-serif';
+        ctx.fillText('071 615 5666 - ඉසර දිල්නුක  |  071 084 6810 - ඉමේශ් නිල්හාන්', width/2, currentY);
         
         currentY += 25;
-        ctx.fillStyle = '#475569';
-        ctx.font = '16px sans-serif';
+        ctx.fillStyle = theme.onSurfaceVariant;
+        ctx.font = '400 16px sans-serif';
         ctx.fillText('isaradilnuka2005@gmail.com', width/2, currentY);
 
         // Final Thank you
-        currentY += 60;
-        ctx.fillStyle = '#22c55e';
-        ctx.font = 'italic 22px sans-serif';
+        currentY += 65;
+        ctx.fillStyle = theme.primary;
+        ctx.font = 'italic 500 22px sans-serif';
         ctx.fillText('Thank you for your generous contribution!', width/2, currentY);
-        ctx.font = '20px sans-serif';
+        ctx.font = '400 20px sans-serif';
         ctx.fillText('ඔබගේ වටිනා පරිත්‍යාගයට බොහෝ පින්.', width/2, currentY + 30);
 
-        // Top Logos (Drawn last to be on top)
-        ctx.drawImage(img, width - 130, 60, 80, 80);
-        ctx.drawImage(img, 50, 60, 80, 80);
-
-        // Trigger Download
-        const dataUrl = canvas.toDataURL('image/png');
+        // Trigger PNG Download
+        const dataUrl = canvas.toDataURL('image/png', 1.0);
         const a = document.createElement('a');
         a.href = dataUrl;
         a.download = `Vesak_Receipt_${donation.name?.replace(/\s+/g, '_') || 'Donor'}_${donation.date}.png`;
         a.click();
+      };
+
+      // Load logo
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = 'logo.png';
+      img.onload = drawContent;
+      img.onerror = drawContent; // Fallback if logo fails
+    };
+
+    const downloadPDFReceipt = (donation) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const width = 800;
+      const height = 1150;
+      canvas.width = width;
+      canvas.height = height;
+
+      // Canvas roundRect Polyfill
+      if (!ctx.roundRect) {
+        ctx.roundRect = function (x, y, w, h, r) {
+          if (!Array.isArray(r)) { r = [r, r, r, r]; }
+          this.beginPath();
+          this.moveTo(x + r[0], y);
+          this.lineTo(x + w - r[1], y);
+          this.quadraticCurveTo(x + w, y, x + w, y + r[1]);
+          this.lineTo(x + w, y + h - r[2]);
+          this.quadraticCurveTo(x + w, y + h, x + w - r[2], y + h);
+          this.lineTo(x + r[3], y + h);
+          this.quadraticCurveTo(x, y + h, x, y + h - r[3]);
+          this.lineTo(x, y + r[0]);
+          this.quadraticCurveTo(x, y, x + r[0], y);
+          this.closePath();
+          return this;
+        };
+      }
+
+      // Material Design 3 Dark Theme Palette (Green Tone)
+      const theme = {
+        surface: '#1A1C18',              // Background
+        surfaceContainer: '#21251E',     // Main Card
+        surfaceContainerHigh: '#2B2F27', // Inner Cards
+        primary: '#9CD67D',              // Main Accent Green
+        onPrimaryContainer: '#D7F5C4',   // Header Text
+        primaryContainer: '#1F510D',     // Header / Amount Background
+        onSurface: '#E2E3DD',            // Main Values
+        onSurfaceVariant: '#C2C9BD',     // Labels & Subtitles
+        outlineVariant: '#43483E'        // Dividers
+      };
+
+      // 1. Full Background
+      ctx.fillStyle = theme.surface;
+      ctx.fillRect(0, 0, width, height);
+
+      const drawContent = () => {
+        // 2. MD3 Main Elevated Card (Large 32px border radius)
+        ctx.fillStyle = theme.surfaceContainer;
+        ctx.roundRect(40, 40, width - 80, height - 80, 32);
+        ctx.fill();
+
+        // 3. Header Accent Shape (Top rounded corners only)
+        ctx.fillStyle = theme.primaryContainer;
+        ctx.roundRect(40, 40, width - 80, 165, [32, 32, 0, 0]);
+        ctx.fill();
+
+        // Watermark Logo
+        ctx.globalAlpha = 0.03;
+        const logoSize = 450;
+        ctx.drawImage(img, (width - logoSize) / 2, (height - logoSize) / 2 + 50, logoSize, logoSize);
+        ctx.globalAlpha = 1.0;
+
+        // 4. Typography - Header Section
+        ctx.textAlign = 'center';
+        
+        ctx.fillStyle = theme.onPrimaryContainer;
+        ctx.font = '900 40px sans-serif'; // Black/Heavy weight
+        ctx.fillText('VESAK LANTERN 2026', width / 2, 105);
+
+        ctx.fillStyle = theme.primary;
+        ctx.font = '600 20px sans-serif'; // Semi-bold
+        ctx.letterSpacing = '1px';
+        ctx.fillText('OFFICIAL DONATION RECEIPT', width / 2, 140);
+
+        ctx.fillStyle = theme.onPrimaryContainer;
+        ctx.font = '400 18px sans-serif'; // Regular
+        ctx.letterSpacing = '0px';
+        ctx.fillText('මහා වෙසක් කූඩු ව්‍යාපෘතිය', width / 2, 170);
+
+        // Top Logos 
+        ctx.drawImage(img, 70, 60, 80, 80);
+        ctx.drawImage(img, width - 150, 60, 80, 80);
+
+        // MD3 Divider Line Function
+        const drawDivider = (y) => {
+          ctx.fillStyle = theme.outlineVariant;
+          ctx.roundRect(100, y, width - 200, 2, 1);
+          ctx.fill();
+        };
+
+        drawDivider(230);
+
+        // 5. Details Section (MD3 List Layout: Label Left, Value Right)
+        let currentY = 295;
+        const rowSpacing = 60;
+        const leftX = 100;
+        const rightX = width - 100;
+
+        const drawRow = (label, value, isHighlight = false) => {
+          // Label (Left Aligned, Muted Color)
+          ctx.textAlign = 'left';
+          ctx.fillStyle = theme.onSurfaceVariant;
+          ctx.font = '500 20px sans-serif';
+          ctx.fillText(label, leftX, currentY);
+          
+          // Value (Right Aligned, Bright Color)
+          ctx.textAlign = 'right';
+          ctx.fillStyle = isHighlight ? theme.primary : theme.onSurface;
+          
+          let displayValue = String(value || '-');
+          if (displayValue.length > 35) {
+             ctx.font = isHighlight ? '700 16px sans-serif' : '500 16px sans-serif';
+          } else if (displayValue.length > 20) {
+             ctx.font = isHighlight ? '700 20px sans-serif' : '500 20px sans-serif';
+          } else {
+             ctx.font = isHighlight ? '700 22px sans-serif' : '500 22px sans-serif';
+          }
+          
+          ctx.fillText(displayValue, rightX, currentY);
+          currentY += rowSpacing;
+        };
+
+        const rawId = donation.id ? String(donation.id) : String(Math.floor(Math.random() * 10000));
+        const shortId = rawId.includes('-') ? rawId.split('-')[0].toUpperCase() : rawId.padStart(4, '0');
+        const receiptId = 'VLP-' + shortId;
+        
+        drawRow('Receipt ID', receiptId, true);
+        drawRow('Date / දිනය', donation.date);
+        drawRow('Donor Name / නම', donation.name);
+        drawRow('Contact / දුරකථන', donation.phone_number);
+        drawRow('Received By / සටහන් කළේ', donation.reported_by);
+        
+        if (donation.donation_type === 'Cash') {
+          drawRow('Category / වර්ගය', donation.donor_category);
+        } else {
+          drawRow('Item / ද්‍රව්‍ය', donation.item_description);
+          drawRow('Quantity / ප්‍රමාණය', donation.quantity.toString());
+        }
+
+        currentY += 15;
+        
+        // 6. Amount Box (MD3 Elevated Card)
+        ctx.fillStyle = theme.surfaceContainerHigh;
+        ctx.roundRect(100, currentY, width - 200, 150, 24);
+        ctx.fill();
+
+        // Box Content
+        ctx.textAlign = 'center';
+        ctx.fillStyle = theme.onSurfaceVariant;
+        ctx.font = '500 18px sans-serif';
+        ctx.fillText(donation.donation_type === 'Cash' ? 'TOTAL DONATION AMOUNT' : 'TOTAL DONATION VALUE', width / 2, currentY + 45);
+
+        ctx.fillStyle = theme.primary;
+        ctx.font = '700 55px monospace';
+        const amountStr = donation.donation_type === 'Cash' ? `Rs. ${Math.round(Number(donation.amount)).toLocaleString()}` : 'GOODS / ද්‍රව්‍ය';
+        ctx.fillText(amountStr, width / 2, currentY + 110);
+
+        currentY += 210;
+
+        drawDivider(currentY);
+        currentY += 45;
+
+        // 7. System Generated Stamp (MD3 Pill Shape)
+        ctx.fillStyle = theme.surfaceContainerHigh;
+        ctx.roundRect((width - 450)/2, currentY - 26, 450, 36, 18);
+        ctx.fill();
+
+        ctx.textAlign = 'center';
+        ctx.fillStyle = theme.onSurfaceVariant;
+        ctx.font = '600 14px sans-serif';
+        ctx.fillText('★ SYSTEM GENERATED DIGITAL RECEIPT ★', width/2, currentY - 3);
+
+        currentY += 75;
+
+        // 8. Footer Contact Details
+        ctx.fillStyle = theme.onSurfaceVariant;
+        ctx.font = '400 18px sans-serif';
+        ctx.fillText('විමසීම් : දික්හේනපුර නව බුදුමැදුර අසල', width/2, currentY);
+        
+        currentY += 30;
+        ctx.fillStyle = theme.onSurface;
+        ctx.font = '600 18px sans-serif';
+        ctx.fillText('071 615 5666 - ඉසර දිල්නුක  |  071 084 6810 - ඉමේශ් නිල්හාන්', width/2, currentY);
+        
+        currentY += 25;
+        ctx.fillStyle = theme.onSurfaceVariant;
+        ctx.font = '400 16px sans-serif';
+        ctx.fillText('isaradilnuka2005@gmail.com', width/2, currentY);
+
+        // Final Thank you
+        currentY += 65;
+        ctx.fillStyle = theme.primary;
+        ctx.font = 'italic 500 22px sans-serif';
+        ctx.fillText('Thank you for your generous contribution!', width/2, currentY);
+        ctx.font = '400 20px sans-serif';
+        ctx.fillText('ඔබගේ වටිනා පරිත්‍යාගයට බොහෝ පින්.', width/2, currentY + 30);
+
+        // Trigger PDF Download
+        const dataUrl = canvas.toDataURL('image/png', 1.0);
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: [width, height] });
+        pdf.addImage(dataUrl, 'PNG', 0, 0, width, height);
+        pdf.save(`Vesak_Receipt_${donation.name?.replace(/\s+/g, '_') || 'Donor'}_${donation.date}.pdf`);
       };
 
       // Load logo
@@ -1127,7 +1376,7 @@
                 <h4 className={`font-semibold ${selectedDetails.type === 'income' ? 'text-brand-400' : selectedDetails.type === 'expense' ? 'text-red-400' : 'text-yellow-400'}`}>
                   {selectedDetails.type === 'income' ? 'Income Records' : selectedDetails.type === 'expense' ? 'Expense Records' : 'Goods Donations'} - {selectedDetails.label}
                 </h4>
-                <button onClick={() => setSelectedDetails(null)} className="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 w-6 h-6 flex justify-center items-center rounded-full transition text-lg leading-none">&times;</button>
+                <button onClick={() => setSelectedDetails(null)} className="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 w-6 h-6 flex justify-center items-center rounded-full transition text-lg leading-none m3-button m3-button-tonal">&times;</button>
               </div>
               
               <div className="max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
@@ -1216,93 +1465,107 @@
       if (status === 'ended') return null;
 
       return (
-        <div className={`glass-card rounded-3xl p-6 border ${status === 'live' ? 'border-brand-500/50 bg-brand-500/10' : 'border-slate-800/50 bg-gradient-to-br from-[#0f172a]/60 to-slate-900/40'} flex justify-between items-center sm:gap-6 flex-col sm:flex-row relative overflow-hidden group mb-8 shadow-[0_20px_50px_rgba(0,0,0,0.4)] transition-all duration-500`}>
-          <div className={`absolute top-0 right-0 w-64 h-64 ${status === 'live' ? 'bg-brand-500/20' : 'bg-amber-500/5'} blur-[80px] rounded-full transition-all duration-700 pointer-events-none group-hover:scale-125`}></div>
-          
-          <div className={`flex flex-col z-10 text-center sm:text-left ${status === 'live' ? 'w-full items-center sm:items-start' : 'mb-6 sm:mb-0'}`}>
-            <h3 className={`text-xl sm:text-2xl font-black ${status === 'live' ? 'text-brand-400' : 'text-amber-500'} flex items-center justify-center sm:justify-start gap-3 drop-shadow-[0_0_15px_rgba(34,197,94,0.4)]`}>
-              {status === 'live' ? (
-                <>
-                  <span className="relative flex h-4 w-4">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-4 w-4 bg-brand-500"></span>
-                  </span>
-                  Vesak Exhibition is LIVE!
-                </>
-              ) : (
-                <>
-                  <svg className="w-6 h-6 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                  Vesak Exhibition Begins In
-                </>
+        <React.Fragment>
+          <div className={`glass-card rounded-3xl p-6 border ${status === 'live' ? 'border-brand-500/50 bg-brand-500/10' : 'border-slate-800/50 bg-gradient-to-br from-[#0f172a]/60 to-slate-900/40'} flex justify-between items-center sm:gap-6 flex-col sm:flex-row relative overflow-hidden group mb-6 shadow-[0_20px_50px_rgba(0,0,0,0.4)] transition-all duration-500`}>
+            <div className={`absolute top-0 right-0 w-64 h-64 ${status === 'live' ? 'bg-brand-500/20' : 'bg-amber-500/5'} blur-[80px] rounded-full transition-all duration-700 pointer-events-none group-hover:scale-125`}></div>
+            
+            <div className={`flex flex-col z-10 text-center sm:text-left ${status === 'live' ? 'w-full items-center sm:items-start' : 'mb-6 sm:mb-0'}`}>
+              <h3 className={`text-xl sm:text-2xl font-black ${status === 'live' ? 'text-brand-400' : 'text-amber-500'} flex items-center justify-center sm:justify-start gap-3 drop-shadow-[0_0_15px_rgba(34,197,94,0.4)]`}>
+                {status === 'live' ? (
+                  <React.Fragment>
+                    <span className="relative flex h-4 w-4">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-4 w-4 bg-brand-500"></span>
+                    </span>
+                    Vesak Exhibition is LIVE!
+                  </React.Fragment>
+                ) : (
+                  <React.Fragment>
+                    <MaterialIcon name="timer" className="animate-pulse" />
+                    Vesak Exhibition Begins In
+                  </React.Fragment>
+                )}
+              </h3>
+              <p className="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-[0.2em] mt-2 opacity-90">
+                {status === 'live' ? 'මහා වෙසක් පහන් කූඩු ප්‍රදර්ශනය දැන් පැවැත්වේ... දින 5ක් පුරා' : 'මහා වෙසක් කූඩු ප්‍රදර්ශනයට තව...'}
+              </p>
+              {status === 'live' && (
+                <div className="mt-4 px-4 py-2 bg-brand-500/10 border border-brand-500/20 rounded-xl inline-flex items-center gap-2 animate-bounce">
+                  <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest">Day {6 - timeLeft.d} of 5</span>
+                </div>
               )}
-            </h3>
-            <p className="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-[0.2em] mt-2 opacity-90">
-              {status === 'live' ? 'මහා වෙසක් පහන් කූඩු ප්‍රදර්ශනය දැන් පැවැත්වේ... දින 5ක් පුරා' : 'මහා වෙසක් කූඩු ප්‍රදර්ශනයට තව...'}
-            </p>
-            {status === 'live' && (
-              <div className="mt-4 px-4 py-2 bg-brand-500/10 border border-brand-500/20 rounded-xl inline-flex items-center gap-2 animate-bounce">
-                <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest">Day {6 - timeLeft.d} of 5</span>
+            </div>
+            
+            {status === 'upcoming' && (
+              <div className="flex gap-2 sm:gap-4 z-10 text-center text-white justify-center w-full sm:w-auto overflow-x-auto sm:overflow-x-visible py-2 animate-fade-in no-scrollbar">
+                {[
+                  { val: timeLeft.d, label: 'Days' },
+                  { val: String(timeLeft.h).padStart(2, '0'), label: 'Hrs' },
+                  { val: String(timeLeft.m).padStart(2, '0'), label: 'Mins' },
+                  { val: String(timeLeft.s).padStart(2, '0'), label: 'Secs', highlight: true }
+                ].map((unit, i) => (
+                  <React.Fragment key={unit.label}>
+                    <div className="glass-card border border-white/5 rounded-2xl px-2 py-3 min-w-[65px] sm:min-w-[80px] shadow-2xl flex flex-col items-center bg-slate-950/60 relative group/unit overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.05] to-transparent pointer-events-none"></div>
+                      <span className={`text-2xl sm:text-3xl font-black font-mono tracking-tighter ${unit.highlight ? 'text-amber-500' : 'text-brand-400'}`}>{unit.val}</span>
+                      <span className="text-[8px] text-slate-500 uppercase tracking-[0.2em] mt-1.5 font-black">{unit.label}</span>
+                    </div>
+                    {i < 3 && <div className="text-2xl font-bold text-slate-800 self-center hidden sm:block">:</div>}
+                  </React.Fragment>
+                ))}
               </div>
             )}
           </div>
-          
-          {status === 'upcoming' && (
-            <div className="flex gap-2 sm:gap-4 z-10 text-center text-white justify-center w-full sm:w-auto overflow-x-auto sm:overflow-x-visible py-2 animate-fade-in no-scrollbar">
-              {[
-                { val: timeLeft.d, label: 'Days' },
-                { val: String(timeLeft.h).padStart(2, '0'), label: 'Hrs' },
-                { val: String(timeLeft.m).padStart(2, '0'), label: 'Mins' },
-                { val: String(timeLeft.s).padStart(2, '0'), label: 'Secs', highlight: true }
-              ].map((unit, i) => (
-                <React.Fragment key={unit.label}>
-                  <div className="glass-card border border-white/5 rounded-2xl px-2 py-3 min-w-[65px] sm:min-w-[80px] shadow-2xl flex flex-col items-center bg-slate-950/60 relative group/unit overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-b from-white/[0.05] to-transparent pointer-events-none"></div>
-                    <span className={`text-2xl sm:text-3xl font-black font-mono tracking-tighter ${unit.highlight ? 'text-amber-500' : 'text-brand-400'}`}>{unit.val}</span>
-                    <span className="text-[8px] text-slate-500 uppercase tracking-[0.2em] mt-1.5 font-black">{unit.label}</span>
-                  </div>
-                  {i < 3 && <div className="text-2xl font-bold text-slate-800 self-center hidden sm:block">:</div>}
-                </React.Fragment>
-              ))}
-            </div>
-          )}
+
           {currentUser?.role === 'admin' && (
-            <div className="w-full mt-6 pt-6 border-t border-white/5 flex flex-col gap-4 z-20">
-               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                 <div className="flex items-center gap-3 self-start sm:self-center">
-                   <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-inner">
-                      <svg className="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                   </div>
-                   <div className="flex flex-col text-left">
-                     <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Admin Control</span>
-                     <span className="text-xs text-slate-400">Remote Lantern System Controller</span>
-                   </div>
+            <div className="glass-card rounded-[2rem] p-6 border border-brand-500/20 bg-brand-500/5 flex flex-col lg:flex-row items-center justify-between gap-6 relative overflow-hidden group mb-10 animate-fade-in shadow-[0_20px_40px_rgba(0,0,0,0.3)] border-l-4 border-l-brand-500">
+               <div className="absolute top-0 right-0 w-48 h-48 bg-brand-500/10 blur-[60px] rounded-full pointer-events-none transition-transform duration-1000 group-hover:scale-150"></div>
+               
+               <div className="flex items-center gap-5 z-10 w-full lg:w-auto">
+                 <div className="w-14 h-14 rounded-2xl bg-brand-500/20 flex items-center justify-center text-brand-400 shadow-inner group-hover:scale-110 transition-transform duration-500">
+                    <MaterialIcon name="settings_remote" className="text-3xl animate-pulse" />
                  </div>
-
-                 <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-3">
-                   <a 
-                     href="http://192.168.1.81:5000" 
-                     target="_blank" 
-                     rel="noopener noreferrer"
-                     className="px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-black uppercase tracking-widest text-[10px] rounded-xl transition-all duration-300 shadow-[0_10px_20px_rgba(245,158,11,0.2)] hover:shadow-[0_15px_30px_rgba(245,158,11,0.3)] flex items-center justify-center gap-2 active:scale-95"
-                   >
-                     <span>Light Up / පත්තු කරන්න</span>
-                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                   </a>
-
-                   <a 
-                     href="http://192.168.1.81:5000/monitor" 
-                     target="_blank" 
-                     rel="noopener noreferrer"
-                     className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black uppercase tracking-widest text-[10px] rounded-xl transition-all duration-300 shadow-[0_10px_20px_rgba(37,99,235,0.2)] hover:shadow-[0_15px_30px_rgba(37,99,235,0.3)] flex items-center justify-center gap-2 active:scale-95"
-                   >
-                     <span>Live Monitor / සජීවීව බලන්න</span>
-                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                   </a>
+                 <div className="flex flex-col">
+                   <div className="flex items-center gap-2">
+                     <span className="text-[10px] font-black text-brand-500 uppercase tracking-[0.2em] leading-none">Admin Control Panel</span>
+                     <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-ping"></span>
+                   </div>
+                   <h4 className="text-lg font-bold text-white tracking-tight mt-1">Remote Lantern System Controller</h4>
+                   <p className="text-[9px] text-slate-500 uppercase font-bold tracking-widest mt-1 opacity-80">පහන් කූඩු පද්ධති පාලක පුවරුව (Remote Access)</p>
                  </div>
+               </div>
+
+               <div className="w-full lg:w-auto flex flex-col sm:flex-row gap-4 z-10">
+                 <a 
+                   href="http://192.168.1.81:5000" 
+                   target="_blank" 
+                   rel="noopener noreferrer"
+                   className="m3-button m3-button-filled !h-14 !rounded-2xl !px-8 !bg-brand-600 hover:!bg-brand-500 shadow-[0_10px_20px_rgba(34,197,94,0.2)] flex items-center justify-center gap-3 group/btn relative overflow-hidden"
+                 >
+                   <div className="absolute inset-0 bg-white/10 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
+                   <MaterialIcon name="bolt" className="group-hover/btn:rotate-12 transition-transform" />
+                   <div className="flex flex-col items-start leading-tight">
+                     <span className="uppercase tracking-widest text-[10px] font-black">Light Up System</span>
+                     <span className="text-[8px] font-bold opacity-80">පද්ධතිය ක්‍රියාත්මක කරන්න</span>
+                   </div>
+                 </a>
+
+                 <a 
+                   href="http://192.168.1.81:5000/monitor" 
+                   target="_blank" 
+                   rel="noopener noreferrer"
+                   className="m3-button m3-button-tonal !h-14 !rounded-2xl !px-8 !bg-slate-900/60 !text-brand-400 border border-brand-500/30 hover:border-brand-400 transition-all flex items-center justify-center gap-3 group/mon"
+                 >
+                   <MaterialIcon name="videocam" className="group-hover/mon:scale-110 transition-transform" />
+                   <div className="flex flex-col items-start leading-tight">
+                     <span className="uppercase tracking-widest text-[10px] font-black">Live Monitor</span>
+                     <span className="text-[8px] font-bold opacity-80">සජීවී නිරීක්ෂණය</span>
+                   </div>
+                 </a>
                </div>
             </div>
           )}
-        </div>
+        </React.Fragment>
       );
     }
 
@@ -1432,7 +1695,7 @@
                         <span className="text-[11px] text-slate-400 text-left">Scan the QR code and enter verification</span>
                       </div>
                     </div>
-                    <button onClick={() => setStep(2)} className="mt-8 w-full py-4 bg-brand-600 hover:bg-brand-500 text-white font-black uppercase tracking-widest text-xs rounded-2xl transition shadow-xl shadow-brand-500/20">
+                    <button onClick={() => setStep(2)} className="mt-8 w-full py-4 bg-brand-600 hover:bg-brand-500 text-white font-black uppercase tracking-widest text-xs rounded-2xl transition shadow-xl shadow-brand-500/20 m3-button m3-button-filled magnetic-button">
                       Get Started / ආරම්භ කරන්න
                     </button>
                   </div>
@@ -1462,7 +1725,7 @@
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
                        </button>
                     </div>
-                    <button onClick={() => setStep(3)} className="w-full py-4 bg-brand-600 hover:bg-brand-500 text-white font-black uppercase tracking-widest text-xs rounded-2xl transition shadow-xl shadow-brand-500/20">
+                    <button onClick={() => setStep(3)} className="w-full py-4 bg-brand-600 hover:bg-brand-500 text-white font-black uppercase tracking-widest text-xs rounded-2xl transition shadow-xl shadow-brand-500/20 m3-button m3-button-filled magnetic-button">
                       I've Scanned It / ඉදිරියට
                     </button>
                     <button onClick={() => setStep(1)} className="mt-4 text-slate-500 text-[10px] font-bold uppercase tracking-widest hover:text-slate-300">Back</button>
@@ -1496,7 +1759,7 @@
                     <button 
                       onClick={handleVerifyAndSave} 
                       disabled={loading || token.length !== 6}
-                      className="w-full py-4 bg-brand-600 hover:bg-brand-500 text-white font-black uppercase tracking-widest text-xs rounded-2xl transition shadow-xl shadow-brand-500/20 disabled:opacity-50 disabled:grayscale"
+                      className="w-full py-4 bg-brand-600 hover:bg-brand-500 text-white font-black uppercase tracking-widest text-xs rounded-2xl transition shadow-xl shadow-brand-500/20 disabled:opacity-50 disabled:grayscale m3-button m3-button-filled magnetic-button"
                     >
                       {loading ? (
                         <div className="flex items-center justify-center gap-2">
@@ -1602,7 +1865,7 @@
                 type="button"
                 onClick={handleVerify} 
                 disabled={loading || token.length !== 6}
-                className="w-full bg-brand-600 hover:bg-brand-500 text-white font-black uppercase tracking-widest text-xs py-5 rounded-2xl transition-all duration-500 shadow-[0_15px_30px_rgba(34,197,94,0.3)] hover:shadow-[0_20px_40px_rgba(34,197,94,0.4)] hover:-translate-y-1 active:translate-y-0 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none"
+                className="w-full bg-brand-600 hover:bg-brand-500 text-white font-black uppercase tracking-widest text-xs py-5 rounded-2xl transition-all duration-500 shadow-[0_15px_30px_rgba(34,197,94,0.3)] hover:shadow-[0_20px_40px_rgba(34,197,94,0.4)] hover:-translate-y-1 active:translate-y-0 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none m3-button m3-button-filled magnetic-button"
               >
                 Verify & Authorize
               </button>
@@ -1969,10 +2232,10 @@
                      <textarea value={profileData.address} onChange={e => setProfileData({...profileData, address: e.target.value})} className="mt-1 block w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-2 text-sm focus:border-brand-500 outline-none h-20"></textarea>
                    </div>
                    <div className="flex justify-end gap-3">
-                     <button type="button" onClick={() => { setIsEditingProfile(false); setProfileData({ phone_number: currentUser?.phone_number || '', address: currentUser?.address || '' }); }} className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-semibold transition">
+                     <button type="button" onClick={() => { setIsEditingProfile(false); setProfileData({ phone_number: currentUser?.phone_number || '', address: currentUser?.address || '' }); }} className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-semibold transition m3-button m3-button-tonal">
                        Cancel
                      </button>
-                     <button type="submit" disabled={savingProfile} className="px-6 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-sm font-semibold transition disabled:opacity-50">
+                     <button type="submit" disabled={savingProfile} className="px-6 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-sm font-semibold transition disabled:opacity-50 m3-button m3-button-filled magnetic-button">
                        {savingProfile ? 'Saving...' : 'Save Details / යාවත්කාලීන කරන්න'}
                      </button>
                    </div>
@@ -2498,7 +2761,7 @@
                     
                     <div className="mt-6 pt-4 border-t border-slate-800 flex justify-between items-center">
                        <div className="text-xs text-slate-500 font-medium">Showing {data.length} records</div>
-                       <button onClick={() => setSummaryType(null)} className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold transition-all active:scale-95">Close / වසන්න</button>
+                       <button onClick={() => setSummaryType(null)} className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold transition-all active:scale-95 m3-button m3-button-tonal">Close / වසන්න</button>
                     </div>
                  </div>
                </div>
@@ -2693,9 +2956,14 @@
                         {p.item_description} <span className="text-[10px] text-slate-500 ml-1">x{p.quantity}</span>
                       </td>
                       <td className="px-4 py-4 text-center">
-                        <button onClick={() => downloadReceipt(p)} className="inline-flex items-center gap-1.5 px-3 py-2 bg-brand-500/20 text-brand-400 hover:bg-brand-500/30 border border-brand-500/50 rounded-lg transition text-xs font-semibold">
-                          <IconDownload /> Receipt
-                        </button>
+                        <div className="flex gap-2 justify-center">
+                          <button onClick={() => downloadReceipt(p)} className="inline-flex items-center gap-1 px-2.5 py-2 bg-brand-500/20 text-brand-400 hover:bg-brand-500/30 border border-brand-500/50 rounded-lg transition text-xs font-semibold">
+                            <IconDownload /> PNG
+                          </button>
+                          <button onClick={() => downloadPDFReceipt(p)} className="inline-flex items-center gap-1 px-2.5 py-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50 rounded-lg transition text-xs font-semibold">
+                            <IconDownload /> PDF
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -2810,9 +3078,14 @@
                         {p.donation_type === 'Cash' ? formatCurrency(p.amount) : 'Goods'}
                       </td>
                       <td className="px-4 py-4 text-center">
-                        <button onClick={() => downloadReceipt(p)} className="inline-flex items-center gap-1.5 px-3 py-2 bg-brand-500/20 text-brand-400 hover:bg-brand-500/30 border border-brand-500/50 rounded-lg transition text-xs font-semibold">
-                          <IconDownload /> Receipt
-                        </button>
+                        <div className="flex gap-2 justify-center">
+                          <button onClick={() => downloadReceipt(p)} className="inline-flex items-center gap-1 px-2.5 py-2 bg-brand-500/20 text-brand-400 hover:bg-brand-500/30 border border-brand-500/50 rounded-lg transition text-xs font-semibold">
+                            <IconDownload /> PNG
+                          </button>
+                          <button onClick={() => downloadPDFReceipt(p)} className="inline-flex items-center gap-1 px-2.5 py-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50 rounded-lg transition text-xs font-semibold">
+                            <IconDownload /> PDF
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -3184,10 +3457,22 @@
                  </div>
 
                  {formData.donation_type === 'Cash' && (
-                   <>
-                     <InputField label="Amount (Rs)" sLabel="ප්‍රමාණය (රු)" type="number" name="amount" value={formData.amount} onChange={handleChange} required prefix="Rs." />
-                   </>
-                 )}
+                    <div className="md:col-span-2 mb-4">
+                      <InputField label="Amount (Rs)" sLabel="ප්‍රමාණය (රු)" type="number" name="amount" value={formData.amount} onChange={handleChange} required prefix="Rs." />
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {[500, 1000, 2000, 5000, 10000].map(val => (
+                          <button
+                            key={val}
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, amount: val }))}
+                            className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all border ${formData.amount == val ? 'bg-brand-500 text-white border-brand-500 shadow-[0_0_15px_rgba(34,197,94,0.4)]' : 'bg-slate-900/50 border-slate-700 text-slate-400 hover:border-brand-500/50 hover:bg-slate-800'}`}
+                          >
+                            Rs. {val.toLocaleString()}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                  {formData.donation_type === 'Goods' && (
                    <>
@@ -3240,17 +3525,17 @@
 
             <div className="flex gap-4 mt-8">
               {step > 1 && (
-                 <button type="button" onClick={() => setStep(step - 1)} className="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 shadow-lg border border-slate-700">
+                 <button type="button" onClick={() => setStep(step - 1)} className="m3-button m3-button-tonal flex-1">
                    Back / ආපසු
                  </button>
               )}
               {step < totalSteps && (
-                 <button type="submit" className="flex-1 bg-brand-600/80 hover:bg-brand-500 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 shadow-[0_0_15px_rgba(34,197,94,0.3)]">
+                 <button type="submit" className="flex-1 bg-brand-600/80 hover:bg-brand-500 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 shadow-[0_0_15px_rgba(34,197,94,0.3)] m3-button m3-button-filled magnetic-button">
                    Next Step / මීලඟ පියවර
                  </button>
               )}
               {step === totalSteps && (
-                 <button type="submit" disabled={loading} className="flex-1 bg-brand-600 hover:bg-brand-500 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 shadow-[0_0_15px_rgba(34,197,94,0.4)] disabled:opacity-50">
+                 <button type="submit" disabled={loading} className="flex-1 bg-brand-600 hover:bg-brand-500 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 shadow-[0_0_15px_rgba(34,197,94,0.4)] disabled:opacity-50 m3-button m3-button-filled magnetic-button">
                     {loading ? 'Saving...' : 'Save Record / සුරකින්න'}
                  </button>
               )}
@@ -3484,7 +3769,7 @@
 
             <div className="flex gap-4 mt-8">
               {step > 1 && (
-                 <button type="button" onClick={() => setStep(step - 1)} className="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 shadow-lg border border-slate-700">
+                 <button type="button" onClick={() => setStep(step - 1)} className="m3-button m3-button-tonal flex-1">
                    Back / ආපසු
                  </button>
               )}
@@ -3504,7 +3789,7 @@
       );
     }
 
-    function PromisedList({ incomes, onRefresh, showNotification, users, setActiveTab, projectSettings }) {
+    function PromisedList({ incomes, onRefresh, showNotification, users, setActiveTab, projectSettings, currentUser }) {
       const promised = incomes.filter(i => i.status === 'Promised');
       const totalPromisedCash = promised.filter(i => i.donation_type === 'Cash').reduce((sum, item) => sum + Number(item.amount || 0), 0);
       const [loadingId, setLoadingId] = useState(null);
@@ -3973,7 +4258,7 @@
                    if (hasPasskeys && !usePasswordFallback) {
                      return (
                        <div className="animate-fade-in space-y-4">
-                         <button type="button" onClick={handleFaceIdLogin} disabled={loading} className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold py-4 rounded-xl transition border border-slate-600 disabled:opacity-50">
+                         <button type="button" onClick={handleFaceIdLogin} disabled={loading} className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold py-4 rounded-xl transition border border-slate-600 disabled:opacity-50 m3-button m3-button-tonal">
                            <svg className="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" /></svg>
                            {loading ? 'Verifying...' : `Login with Passkey (${userPasskeys.length})`}
                          </button>
@@ -3987,7 +4272,7 @@
                    return (
                      <div className="animate-fade-in space-y-4">
                        <input type="password" placeholder={`Password for ${username.split(' ')[0]}`} value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-4 outline-none focus:border-brand-500 font-medium" required />
-                       <button type="submit" disabled={loading} className="w-full bg-brand-600 hover:bg-brand-500 text-white font-black uppercase tracking-widest text-xs py-4 rounded-xl transition shadow-[0_10px_20px_rgba(34,197,94,0.3)] hover:shadow-[0_15px_30px_rgba(34,197,94,0.4)] hover:-translate-y-0.5 disabled:opacity-50">
+                       <button type="submit" disabled={loading} className="w-full bg-brand-600 hover:bg-brand-500 text-white font-black uppercase tracking-widest text-xs py-4 rounded-xl transition shadow-[0_10px_20px_rgba(34,197,94,0.3)] hover:shadow-[0_15px_30px_rgba(34,197,94,0.4)] hover:-translate-y-0.5 disabled:opacity-50 m3-button m3-button-filled magnetic-button">
                          {loading ? 'Logging in...' : 'Secure Login'}
                        </button>
                      </div>
@@ -4010,7 +4295,7 @@
                    <li>One uppercase & one lowercase letter</li>
                    <li>One number & one symbol (@$!%*?&)</li>
                  </ul>
-                 <button type="submit" disabled={loading} className="w-full bg-brand-600 hover:bg-brand-500 text-white font-semibold py-3 rounded-xl transition shadow-[0_0_15px_rgba(34,197,94,0.3)] disabled:opacity-50 mt-2">
+                 <button type="submit" disabled={loading} className="w-full bg-brand-600 hover:bg-brand-500 text-white font-semibold py-3 rounded-xl transition shadow-[0_0_15px_rgba(34,197,94,0.3)] disabled:opacity-50 mt-2 m3-button m3-button-filled magnetic-button">
                    {loading ? 'Saving...' : 'Change Password & Login'}
                  </button>
                </form>
@@ -4026,7 +4311,7 @@
                  <button type="submit" disabled={loading} className="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-semibold py-3 rounded-xl transition shadow-[0_0_15px_rgba(234,179,8,0.3)] disabled:opacity-50">
                    {loading ? 'Requesting...' : 'Request Reset'}
                  </button>
-                 <button type="button" onClick={() => setView('login')} className="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-3 rounded-xl transition border border-slate-700">Back to Login</button>
+                 <button type="button" onClick={() => setView('login')} className="m3-button m3-button-tonal flex-1">Back to Login</button>
                </form>
              )}
           </div>
@@ -4154,8 +4439,8 @@
                 )}
 
                 <div className="flex gap-3 pt-4 border-t border-slate-800">
-                  <button onClick={onClose} className="flex-1 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all">Cancel</button>
-                  <button onClick={handleSave} disabled={saving} className="flex-1 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-brand-600 hover:bg-brand-500 text-white transition-all shadow-lg shadow-brand-500/20 disabled:opacity-50">
+                  <button onClick={onClose} className="flex-1 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all m3-button m3-button-tonal">Cancel</button>
+                  <button onClick={handleSave} disabled={saving} className="flex-1 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-brand-600 hover:bg-brand-500 text-white transition-all shadow-lg shadow-brand-500/20 disabled:opacity-50 m3-button m3-button-filled magnetic-button">
                     {saving ? 'Saving...' : 'Save Settings'}
                   </button>
                 </div>
@@ -4167,7 +4452,7 @@
                 </div>
                 <p className="text-sm text-slate-300 font-bold mb-2">Access controlled by admin</p>
                 <p className="text-xs text-slate-500 leading-relaxed">මෙම අංශයේ දත්ත ඇතුළත් කිරීමේ අවසරය ප්‍රධාන පාලක (Admin) විසින් තීරණය කරනු ලැබේ.</p>
-                <button onClick={onClose} className="mt-8 w-full py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-slate-800 text-white hover:bg-slate-700 transition-all">Got It</button>
+                <button onClick={onClose} className="mt-8 w-full py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-slate-800 text-white hover:bg-slate-700 transition-all m3-button m3-button-tonal">Got It</button>
               </div>
             )}
           </div>
@@ -4285,7 +4570,7 @@
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                 Open in New Tab
               </button>
-              <button onClick={onClose} className="px-6 py-3 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold uppercase tracking-widest transition shadow-lg shadow-brand-500/20">
+              <button onClick={onClose} className="px-6 py-3 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold uppercase tracking-widest transition shadow-lg shadow-brand-500/20 m3-button m3-button-filled magnetic-button">
                 Back / ආපසු
               </button>
             </div>
@@ -4617,7 +4902,7 @@
                  <h2 className="text-xl font-bold text-white mb-2">Current Balance</h2>
                  <p className="text-sm text-slate-400 mb-6">දැනට ඉතිරි මුදල</p>
                  <div className="text-4xl font-bold text-brand-400 mb-8 neon-text">{formatCurrency(currentBalance)}</div>
-                 <button onClick={() => setShowBalanceOnly(false)} className="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-3 px-4 rounded-xl transition border border-slate-700">
+                 <button onClick={() => setShowBalanceOnly(false)} className="m3-button m3-button-tonal flex-1">
                    Back to Login
                  </button>
                </div>
@@ -4698,7 +4983,7 @@
             
             <button 
               onClick={() => { setIsNotificationModalOpen(false); setHasUnreadNotifications(false); }}
-              className="mt-6 w-full py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold uppercase tracking-widest transition border border-slate-700 shadow-lg"
+              className="m3-button m3-button-tonal flex-1"
             >
               Close / වසන්න
             </button>
@@ -4747,11 +5032,15 @@
 
           {/* M3 Navigation Rail (Desktop) */}
           <aside className="hidden md:flex flex-col w-20 bg-m3-surfaceContainerLow border-r border-white/5 fixed left-0 top-0 h-screen z-40 items-center py-8 gap-6">
-            <div className="w-12 h-12 bg-m3-primaryContainer rounded-2xl flex items-center justify-center text-m3-onPrimaryContainer shadow-lg mb-4">
-              <img src="logo.png" className="w-8 h-8 object-contain" />
-            </div>
+            <button 
+              onClick={() => setActiveTab('dashboard')} 
+              className="w-12 h-12 bg-m3-primaryContainer rounded-2xl flex items-center justify-center text-m3-onPrimaryContainer shadow-lg mb-4 hover:scale-110 active:scale-95 transition-all duration-300 group cursor-pointer"
+              title="Home"
+            >
+              <img src="logo.png" className="w-8 h-8 object-contain group-hover:rotate-12 transition-transform duration-500" />
+            </button>
             
-            <nav className="flex flex-col gap-4 flex-1">
+            <nav className="flex flex-col gap-6 flex-1">
               {[
                 { id: 'dashboard', icon: 'dashboard', tooltip: 'Dashboard' },
                 { id: 'income-page', icon: 'payments', tooltip: 'Income' },
@@ -4761,17 +5050,30 @@
                 <button 
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`w-14 h-14 flex items-center justify-center rounded-2xl transition-all duration-300 ${activeTab === item.id ? 'bg-m3-secondaryContainer text-m3-onSecondaryContainer' : 'text-m3-onSurface hover:bg-white/5'}`}
+                  className={`w-16 py-2 flex flex-col items-center justify-center rounded-2xl transition-all duration-300 ${activeTab === item.id ? 'bg-m3-secondaryContainer text-m3-onSecondaryContainer' : 'text-m3-onSurface hover:bg-white/5'}`}
                   title={item.tooltip}
                 >
                   <MaterialIcon name={item.icon} className={activeTab === item.id ? 'FILL' : ''} />
+                  <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter opacity-80">{item.tooltip}</span>
                 </button>
               ))}
             </nav>
             
-            <button onClick={() => setActiveTab('profile')} className="w-12 h-12 rounded-full overflow-hidden border-2 border-transparent hover:border-m3-primary transition-all duration-300">
-               <img src={currentUser?.avatar_url || 'logo.png'} className="w-full h-full object-cover" />
-            </button>
+            <div className="flex flex-col items-center gap-4 mb-4 mt-auto">
+              <button onClick={() => setActiveTab('profile')} className="flex flex-col items-center gap-1.5 group">
+                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-transparent group-hover:border-m3-primary transition-all duration-300 shadow-lg">
+                   <img src={currentUser?.avatar_url || 'logo.png'} className="w-full h-full object-cover" />
+                </div>
+                <div className="flex flex-col items-center leading-none">
+                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.1em] truncate w-16 text-center">{currentUser?.username?.split(' ')[0]}</span>
+                  <span className="text-[7px] font-bold text-brand-500/60 uppercase tracking-[0.2em] mt-1">{currentUser?.role}</span>
+                </div>
+              </button>
+              
+              <button onClick={() => setCurrentUser(null)} className="w-10 h-10 flex items-center justify-center rounded-2xl text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all duration-300 mt-2" title="Logout">
+                <MaterialIcon name="logout" className="text-xl" />
+              </button>
+            </div>
           </aside>
 
           <div className="flex-1 md:ml-20 flex flex-col min-h-screen relative z-10 overflow-x-hidden">
@@ -4866,7 +5168,7 @@
                       </div>
                     )}
 
-                    {activeTab === 'pledges' && <PromisedList incomes={incomes} onRefresh={fetchData} showNotification={showNotification} users={users} setActiveTab={setActiveTab} projectSettings={projectSettings} />}
+                    {activeTab === 'pledges' && <PromisedList incomes={incomes} onRefresh={fetchData} showNotification={showNotification} users={users} setActiveTab={setActiveTab} projectSettings={projectSettings} currentUser={currentUser} />}
                 </div>
                 
                 {viewingReceipt && <ReceiptModal url={viewingReceipt} onClose={() => setViewingReceipt(null)} />}
@@ -4888,6 +5190,7 @@
                   { id: 'dashboard', icon: 'dashboard', label: 'Home' },
                   { id: 'income-page', icon: 'payments', label: 'Income' },
                   { id: 'expense-page', icon: 'account_balance_wallet', label: 'Expense' },
+                  { id: 'pledges', icon: 'history', label: 'Pledges' },
                   { id: 'profile', icon: 'person', label: 'Profile' }
                 ].map(item => (
                   <button 
