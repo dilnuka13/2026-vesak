@@ -1051,7 +1051,8 @@
               allow_pledge_entry: projectSettings.allow_pledge_entry,
               income_access_list: projectSettings.income_access_list,
               expense_access_list: projectSettings.expense_access_list,
-              pledge_access_list: projectSettings.pledge_access_list
+              pledge_access_list: projectSettings.pledge_access_list,
+              public_portal_enabled: projectSettings.public_portal_enabled
             }).eq('id', existing.id);
             error = err;
           } else {
@@ -1062,7 +1063,8 @@
               allow_pledge_entry: projectSettings.allow_pledge_entry,
               income_access_list: projectSettings.income_access_list,
               expense_access_list: projectSettings.expense_access_list,
-              pledge_access_list: projectSettings.pledge_access_list
+              pledge_access_list: projectSettings.pledge_access_list,
+              public_portal_enabled: projectSettings.public_portal_enabled
             }]);
             error = err;
           }
@@ -1349,7 +1351,7 @@
             </button>
           </aside>
 
-          <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 relative z-10 overflow-y-auto h-screen">
+          <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 relative z-10 overflow-y-auto h-screen" style={{ paddingTop: 'max(env(safe-area-inset-top), 1rem)' }}>
             <header className="flex flex-col md:flex-row justify-between items-center mb-8 gap-6 surface-container p-6 rounded-m3-xl border border-white/5 shadow-xl">
                <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-m3-primaryContainer rounded-2xl flex items-center justify-center text-m3-onPrimaryContainer shadow-md">
@@ -1844,6 +1846,28 @@
                           <label className="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" checked={projectSettings.allow_pledge_entry !== false} onChange={e => setProjectSettings({...projectSettings, allow_pledge_entry: e.target.checked})} className="sr-only peer" />
                             <div className="w-11 h-6 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-brand-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Public Portal Section */}
+                      <div className="bg-slate-900/40 p-6 rounded-[2rem] border-2 border-brand-500/20 shadow-[0_0_30px_rgba(34,197,94,0.1)] relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                          <svg className="w-12 h-12 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                        </div>
+                        <div className="flex items-center justify-between relative z-10">
+                          <div>
+                            <p className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
+                              Public Portal Access
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full ${projectSettings.public_portal_enabled !== false ? 'bg-brand-500/20 text-brand-400' : 'bg-red-500/20 text-red-400'}`}>
+                                {projectSettings.public_portal_enabled !== false ? 'LIVE' : 'DISABLED'}
+                              </span>
+                            </p>
+                            <p className="text-xs text-slate-400 mt-1">Enable or disable the public donation portal (view_income.html) for all users.</p>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked={projectSettings.public_portal_enabled !== false} onChange={e => setProjectSettings({...projectSettings, public_portal_enabled: e.target.checked})} className="sr-only peer" />
+                            <div className="w-14 h-7 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-brand-500 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all shadow-lg"></div>
                           </label>
                         </div>
                       </div>

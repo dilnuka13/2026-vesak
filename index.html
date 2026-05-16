@@ -299,6 +299,86 @@
       position: relative;
     }
 
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes scale-in {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes slide-right {
+      from { opacity: 0; transform: translateX(-30px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes slide-up {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes shimmer-sweep {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .animate-fade-in { animation: fade-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+    .animate-scale-in { animation: scale-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+    .animate-slide-right { animation: slide-right 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+    .animate-slide-up { animation: slide-up 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+
+    .delay-100 { animation-delay: 100ms; }
+    .delay-200 { animation-delay: 200ms; }
+    .delay-300 { animation-delay: 300ms; }
+    .delay-500 { animation-delay: 500ms; }
+    .delay-700 { animation-delay: 700ms; }
+
+    /* Premium Loader */
+    .loader-ring {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      position: relative;
+      padding: 3px;
+      background: conic-gradient(from 0deg, transparent, #22c55e);
+      animation: rotate 1s linear infinite;
+    }
+
+    .loader-ring::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg, transparent, transparent, transparent, #22c55e);
+      filter: blur(10px);
+    }
+
+    .loader-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: #020617;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .loader-logo-pulse {
+      animation: logo-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes logo-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.1); opacity: 0.8; }
+    }
+
     .luminous::before {
       content: '';
       position: absolute;
@@ -1188,7 +1268,7 @@
 
     function DashboardCard({ title, sTitle, amount, icon, isExpense, delay = 'delay-100', onClick, settingsButton }) {
       return (
-        <div onClick={onClick} className={`glass-card rounded-3xl p-6 transition-all transform hover:-translate-y-2 duration-500 relative overflow-hidden group animate-fade-in cursor-pointer ${delay} ${isExpense ? 'hover:shadow-[0_10px_30px_rgba(239,68,68,0.2)] hover:border-red-500/30' : 'hover:shadow-[0_10px_30px_rgba(34,197,94,0.2)] hover:border-brand-500/30'}`}>
+        <div onClick={onClick} className={`glass-card rounded-3xl p-4 sm:p-6 transition-all transform hover:-translate-y-2 duration-500 relative overflow-hidden group animate-fade-in cursor-pointer ${delay} ${isExpense ? 'hover:shadow-[0_10px_30px_rgba(239,68,68,0.2)] hover:border-red-500/30' : 'hover:shadow-[0_10px_30px_rgba(34,197,94,0.2)] hover:border-brand-500/30'}`}>
           <div className={`absolute top-0 right-0 -mr-8 -mt-8 w-40 h-40 rounded-full blur-[50px] transition-opacity duration-500 ${isExpense ? 'bg-red-500/20 group-hover:bg-red-500/30' : 'bg-brand-500/20 group-hover:bg-brand-500/30'}`}></div>
 
           {settingsButton && (
@@ -2973,7 +3053,7 @@
             }, [isSuccess]);
 
             return (
-              <div className={`glass-card rounded-3xl p-6 border animate-fade-in relative overflow-hidden transition-all duration-500 ${isSuccess ? 'border-brand-500/50 shadow-[0_20px_50px_rgba(34,197,94,0.15)] bg-brand-500/5' : 'border-slate-800/50'}`}>
+              <div className={`glass-card rounded-3xl p-4 sm:p-6 border animate-fade-in relative overflow-hidden transition-all duration-500 ${isSuccess ? 'border-brand-500/50 shadow-[0_20px_50px_rgba(34,197,94,0.15)] bg-brand-500/5' : 'border-slate-800/50'}`}>
                 <div className="absolute top-0 left-0 w-full h-1 bg-slate-800"></div>
                 <div className="absolute top-0 left-0 h-1 bg-brand-500 shadow-[0_0_10px_rgba(34,197,94,0.8)] transition-all duration-1000" style={{ width: `${progressPercent}%` }}></div>
 
@@ -3024,7 +3104,7 @@
             );
           })()}
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
             <DashboardCard
               title="Total Cash Income"
               sTitle="මුළු මුදල් ආදායම"
@@ -3059,7 +3139,7 @@
             </div>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mt-8">
             <button onClick={() => handleTabSwitch('income-list')} className="glass-card rounded-3xl p-5 flex flex-col items-center justify-center gap-3 hover:bg-slate-800/80 border border-slate-700/30 hover:border-brand-500/50 transition-all group animate-fade-in delay-100">
               <div className="w-14 h-14 rounded-2xl bg-brand-500/10 text-brand-400 flex items-center justify-center group-hover:bg-brand-500 group-hover:text-white transition-all duration-500 shadow-inner group-hover:shadow-[0_0_20px_rgba(34,197,94,0.4)]">
                 <IconIncome />
@@ -3165,6 +3245,59 @@
           </div>
 
           <DailyBarChart incomes={incomes} expenses={expenses} />
+
+          {/* Public Portal Link Section */}
+          <div className="glass-card rounded-[2.5rem] p-8 border border-white/10 relative overflow-hidden animate-fade-in delay-500 mt-6 group">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/5 blur-[100px] rounded-full group-hover:bg-brand-500/10 transition-colors"></div>
+            
+            <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
+              {/* QR Code */}
+              <div className="shrink-0 p-4 bg-white rounded-3xl shadow-2xl rotate-[-3deg] hover:rotate-0 transition-transform duration-500 group/qr relative">
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.origin + window.location.pathname.replace('index.html', '').replace(/\/$/, '') + '/view_income.html')}`} 
+                  alt="QR Code" 
+                  className="w-32 h-32 md:w-40 md:h-40"
+                />
+                <div className="absolute -bottom-2 -right-2 bg-brand-500 text-white p-2 rounded-xl shadow-lg scale-0 group-hover/qr:scale-100 transition-transform">
+                  <MaterialIcon name="qr_code_2" className="text-xl" />
+                </div>
+              </div>
+
+              <div className="flex-1 space-y-6 text-center md:text-left">
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-black text-white tracking-tight">Public Transparency Portal</h3>
+                  <p className="text-brand-400 font-bold text-[10px] uppercase tracking-[0.3em]">ප්‍රසිද්ධ විනිවිදභාවය පද්ධතිය</p>
+                  <p className="text-sm text-slate-400 leading-relaxed font-medium">
+                    Share this link with donors so they can verify their contributions and download official receipts independently.
+                  </p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-2">මෙම සබැඳිය පරිත්‍යාගශීලීන් සමඟ බෙදා ගන්න. ඔවුන්ට තම දායකත්වය තහවුරු කර ගැනීමට සහ රිසිට්පත් ලබා ගැනීමට මෙය භාවිතා කළ හැක.</p>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
+                  <a 
+                    href="view_income.html" 
+                    target="_blank"
+                    className="px-8 py-4 bg-brand-600 hover:bg-brand-500 text-white font-black text-xs uppercase tracking-widest rounded-2xl transition shadow-xl shadow-brand-500/20 active:scale-95 flex items-center gap-2 group/btn"
+                  >
+                    <MaterialIcon name="open_in_new" className="text-sm group-hover/btn:rotate-12 transition-transform" />
+                    Open Portal
+                  </a>
+                  
+                  <button 
+                    onClick={() => {
+                      const url = window.location.origin + window.location.pathname.replace('index.html', '').replace(/\/$/, '') + '/view_income.html';
+                      navigator.clipboard.writeText(url);
+                      alert('Portal link copied to clipboard!');
+                    }}
+                    className="px-8 py-4 bg-slate-900 hover:bg-slate-800 text-slate-300 font-black text-xs uppercase tracking-widest rounded-2xl border border-slate-700 transition active:scale-95 flex items-center gap-2"
+                  >
+                    <MaterialIcon name="content_copy" className="text-sm" />
+                    Copy Link
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {summaryType && (() => {
             let data = [];
@@ -3992,12 +4125,70 @@
             item_description: '', quantity: '', description: '',
             status: 'Received Today'
           });
-        } catch (err) {
-          setError(err.message);
         } finally {
           setLoading(false);
         }
       };
+
+      const generateAIDescription = () => {
+        const { name, amount, donation_type, item_description, donor_category, quantity } = formData;
+        if (!name && !item_description) return;
+        
+        const prefix = donor_category === 'Main Donor' ? 'ගෞරවනීය ප්‍රධාන ආධාරකරු ' : '';
+        const ePrefix = donor_category === 'Main Donor' ? 'Honorable Main Donor ' : '';
+        const donorName = name || "Anonymous";
+        
+        const cashOpenings = [
+          { s: `${prefix}${donorName} පින්වතා විසින්`, e: `By ${ePrefix}${donorName},` },
+          { s: `ශාසනික අභිවෘද්ධිය පතන ${prefix}${donorName} විසින්`, e: `By ${ePrefix}${donorName}, for the prosperity of Sasana,` },
+          { s: `මෙවර වෙසක් උත්සවය වෙනුවෙන් ${prefix}${donorName} පින්වතා විසින්`, e: `For this Vesak festival, by ${ePrefix}${donorName},` }
+        ];
+        
+        const cashBodies = [
+          { s: ` රු. ${Number(amount).toLocaleString()} ක ආධාර මුදලක් පූජා කරන ලදී.`, e: ` a donation of Rs. ${Number(amount).toLocaleString()} was offered.` },
+          { s: ` රු. ${Number(amount).toLocaleString()} ක මුදලක් වෙසක් කුඩුව සඳහා පරිත්‍යාග කරන ලදී.`, e: ` a sum of Rs. ${Number(amount).toLocaleString()} was donated for the lantern.` },
+          { s: ` රු. ${Number(amount).toLocaleString()} ක මුදලකින් දායක විය.`, e: ` contributed with an amount of Rs. ${Number(amount).toLocaleString()}.` }
+        ];
+
+        const goodsOpenings = [
+          { s: `${prefix}${donorName} පින්වතා විසින්`, e: `By ${ePrefix}${donorName},` },
+          { s: `වෙසක් පින්කමට දායක වෙමින් ${prefix}${donorName} පින්වතා විසින්`, e: `Contributing to the Vesak merit, by ${ePrefix}${donorName},` }
+        ];
+
+        const goodsBodies = [
+          { s: ` ${item_description} (x${quantity || 1}) පරිත්‍යාග කරන ලදී.`, e: ` ${item_description} (x${quantity || 1}) were donated.` },
+          { s: ` වෙසක් කුඩුව සඳහා ${item_description} (x${quantity || 1}) ලබා දී සහයෝගය දැක්වූහ.`, e: ` provided ${item_description} (x${quantity || 1}) in support of the lantern.` }
+        ];
+        
+        const closings = [
+          { s: " පින් අනුමෝදන් වේවා!", e: " May you be blessed!" },
+          { s: " මෙම උතුම් පින්කම නිවන් මගට හේතු වේවා!", e: " May this noble deed lead to Nibbana!" },
+          { s: " සියලු සම්පත් සම්පූර්ණ වේවා!", e: " May all your wishes be fulfilled!" }
+        ];
+        
+        const op = donation_type === 'Cash' 
+          ? cashOpenings[Math.floor(Math.random() * cashOpenings.length)]
+          : goodsOpenings[Math.floor(Math.random() * goodsOpenings.length)];
+          
+        const bd = donation_type === 'Cash'
+          ? cashBodies[Math.floor(Math.random() * cashBodies.length)]
+          : goodsBodies[Math.floor(Math.random() * goodsBodies.length)];
+          
+        const cl = closings[Math.floor(Math.random() * closings.length)];
+        
+        const sText = `${op.s}${bd.s}${cl.s}`;
+        const eText = `${op.e}${bd.e}${cl.e}`;
+        
+        setFormData(prev => ({ ...prev, description: `${sText}\n\n${eText}` }));
+      };
+
+      const SUGGESTIONS = [
+        "පින්වතුන්ගේ මාසික දායකත්වය",
+        "විශේෂ ආධාරයක් ලෙස ලබා දෙන ලදී",
+        "වෙසක් කූඩුව සඳහා ලබා දුන් මුදල්",
+        "පුණ්‍යානුමෝදනා පත්‍රිකා සඳහා ලැබුණු මුදල්",
+        "පින් අනුමෝදන් වේවා!"
+      ];
 
       const StepIndicator = ({ current, total }) => (
         <div className="flex gap-2 mb-6">
@@ -4156,8 +4347,37 @@
                   </div>
                 </div>
 
-                <div className="md:col-span-2">
-                  <InputField label="Notes / Description" sLabel="සටහන් / විස්තර (අත්‍යවශ්‍ය නොවේ)" type="textarea" name="description" value={formData.description} onChange={handleChange} />
+                <div className="md:col-span-2 relative group">
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="text-sm font-medium text-slate-300">Notes / Description (සටහන් / විස්තර)</label>
+                    <button 
+                      type="button" 
+                      onClick={generateAIDescription}
+                      className="bg-white hover:bg-slate-100 px-4 py-2 rounded-2xl border border-slate-200 transition-all flex items-center justify-center shadow-2xl active:scale-95 group gap-2"
+                      title="Generate with Gemini AI"
+                    >
+                      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Google_Gemini_logo_2025.svg/330px-Google_Gemini_logo_2025.svg.png" className="h-5 object-contain group-hover:scale-105 transition-transform" />
+                    </button>
+                  </div>
+                  <textarea 
+                    name="description" 
+                    value={formData.description} 
+                    onChange={handleChange}
+                    placeholder="Enter description or use suggestions below..."
+                    className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-4 text-sm focus:border-brand-500 outline-none min-h-[120px] transition-all"
+                  />
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {SUGGESTIONS.map((s, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, description: prev.description ? prev.description + ' ' + s : s }))}
+                        className="text-[9px] bg-slate-800/50 hover:bg-slate-700 text-slate-400 px-3 py-1.5 rounded-lg border border-slate-700/50 transition-all whitespace-nowrap"
+                      >
+                        + {s}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -4983,6 +5203,10 @@
                 <div className="flex flex-col items-center gap-3 mt-8 pt-6 border-t border-white/5">
                   <button type="button" onClick={() => setView('forgot_password')} className="text-xs text-brand-400 font-bold hover:text-brand-300 transition-colors">Forgot Password?</button>
                   <button type="button" onClick={onShowBalance} className="text-[10px] text-slate-400 hover:text-white transition-colors uppercase tracking-widest">View Current Balance</button>
+                  <a href="view_income.html" className="mt-2 flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500/10 text-brand-400 hover:bg-brand-500/20 transition-all border border-brand-500/20 group">
+                    <MaterialIcon name="public" className="text-sm group-hover:rotate-12 transition-transform" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Public Donation Portal</span>
+                  </a>
                 </div>
               </form>
             )}
@@ -5289,6 +5513,377 @@
       );
     }
 
+    // --- DONATIONS VIEW COMPONENT ---
+    function DonationsView({ incomes, users, setActiveTab }) {
+      const [phoneSearch, setPhoneSearch] = useState('');
+      const [phoneSearchResult, setPhoneSearchResult] = useState(null); // null | 'found' | 'not_found'
+      const [phoneMatches, setPhoneMatches] = useState([]);
+      const [filterCat, setFilterCat] = useState('all'); // all, pledge, cash, goods
+      const [searchTerm, setSearchTerm] = useState('');
+      const [receiptModal, setReceiptModal] = useState(null); // {donation}
+      const [verifyPhone, setVerifyPhone] = useState('');
+      const [verifyStatus, setVerifyStatus] = useState(null); // null | 'ok' | 'fail' | 'no_phone'
+      const [receiptCanvas, setReceiptCanvas] = useState(null);
+      const [canvasLoading, setCanvasLoading] = useState(false);
+
+      // Combined all donations sorted by date desc
+      const allDonations = useMemo(() => {
+        return [...incomes].sort((a, b) => {
+          const da = new Date(a.created_at || a.date);
+          const db = new Date(b.created_at || b.date);
+          return db - da;
+        });
+      }, [incomes]);
+
+      const filtered = useMemo(() => {
+        return allDonations.filter(d => {
+          if (filterCat === 'pledge' && d.status !== 'Promised') return false;
+          if (filterCat === 'cash' && (d.status === 'Promised' || d.donation_type !== 'Cash')) return false;
+          if (filterCat === 'goods' && (d.status === 'Promised' || d.donation_type !== 'Goods')) return false;
+          if (searchTerm) {
+            const l = searchTerm.toLowerCase();
+            return (d.name?.toLowerCase().includes(l) || d.phone_number?.includes(l) || d.item_description?.toLowerCase().includes(l));
+          }
+          return true;
+        });
+      }, [allDonations, filterCat, searchTerm]);
+
+      const handlePhoneSearch = () => {
+        const q = phoneSearch.trim();
+        if (!q) return;
+        const matches = allDonations.filter(d => d.phone_number && d.phone_number.replace(/\s/g,'') === q.replace(/\s/g,''));
+        if (matches.length > 0) {
+          setPhoneMatches(matches);
+          setPhoneSearchResult('found');
+        } else {
+          setPhoneMatches([]);
+          setPhoneSearchResult('not_found');
+        }
+      };
+
+      const openReceiptModal = (donation) => {
+        setReceiptModal(donation);
+        setVerifyPhone('');
+        setVerifyStatus(null);
+        setReceiptCanvas(null);
+      };
+
+      const handleVerifyPhone = async () => {
+        if (!receiptModal) return;
+        const donorPhone = receiptModal.phone_number ? receiptModal.phone_number.replace(/\s/g,'') : null;
+        if (!donorPhone) {
+          setVerifyStatus('no_phone');
+          return;
+        }
+        if (verifyPhone.replace(/\s/g,'') === donorPhone) {
+          setVerifyStatus('ok');
+          setCanvasLoading(true);
+          try {
+            const canvas = await generateReceiptCanvas(receiptModal);
+            setReceiptCanvas(canvas);
+          } catch(e) {}
+          setCanvasLoading(false);
+        } else {
+          setVerifyStatus('fail');
+        }
+      };
+
+      const doDownloadPNG = () => {
+        if (!receiptCanvas || !receiptModal) return;
+        const a = document.createElement('a');
+        a.href = receiptCanvas.toDataURL('image/png', 1.0);
+        a.download = `Receipt_${getReceiptShortId(receiptModal)}.png`;
+        a.click();
+      };
+
+      const doDownloadPDF = () => {
+        if (!receiptCanvas || !receiptModal) return;
+        const dataUrl = receiptCanvas.toDataURL('image/png', 1.0);
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p','px',[800,1100]);
+        pdf.addImage(dataUrl,'PNG',0,0,800,1100);
+        pdf.save(`Receipt_${getReceiptShortId(receiptModal)}.pdf`);
+      };
+
+      const getCatStyle = (d) => {
+        if (d.status === 'Promised') return { dot: 'bg-yellow-500', badge: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30', row: 'border-l-yellow-500' };
+        if (d.donation_type === 'Goods') return { dot: 'bg-purple-500', badge: 'bg-purple-500/15 text-purple-400 border-purple-500/30', row: 'border-l-purple-500' };
+        return { dot: 'bg-emerald-500', badge: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30', row: 'border-l-emerald-500' };
+      };
+
+      const getCatLabel = (d) => {
+        if (d.status === 'Promised') return 'Pledge';
+        if (d.donation_type === 'Goods') return 'Goods';
+        return 'Cash';
+      };
+
+      return (
+        <div className="space-y-6" id="donations-view">
+          <h2 className="text-2xl font-bold text-white flex flex-col">
+            <span>All Donations Overview</span>
+            <span className="text-sm text-slate-400 font-normal">සියලුම පරිත්‍යාග දළ විශ්ලේෂණය</span>
+          </h2>
+
+          {/* Phone Search Hero Card */}
+          <div className="glass-card rounded-3xl p-6 border border-slate-700/50 bg-gradient-to-br from-indigo-900/20 to-slate-900/30 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-56 h-56 bg-indigo-500/10 blur-[80px] rounded-full pointer-events-none"></div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+                  <MaterialIcon name="phone_in_talk" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-sm">Search Donations by Phone</h3>
+                  <p className="text-[10px] text-slate-400">දුරකතන අංකයෙන් පරිත්‍යාග සොයන්න</p>
+                </div>
+              </div>
+              <div className="flex gap-3 flex-col sm:flex-row">
+                <input
+                  type="tel"
+                  value={phoneSearch}
+                  onChange={e => { setPhoneSearch(e.target.value); setPhoneSearchResult(null); setPhoneMatches([]); }}
+                  onKeyDown={e => e.key === 'Enter' && handlePhoneSearch()}
+                  placeholder="eg: 071 615 5666"
+                  className="flex-1 bg-slate-900/70 border border-slate-700 text-white rounded-2xl px-5 py-3 outline-none focus:border-indigo-500 transition text-sm font-medium placeholder-slate-600"
+                />
+                <button onClick={handlePhoneSearch} className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl transition flex items-center gap-2 text-sm shadow-lg shadow-indigo-500/20 whitespace-nowrap">
+                  <MaterialIcon name="search" /> Search / සොයන්න
+                </button>
+              </div>
+
+              {phoneSearchResult === 'not_found' && (
+                <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl animate-fade-in flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center shrink-0"><MaterialIcon name="error" /></div>
+                  <div>
+                    <p className="text-red-400 font-bold text-sm">Donations not found / පරිත්‍යාග හමු නොවිණ</p>
+                    <p className="text-red-300/70 text-xs mt-1">පද්ධතියේ දැනට මෙම දුරකතන අංකය සඳහා පරිත්‍යාග උඩුගත වී නොමැත, දුරකතන අංකය වැරදී හෝ ඇත, නැවත check කරන්න.</p>
+                  </div>
+                </div>
+              )}
+
+              {phoneSearchResult === 'found' && phoneMatches.length > 0 && (
+                <div className="mt-4 animate-fade-in">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <p className="text-emerald-400 font-bold text-sm">{phoneMatches.length} donation(s) found for this number</p>
+                  </div>
+                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    {phoneMatches.map(d => {
+                      const cs = getCatStyle(d);
+                      return (
+                        <div key={d.id} className={`flex items-center justify-between p-3 bg-slate-900/60 rounded-xl border border-l-4 ${cs.row} border-slate-800`}>
+                          <div className="flex items-center gap-3">
+                            <div>
+                              <div className="font-semibold text-white text-sm">{d.name}</div>
+                              <div className="text-xs text-slate-400">{formatDate(d.date)} • <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${cs.badge}`}>{getCatLabel(d)}</span></div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-sm text-slate-200">
+                              {d.donation_type === 'Cash' ? formatCurrency(d.amount) : `${d.item_description} x${d.quantity}`}
+                            </span>
+                            {d.status !== 'Promised' && (
+                              <button onClick={() => openReceiptModal(d)} className="px-3 py-1.5 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-lg text-xs font-bold hover:bg-indigo-500/30 transition flex items-center gap-1">
+                                <MaterialIcon name="download" /> Receipt
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Category Legend + Filters */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { key:'all', label:'All / සියල්ල', color:'text-slate-300 border-slate-700' },
+                { key:'cash', label:'Cash / මුදල්', color:'text-emerald-400 border-emerald-500/40' },
+                { key:'goods', label:'Goods / ද්‍රව්‍ය', color:'text-purple-400 border-purple-500/40' },
+                { key:'pledge', label:'Pledges / පොරොන්දු', color:'text-yellow-400 border-yellow-500/40' },
+              ].map(c => (
+                <button key={c.key} onClick={() => setFilterCat(c.key)} className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${filterCat===c.key ? 'bg-white/10 '+ c.color : 'bg-transparent text-slate-500 border-slate-800 hover:border-slate-700'}`}>
+                  {c.label}
+                </button>
+              ))}
+            </div>
+            <input type="text" value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} placeholder="Search name / phone..." className="ml-auto bg-slate-900 border border-slate-700 text-white text-xs rounded-xl px-4 py-2 outline-none focus:border-brand-500 w-full sm:w-56" />
+          </div>
+
+          {/* Color Legend */}
+          <div className="flex flex-wrap gap-4 px-1">
+            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-emerald-500"></div><span className="text-xs text-slate-400">Cash Donation</span></div>
+            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-purple-500"></div><span className="text-xs text-slate-400">Goods Donation</span></div>
+            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-yellow-500"></div><span className="text-xs text-slate-400">Pledge (Pending)</span></div>
+          </div>
+
+          {/* Table */}
+          {filtered.length === 0 ? (
+            <div className="text-center py-16 border border-dashed border-slate-700 rounded-2xl text-slate-400">
+              No records found. / වාර්තා නොමැත.
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/30">
+              <table className="w-full text-sm text-slate-300 min-w-[750px]">
+                <thead>
+                  <tr className="text-xs text-slate-500 uppercase bg-slate-900/70 border-b border-slate-800">
+                    <th className="px-4 py-3 text-left rounded-tl-2xl">Date / Time<br/><span className="text-[9px] text-brand-400 font-normal normal-case">දිනය / වේලාව</span></th>
+                    <th className="px-4 py-3 text-left">Name<br/><span className="text-[9px] text-brand-400 font-normal normal-case">නම</span></th>
+                    <th className="px-4 py-3 text-left">Type<br/><span className="text-[9px] text-brand-400 font-normal normal-case">ආකාරය</span></th>
+                    <th className="px-4 py-3 text-center">Status<br/><span className="text-[9px] text-brand-400 font-normal normal-case">තත්ත්වය</span></th>
+                    <th className="px-4 py-3 text-right">Amount / Details<br/><span className="text-[9px] text-brand-400 font-normal normal-case">මුදල / විස්තර</span></th>
+                    <th className="px-4 py-3 text-center rounded-tr-2xl">Action<br/><span className="text-[9px] text-brand-400 font-normal normal-case">ක්‍රියාව</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((d, idx) => {
+                    const cs = getCatStyle(d);
+                    const isPending = d.status === 'Promised';
+                    const dt = new Date(d.created_at || d.date);
+                    return (
+                      <tr key={d.id} className={`border-b border-slate-800/60 hover:bg-slate-800/30 transition border-l-2 ${cs.row}`}>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="font-medium text-slate-200 text-xs">{formatDate(d.date)}</div>
+                          <div className="text-[10px] text-slate-500">{d.created_at ? new Date(d.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : ''}</div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="font-semibold text-slate-200 text-sm">{d.name || '—'}</div>
+                          {d.phone_number && <div className="text-[10px] text-slate-500 mt-0.5">{d.phone_number}</div>}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${cs.badge}`}>{getCatLabel(d)}</span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {isPending ? (
+                            <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-yellow-500/10 text-yellow-400 border border-yellow-500/30">Pending</span>
+                          ) : (
+                            <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">✓ Received</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right font-semibold">
+                          {d.donation_type === 'Cash' ? (
+                            <span className="text-emerald-400">{formatCurrency(d.amount)}</span>
+                          ) : d.status === 'Promised' && d.donation_type === 'Cash' ? (
+                            <span className="text-yellow-400">{formatCurrency(d.amount)}</span>
+                          ) : (
+                            <span className="text-purple-400 text-xs">{d.item_description} <span className="text-slate-500">×{d.quantity}</span></span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {!isPending && (
+                            <button onClick={() => openReceiptModal(d)} className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-xl text-xs font-bold hover:bg-indigo-500/30 transition">
+                              <MaterialIcon name="receipt_long" /> Receipt
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Receipt Verify Modal */}
+          {receiptModal && (
+            <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in" onClick={() => setReceiptModal(null)}>
+              <div className="glass rounded-[2.5rem] max-w-md w-full border border-white/10 shadow-[0_40px_80px_rgba(0,0,0,0.9)] overflow-hidden relative" onClick={e => e.stopPropagation()}>
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-indigo-500"></div>
+                <div className="p-8">
+                  <button onClick={() => setReceiptModal(null)} className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/5 text-slate-400 hover:text-white flex items-center justify-center transition">×</button>
+
+                  <div className="text-center mb-6">
+                    <div className="w-16 h-16 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto mb-4">
+                      <MaterialIcon name="receipt_long" className="text-3xl" />
+                    </div>
+                    <h3 className="text-xl font-black text-white">Download Receipt</h3>
+                    <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mt-1">රිසිට්පත බාගන්න</p>
+                  </div>
+
+                  <div className="bg-slate-900/60 rounded-2xl p-4 mb-6 border border-slate-800 space-y-2">
+                    <div className="flex justify-between text-xs"><span className="text-slate-400">Donor</span><span className="font-bold text-white">{receiptModal.name}</span></div>
+                    <div className="flex justify-between text-xs"><span className="text-slate-400">Date</span><span className="font-bold text-white">{formatDate(receiptModal.date)}</span></div>
+                    <div className="flex justify-between text-xs"><span className="text-slate-400">Type</span><span className="font-bold text-white">{receiptModal.donation_type}</span></div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400">Amount</span>
+                      <span className="font-bold text-emerald-400">{receiptModal.donation_type==='Cash' ? formatCurrency(receiptModal.amount) : `${receiptModal.item_description} ×${receiptModal.quantity}`}</span>
+                    </div>
+                  </div>
+
+                  {verifyStatus !== 'ok' && (
+                    <>
+                      <p className="text-xs text-slate-300 mb-3 text-center leading-relaxed">
+                        ආරක්ෂාව සඳහා, රිසිට්පත බාගැනීමට ඔබේ දුරකතන අංකය ඇතුළත් කරන්න.
+                      </p>
+                      <div className="relative mb-4">
+                        <MaterialIcon name="phone" className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+                        <input
+                          type="tel"
+                          value={verifyPhone}
+                          onChange={e => { setVerifyPhone(e.target.value); setVerifyStatus(null); }}
+                          placeholder="Enter your phone number"
+                          className="w-full bg-slate-900 border border-slate-700 text-white rounded-2xl pl-12 pr-4 py-3.5 outline-none focus:border-indigo-500 transition text-sm"
+                        />
+                      </div>
+
+                      {verifyStatus === 'fail' && (
+                        <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-xl mb-4 text-center animate-fade-in">
+                          <p className="text-red-400 text-xs font-bold">Phone number does not match / දුරකතන අංකය නොගැලපේ.</p>
+                          <p className="text-red-300/70 text-[10px] mt-1">නිවැරදි දුරකතන අංකය ඇතුළත් කරන්න.</p>
+                        </div>
+                      )}
+                      {verifyStatus === 'no_phone' && (
+                        <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl mb-4 text-center animate-fade-in">
+                          <p className="text-amber-400 text-xs font-bold">සමාවන්න!</p>
+                          <p className="text-amber-300/70 text-[10px] mt-1">කරුණාකර පනහකූඩුව නිර්මානය කරන පුද්ගලයන් හමු වන්න, ඔබගේ පරිත්‍යාගය සඳහා නිවැරදි දුරකතන අංකය පද්ධතියට ඇතුළත් කරගන්න.</p>
+                        </div>
+                      )}
+
+                      <button onClick={handleVerifyPhone} disabled={!verifyPhone.trim()} className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black uppercase tracking-widest text-xs rounded-2xl transition disabled:opacity-40">
+                        Verify & Unlock / තහවුරු කරන්න
+                      </button>
+                    </>
+                  )}
+
+                  {verifyStatus === 'ok' && (
+                    <div className="animate-fade-in">
+                      <div className="flex items-center justify-center gap-2 mb-5 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
+                        <MaterialIcon name="verified" className="text-emerald-400" />
+                        <span className="text-emerald-400 font-bold text-sm">Verified! Download your receipt.</span>
+                      </div>
+                      {canvasLoading ? (
+                        <div className="flex justify-center py-4">
+                          <div className="w-8 h-8 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+                        </div>
+                      ) : receiptCanvas && (
+                        <>
+                          <div className="rounded-xl overflow-hidden border border-slate-700 mb-4 max-h-48 flex items-center justify-center bg-white">
+                            <img src={receiptCanvas.toDataURL()} alt="Receipt Preview" className="w-full object-contain" />
+                          </div>
+                          <div className="flex gap-3">
+                            <button onClick={doDownloadPNG} className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 transition">
+                              <MaterialIcon name="image" /> PNG
+                            </button>
+                            <button onClick={doDownloadPDF} className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 transition">
+                              <MaterialIcon name="picture_as_pdf" /> PDF
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     // --- MAIN APP COMPONENT ---
     function App() {
       const [currentUser, setCurrentUser] = useState(() => {
@@ -5417,7 +6012,7 @@
       useEffect(() => {
         const handleHashChange = () => {
           const hash = window.location.hash.replace('#', '');
-          const validTabs = ['dashboard', 'income-page', 'income-list', 'goods-list', 'expense-page', 'expense-list', 'pledges', 'profile'];
+          const validTabs = ['dashboard', 'income-page', 'income-list', 'goods-list', 'expense-page', 'expense-list', 'pledges', 'profile', 'donations-view'];
           if (hash && validTabs.includes(hash)) {
             setActiveTab(hash);
           }
@@ -5453,25 +6048,27 @@
           const isEvening = hours === 20 && mins < 30;
 
           if ((isMorning || isEvening) && lastReminder !== `${today}_${hours}`) {
-            const target = 10000; // Default target
-            const totalCont = incomes.filter(i => {
-              const firstWord = currentUser.username.split(' ')[0].toLowerCase();
-              return i.name?.toLowerCase().includes(firstWord) && i.status === 'Received Today' && i.donation_type === 'Cash';
-            }).reduce((sum, i) => sum + Number(i.amount || 0), 0);
+            // Only send reminder if user is a contributor and has a goal
+            if (currentUser.is_contributor) {
+              const target = Number(currentUser.contribution_goal) || 10000;
+              const totalCont = incomes.filter(i => {
+                const firstWord = currentUser.username.split(' ')[0].toLowerCase();
+                return i.name?.toLowerCase().includes(firstWord) && i.status === 'Received Today' && i.donation_type === 'Cash';
+              }).reduce((sum, i) => sum + Number(i.amount || 0), 0);
 
-            const remaining = Math.round(target - totalCont);
-            if (remaining > 0) {
-              const title = "🔔 Payment Reminder";
-              const body = `ඔබගේ ඉතිරි දායකත්ව මුදල වන Rs. ${remaining.toLocaleString()} හැකි ඉක්මනින් ලබා දී සහයෝගය දක්වන්න.`;
+              const remaining = Math.round(target - totalCont);
+              if (remaining > 0) {
+                const title = "🔔 Payment Reminder";
+                const body = `ඔබගේ ඉතිරි දායකත්ව මුදල වන Rs. ${remaining.toLocaleString()} හැකි ඉක්මනින් ලබා දී සහයෝගය දක්වන්න.`;
 
-              showNotification({ title, sTitle: 'Reminder', details: [{ label: 'Remaining', value: `Rs. ${remaining.toLocaleString()}` }] });
+                showNotification({ title, sTitle: 'Reminder', details: [{ label: 'Remaining', value: `Rs. ${remaining.toLocaleString()}` }] });
 
-              // Only insert into DB if not already there for this user/time
-              supabase.from('notifications').insert([{
-                title, body, type: 'reminder', user_id: currentUser.id
-              }]).then(() => fetchData());
+                supabase.from('notifications').insert([{
+                  title, body, type: 'reminder', user_id: currentUser.id
+                }]).then(() => fetchData());
 
-              localStorage.setItem(lastReminderKey, `${today}_${hours}`);
+                localStorage.setItem(lastReminderKey, `${today}_${hours}`);
+              }
             }
           }
         };
@@ -5834,6 +6431,43 @@
         </div>
       );
 
+      function LoadingScreen() {
+        return (
+          <div className="fixed inset-0 z-[500] bg-[#020617] flex flex-col items-center justify-center p-8 overflow-hidden">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand-500/10 blur-[120px] rounded-full animate-pulse"></div>
+            <div className="relative space-y-12 flex flex-col items-center">
+              <div className="relative">
+                <div className="loader-ring">
+                  <div className="loader-inner">
+                    <img src="logo.png" className="w-10 h-10 object-contain loader-logo-pulse" alt="Logo" />
+                  </div>
+                </div>
+                <div className="absolute -inset-4 border border-white/5 rounded-full"></div>
+              </div>
+              <div className="text-center space-y-4">
+                <div className="space-y-1">
+                  <h2 className="text-white text-2xl font-black tracking-tighter uppercase animate-fade-in">Vesak Finance</h2>
+                  <p className="text-brand-500 font-black text-[10px] tracking-[0.5em] uppercase animate-fade-in delay-100">Control Dashboard</p>
+                </div>
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-48 h-1 bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full bg-brand-500 w-1/3 animate-[shimmer-sweep_1.5s_infinite]"></div>
+                  </div>
+                  <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest animate-pulse">Establishing Secure Neural Link...</p>
+                </div>
+              </div>
+              <div className="absolute bottom-[-100px] flex items-center gap-4 opacity-20">
+                <img src="ve1rify.png" className="w-8 h-8 grayscale" />
+                <div className="h-4 w-px bg-white/20"></div>
+                <p className="text-[8px] text-white font-black uppercase tracking-[0.3em]">BEYOND VERIFIED</p>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (loading) return <LoadingScreen />;
+
       return (
         <div className={`flex flex-col md:flex-row min-h-screen relative overflow-hidden ${currentUser?.role === 'admin' ? 'admin-theme' : ''}`}>
           <div className="neural-flow"></div>
@@ -5874,7 +6508,7 @@
           )}
 
           {/* M3 Navigation Rail (Desktop) */}
-          <aside className="hidden md:flex flex-col w-20 bg-m3-surfaceContainerLow border-r border-white/5 fixed left-0 top-0 h-screen z-40 items-center py-8 gap-6">
+          <aside className="hidden md:flex flex-col w-20 bg-m3-surfaceContainerLow border-r border-white/5 fixed left-0 top-0 h-screen z-40 items-center py-8 gap-6 animate-slide-right">
             <button
               onClick={() => setActiveTab('dashboard')}
               className="w-12 h-12 bg-m3-primaryContainer rounded-2xl flex items-center justify-center text-m3-onPrimaryContainer shadow-lg mb-4 hover:scale-110 active:scale-95 transition-all duration-300 group cursor-pointer"
@@ -5889,11 +6523,20 @@
                 { id: 'income-page', icon: 'payments', tooltip: 'Income' },
                 { id: 'expense-page', icon: 'account_balance_wallet', tooltip: 'Expense' },
                 { id: 'pledges', icon: 'history', tooltip: 'Pledges' },
+                { id: 'donations-view', icon: 'visibility', tooltip: 'View All' },
                 ...(currentUser?.role === 'admin' ? [{ id: 'admin-link', icon: 'shield', tooltip: 'Admin', isLink: true }] : [])
               ].map(item => (
                 <button
                   key={item.id}
-                  onClick={() => item.isLink ? window.location.href = 'admin.html' : setActiveTab(item.id)}
+                  onClick={() => {
+                    if (item.isLink) {
+                      if (confirm("Are you sure you want to open Admin Panel? / ඇඩ්මින් පැනලය විවෘත කිරීමට ඔබට අවශ්‍ය බව සහතිකද?")) {
+                        window.location.href = 'admin.html';
+                      }
+                    } else {
+                      setActiveTab(item.id);
+                    }
+                  }}
                   className={`w-16 py-2 flex flex-col items-center justify-center rounded-2xl transition-all duration-300 ${
                     item.isLink 
                       ? 'text-indigo-400 hover:bg-indigo-500/10 border border-indigo-500/20'
@@ -5936,9 +6579,9 @@
             </div>
           </aside>
 
-          <div className="flex-1 md:ml-20 flex flex-col min-h-screen relative z-10 overflow-x-hidden">
+          <div className="flex-1 md:ml-20 flex flex-col min-h-screen relative z-10 overflow-x-hidden animate-fade-in delay-100">
             {/* Header */}
-            <header className="px-6 py-6 md:px-12 md:py-8 flex justify-between items-center sticky top-0 bg-m3-surface/60 backdrop-blur-xl z-30">
+            <header className="px-6 py-6 md:px-12 md:py-8 flex justify-between items-center sticky top-0 bg-m3-surface/60 backdrop-blur-xl z-30" style={{ paddingTop: 'max(env(safe-area-inset-top), 1.5rem)' }}>
               <div className="flex items-center gap-4">
                 <div className="md:hidden w-10 h-10 bg-m3-primaryContainer rounded-xl flex items-center justify-center text-m3-onPrimaryContainer shadow-md">
                   <img src="logo.png" className="w-6 h-6 object-contain" />
@@ -6037,51 +6680,62 @@
                 )}
 
                 {activeTab === 'pledges' && <PromisedList incomes={incomes} onRefresh={fetchData} showNotification={showNotification} users={users} setActiveTab={setActiveTab} projectSettings={projectSettings} currentUser={currentUser} />}
+
+                {activeTab === 'donations-view' && <DonationsView incomes={incomes} users={users} setActiveTab={setActiveTab} />}
               </div>
 
               {viewingReceipt && <ReceiptModal url={viewingReceipt} onClose={() => setViewingReceipt(null)} />}
 
               {currentUser?.role === 'admin' && (
                 <div className="text-center mt-12 mb-8 flex justify-center animate-fade-in">
-                  <a href="admin.html" className="m3-button m3-button-tonal !h-14 !rounded-2xl !px-8 border border-white/5 hover:border-m3-primary/30 shadow-xl group">
+                  <button 
+                    onClick={() => {
+                      if (confirm("Are you sure you want to open Admin Panel? / ඇඩ්මින් පැනලය විවෘත කිරීමට ඔබට අවශ්‍ය බව සහතිකද?")) {
+                        window.location.href = 'admin.html';
+                      }
+                    }}
+                    className="m3-button m3-button-tonal !h-14 !rounded-2xl !px-8 border border-white/5 hover:border-m3-primary/30 shadow-xl group"
+                  >
                     <MaterialIcon name="shield" className="text-m3-primary group-hover:scale-110 transition-transform" />
                     <span className="font-black uppercase tracking-widest text-xs">System Admin Portal</span>
                     <MaterialIcon name="chevron_right" />
-                  </a>
+                  </button>
                 </div>
               )}
             </main>
-
-            {/* M3 Navigation Bar (Mobile) */}
-            <footer className="md:hidden fixed bottom-0 left-0 right-0 glass-m3 border-t border-white/5 z-50 flex justify-around items-center px-4 pt-3" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 1.25rem)' }}>
-              {[
-                { id: 'dashboard', icon: 'dashboard', label: 'Home' },
-                { id: 'income-page', icon: 'payments', label: 'Income' },
-                { id: 'expense-page', icon: 'account_balance_wallet', label: 'Expense' },
-                ...(currentUser?.role === 'admin' 
-                  ? [{ id: 'admin-page', icon: 'shield', label: 'Admin', isLink: true }]
-                  : [{ id: 'pledges', icon: 'history', label: 'Pledges' }]),
-                { id: 'profile', icon: 'person', label: 'Profile' }
-              ].map(item => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    if (item.isLink) {
-                      window.location.href = 'admin.html';
-                    } else {
-                      setActiveTab(item.id);
-                    }
-                  }}
-                  className={`flex flex-col items-center gap-1 flex-1 py-1 transition-all duration-300 ${activeTab === item.id ? 'text-m3-primary' : 'text-m3-outline'}`}
-                >
-                  <div className={`w-12 h-8 rounded-full flex items-center justify-center transition-all ${activeTab === item.id ? 'bg-m3-secondaryContainer text-m3-onSecondaryContainer' : ''}`}>
-                    <MaterialIcon name={item.icon} className={activeTab === item.id ? 'FILL' : ''} />
-                  </div>
-                  <span className="text-[10px] font-bold tracking-wider">{item.label}</span>
-                </button>
-              ))}
-            </footer>
           </div>
+
+          {/* M3 Navigation Bar (Mobile) - Moved Outside Animated Container to Fix Scrolling Issue */}
+          <footer className="md:hidden fixed bottom-0 left-0 right-0 glass-m3 border-t border-white/5 z-50 flex justify-around items-center px-4 pt-3 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 1.25rem)' }}>
+            {[
+              { id: 'dashboard', icon: 'dashboard', label: 'Home' },
+              { id: 'income-page', icon: 'payments', label: 'Income' },
+              { id: 'expense-page', icon: 'account_balance_wallet', label: 'Expense' },
+              ...(currentUser?.role === 'admin' 
+                ? [{ id: 'admin-page', icon: 'shield', label: 'Admin', isLink: true }]
+                : [{ id: 'pledges', icon: 'history', label: 'Pledges' }]),
+              { id: 'profile', icon: 'person', label: 'Profile' }
+            ].map(item => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  if (item.isLink) {
+                    if (confirm("Are you sure you want to open Admin Panel? / ඇඩ්මින් පැනලය විවෘත කිරීමට ඔබට අවශ්‍ය බව සහතිකද?")) {
+                      window.location.href = 'admin.html';
+                    }
+                  } else {
+                    setActiveTab(item.id);
+                  }
+                }}
+                className={`flex flex-col items-center gap-1 flex-1 py-1 transition-all duration-300 ${activeTab === item.id ? 'text-m3-primary' : 'text-m3-outline'}`}
+              >
+                <div className={`w-12 h-8 rounded-full flex items-center justify-center transition-all ${activeTab === item.id ? 'bg-m3-secondaryContainer text-m3-onSecondaryContainer' : ''}`}>
+                  <MaterialIcon name={item.icon} className={activeTab === item.id ? 'FILL' : ''} />
+                </div>
+                <span className="text-[10px] font-bold tracking-wider">{item.label}</span>
+              </button>
+            ))}
+          </footer>
         </div>
       );
     }

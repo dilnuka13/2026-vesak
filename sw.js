@@ -1,16 +1,52 @@
-const CACHE_NAME = 'vesak-finance-v2';
+const CACHE_NAME = 'vesak-finance-v3';
+const OFFLINE_URL = 'offline.html';
 
 self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll([
+        OFFLINE_URL, 
+        'index.html', 
+        'admin.html', 
+        'view_income.html', 
+        'logo.png', 
+        'dc.png', 
+        've1rify.png'
+      ]);
+    })
+  );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(clients.claim());
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-  // Simple pass-through. Essential to pass PWA installability requirements.
-  event.respondWith(fetch(event.request).catch(() => new Response('Offline')));
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.open(CACHE_NAME).then((cache) => {
+          return cache.match(OFFLINE_URL);
+        });
+      })
+    );
+  } else {
+    event.respondWith(fetch(event.request).catch(() => {
+      return caches.match(event.request);
+    }));
+  }
 });
 
 importScripts('https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js');
