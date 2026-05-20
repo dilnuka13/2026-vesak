@@ -167,12 +167,17 @@
       }
     }
 
-    /* Glassmorphism 2.0 */
+    /* iOS 26 Liquid Glass x Material 3 */
     .glass-m3 {
-      background: rgba(2, 6, 23, 0.7);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+      background-color: rgba(2, 6, 23, 0.45);
+      backdrop-filter: blur(40px) saturate(200%);
+      -webkit-backdrop-filter: blur(40px) saturate(200%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 
+        0 30px 60px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.15),
+        inset 0 0 20px rgba(255,255,255,0.03);
     }
 
     /* Tonal Palette Surfaces */
@@ -238,14 +243,15 @@
     }
 
     .m3-button-filled {
-      background: var(--m3-primary);
-      color: var(--m3-on-primary);
+      background: linear-gradient(135deg, var(--brand-400), var(--brand-600));
+      color: #022c15;
+      box-shadow: 0 4px 14px rgba(34,197,94,0.3), inset 0 1px 0 rgba(255,255,255,0.3);
+      border: none;
     }
 
     .m3-button-filled:hover {
-      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
-      background: #4ade80;
-      transform: scale(1.02);
+      box-shadow: 0 8px 24px rgba(34,197,94,0.5), 0 0 30px rgba(34,197,94,0.3), inset 0 1px 0 rgba(255,255,255,0.4);
+      transform: translateY(-2px) scale(1.03);
     }
 
     .m3-button-tonal {
@@ -254,15 +260,17 @@
     }
 
     .m3-button-elevated {
-      background: var(--m3-surface-container-low);
-      color: var(--m3-primary);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(20px);
+      color: var(--brand-400);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.06);
     }
 
     .m3-button-elevated:hover {
-      background: var(--m3-surface-container-high);
-      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
-      transform: scale(1.02);
+      background: rgba(30, 41, 59, 0.9);
+      box-shadow: 0 8px 24px rgba(34,197,94,0.15), inset 0 1px 0 rgba(255,255,255,0.1);
+      transform: translateY(-2px) scale(1.02);
     }
 
     .m3-button-outlined {
@@ -283,15 +291,24 @@
     }
 
     .m3-card-elevated {
-      background: var(--m3-surface-container-low);
+      background: linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.4));
+      backdrop-filter: blur(30px) saturate(180%);
+      -webkit-backdrop-filter: blur(30px) saturate(180%);
       border-radius: 28px;
-      transition: all 0.4s cubic-bezier(0.05, 0.7, 0.1, 1.0);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transform-style: preserve-3d;
     }
 
     .m3-card-elevated:hover {
-      background: var(--m3-surface-container-high);
-      transform: translateY(-4px) scale(1.02);
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+      background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.6));
+      transform: translateY(-8px) scale(1.02) rotateX(2deg) rotateY(-2deg);
+      box-shadow: 
+        0 20px 40px rgba(0,0,0,0.5), 
+        0 0 60px rgba(34,197,94,0.1), 
+        inset 0 1px 0 rgba(255,255,255,0.15);
+      border-color: rgba(34, 197, 94, 0.3);
     }
 
     /* Luminous Effect */
@@ -487,10 +504,7 @@
 <body
   class="min-h-screen text-slate-200 antialiased overflow-x-hidden selection:bg-m3-primary/30 selection:text-m3-onPrimaryContainer relative">
   <div class="neural-flow"></div>
-  <div
-    class="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-500/10 blur-[150px] animate-pulse"
-    style="animation-duration: 12s;"></div>
-  </div>
+  <div class="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-500/10 blur-[150px] animate-pulse" style="animation-duration: 12s;"></div>
 
   <div id="root"></div>
 
@@ -3745,56 +3759,11 @@
       const [sortBy, setSortBy] = useState('date-desc');
       const [filterDate, setFilterDate] = useState('');
       const [uploadingId, setUploadingId] = useState(null);
-      const [receiptPopup, setReceiptPopup] = useState(null); // { url, reason }
-      const [zoomLevel, setZoomLevel] = useState(1);
-      const [imgPos, setImgPos] = useState({ x: 0, y: 0 });
-      const [isDragging, setIsDragging] = useState(false);
-      const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-
-      const openReceiptPopup = (url, reason) => {
-        setReceiptPopup({ url, reason });
-        setZoomLevel(1);
-        setImgPos({ x: 0, y: 0 });
+      const handleViewReceipt = (url, reason) => {
+        if (onViewReceipt) {
+          onViewReceipt({ url, title: reason });
+        }
       };
-      const closeReceiptPopup = () => {
-        setReceiptPopup(null);
-        setZoomLevel(1);
-        setImgPos({ x: 0, y: 0 });
-      };
-      const handleZoomIn = () => setZoomLevel(z => Math.min(z + 0.5, 5));
-      const handleZoomOut = () => {
-        setZoomLevel(z => {
-          const nz = Math.max(z - 0.5, 1);
-          if (nz === 1) setImgPos({ x: 0, y: 0 });
-          return nz;
-        });
-      };
-      const handleWheel = (e) => {
-        e.preventDefault();
-        if (e.deltaY < 0) handleZoomIn();
-        else handleZoomOut();
-      };
-      const handleImgMouseDown = (e) => {
-        if (zoomLevel <= 1) return;
-        e.preventDefault();
-        setIsDragging(true);
-        setDragStart({ x: e.clientX - imgPos.x, y: e.clientY - imgPos.y });
-      };
-      const handleImgMouseMove = (e) => {
-        if (!isDragging) return;
-        setImgPos({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
-      };
-      const handleImgMouseUp = () => setIsDragging(false);
-      const handleTouchStart = (e) => {
-        if (zoomLevel <= 1 || e.touches.length !== 1) return;
-        setIsDragging(true);
-        setDragStart({ x: e.touches[0].clientX - imgPos.x, y: e.touches[0].clientY - imgPos.y });
-      };
-      const handleTouchMove = (e) => {
-        if (!isDragging || e.touches.length !== 1) return;
-        setImgPos({ x: e.touches[0].clientX - dragStart.x, y: e.touches[0].clientY - dragStart.y });
-      };
-      const handleTouchEnd = () => setIsDragging(false);
 
       const handleReceiptUpload = async (e, recordId) => {
         const file = e.target.files[0];
@@ -3926,7 +3895,7 @@
                       {/* Mobile: Receipt button */}
                       <td className="mob-action-cell sm:!hidden">
                         {e.receipt_url ? (
-                          <button onClick={() => openReceiptPopup(e.receipt_url, e.reason)} className="w-9 h-9 flex items-center justify-center bg-brand-500/20 text-brand-400 hover:bg-brand-500/30 border border-brand-500/40 rounded-xl transition" title="View Receipt">
+                          <button onClick={() => handleViewReceipt(e.receipt_url, e.reason)} className="w-9 h-9 flex items-center justify-center bg-brand-500/20 text-brand-400 hover:bg-brand-500/30 border border-brand-500/40 rounded-xl transition" title="View Receipt">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                           </button>
                         ) : (
@@ -3958,7 +3927,7 @@
                       <td className="px-4 py-4 hidden sm:table-cell"><MultiReporterBadge name={e.withdrawer_name} users={users} showFullName={true} /></td>
                       <td className="px-4 py-4 text-center hidden sm:table-cell">
                         {e.receipt_url ? (
-                          <button onClick={() => openReceiptPopup(e.receipt_url, e.reason)} className="text-brand-400 hover:text-brand-300 transition text-xs font-semibold underline bg-transparent border-none cursor-pointer">View Bill</button>
+                          <button onClick={() => handleViewReceipt(e.receipt_url, e.reason)} className="text-brand-400 hover:text-brand-300 transition text-xs font-semibold underline bg-transparent border-none cursor-pointer">View Bill</button>
                         ) : (
                           <label className={`cursor-pointer inline-flex items-center justify-center px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 transition ${uploadingId === e.id ? 'opacity-50 pointer-events-none' : ''}`}>
                             <input type="file" accept="image/*" className="hidden" onChange={(evt) => handleReceiptUpload(evt, e.id)} />
@@ -3975,61 +3944,6 @@
                   ))}
                 </tbody>
               </table>
-            </div>
-          )}
-
-          {/* Receipt Lightbox Popup */}
-          {receiptPopup && (
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-sm"
-              onClick={(e) => { if (e.target === e.currentTarget) closeReceiptPopup(); }}
-              onMouseMove={handleImgMouseMove}
-              onMouseUp={handleImgMouseUp}
-              onMouseLeave={handleImgMouseUp}
-              style={{ touchAction: 'none' }}
-            >
-              {/* Top bar */}
-              <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3 z-10" style={{ background: 'linear-gradient(180deg,rgba(0,0,0,0.7) 0%,transparent 100%)' }}>
-                <div className="flex flex-col">
-                  <span className="text-white text-sm font-bold truncate max-w-[200px] sm:max-w-none">{receiptPopup.reason || 'Receipt'}</span>
-                  <span className="text-slate-400 text-[10px] font-medium">බිල්පත / Receipt</span>
-                </div>
-                <button onClick={closeReceiptPopup} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white text-xl transition">&times;</button>
-              </div>
-
-              {/* Image container */}
-              <div className="relative w-full h-full flex items-center justify-center overflow-hidden"
-                onWheel={handleWheel}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-              >
-                <img
-                  src={receiptPopup.url}
-                  alt="Receipt"
-                  className="max-w-[90vw] max-h-[80vh] object-contain rounded-lg shadow-2xl select-none"
-                  style={{
-                    transform: `scale(${zoomLevel}) translate(${imgPos.x / zoomLevel}px, ${imgPos.y / zoomLevel}px)`,
-                    cursor: zoomLevel > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
-                    transition: isDragging ? 'none' : 'transform 0.2s ease'
-                  }}
-                  onMouseDown={handleImgMouseDown}
-                  draggable={false}
-                />
-              </div>
-
-              {/* Bottom controls */}
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-slate-900/80 backdrop-blur-md rounded-full px-4 py-2.5 border border-white/10 shadow-xl">
-                <button onClick={handleZoomOut} disabled={zoomLevel <= 1} className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white text-lg font-bold transition disabled:opacity-30 disabled:cursor-not-allowed">−</button>
-                <span className="text-white text-xs font-bold min-w-[40px] text-center">{Math.round(zoomLevel * 100)}%</span>
-                <button onClick={handleZoomIn} disabled={zoomLevel >= 5} className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white text-lg font-bold transition disabled:opacity-30 disabled:cursor-not-allowed">+</button>
-                <div className="w-px h-6 bg-white/20"></div>
-                <button onClick={() => { setZoomLevel(1); setImgPos({ x: 0, y: 0 }); }} className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition" title="Reset Zoom">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                </button>
-                <button onClick={() => window.open(receiptPopup.url, '_blank')} className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition" title="Open in New Tab">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                </button>
-              </div>
             </div>
           )}
 
@@ -5980,27 +5894,101 @@
       const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
       const [viewingReceipt, setViewingReceipt] = useState(null);
 
-      const ReceiptModal = ({ url, onClose }) => (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/95 backdrop-blur-xl p-4 animate-fade-in" onClick={onClose}>
-          <div className="relative max-w-5xl w-full max-h-[90vh] flex flex-col items-center gap-4" onClick={e => e.stopPropagation()}>
-            <button onClick={onClose} className="absolute -top-12 right-0 text-white hover:text-brand-400 transition flex items-center gap-2 font-bold uppercase tracking-widest text-xs">
-              Close / වසන්න <span className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-full">&times;</span>
-            </button>
-            <div className="w-full h-full overflow-hidden rounded-2xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] bg-slate-900 flex items-center justify-center">
-              <img src={url} className="max-w-full max-h-[80vh] object-contain" alt="Receipt" />
+      const ReceiptModal = ({ url, title, onClose }) => {
+        const [zoomLevel, setZoomLevel] = useState(1);
+        const [imgPos, setImgPos] = useState({ x: 0, y: 0 });
+        const [isDragging, setIsDragging] = useState(false);
+        const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+        const handleZoomIn = () => setZoomLevel(z => Math.min(z + 0.5, 5));
+        const handleZoomOut = () => {
+          setZoomLevel(z => {
+            const nz = Math.max(z - 0.5, 1);
+            if (nz === 1) setImgPos({ x: 0, y: 0 });
+            return nz;
+          });
+        };
+        const handleWheel = (e) => {
+          e.preventDefault();
+          if (e.deltaY < 0) handleZoomIn();
+          else handleZoomOut();
+        };
+        const handleImgMouseDown = (e) => {
+          if (zoomLevel <= 1) return;
+          e.preventDefault();
+          setIsDragging(true);
+          setDragStart({ x: e.clientX - imgPos.x, y: e.clientY - imgPos.y });
+        };
+        const handleImgMouseMove = (e) => {
+          if (!isDragging) return;
+          setImgPos({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+        };
+        const handleImgMouseUp = () => setIsDragging(false);
+        const handleTouchStart = (e) => {
+          if (zoomLevel <= 1 || e.touches.length !== 1) return;
+          setIsDragging(true);
+          setDragStart({ x: e.touches[0].clientX - imgPos.x, y: e.touches[0].clientY - imgPos.y });
+        };
+        const handleTouchMove = (e) => {
+          if (!isDragging || e.touches.length !== 1) return;
+          setImgPos({ x: e.touches[0].clientX - dragStart.x, y: e.touches[0].clientY - dragStart.y });
+        };
+        const handleTouchEnd = () => setIsDragging(false);
+
+        return (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-xl animate-fade-in"
+            onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+            onMouseMove={handleImgMouseMove}
+            onMouseUp={handleImgMouseUp}
+            onMouseLeave={handleImgMouseUp}
+            style={{ touchAction: 'none' }}
+          >
+            {/* Top bar */}
+            <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 py-4 z-10" style={{ background: 'linear-gradient(180deg,rgba(0,0,0,0.8) 0%,transparent 100%)' }}>
+              <div className="flex flex-col text-left">
+                <span className="text-white text-base font-black tracking-tight truncate max-w-[200px] sm:max-w-none">{title || 'Receipt'}</span>
+                <span className="text-slate-400 text-xs font-bold uppercase tracking-wider mt-0.5">බිල්පත / Receipt</span>
+              </div>
+              <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white text-xl transition">&times;</button>
             </div>
-            <div className="flex gap-4">
-              <button onClick={() => window.open(url, '_blank')} className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold uppercase tracking-widest transition border border-white/10 flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                Open in New Tab
+
+            {/* Image container */}
+            <div className="relative w-full h-full flex items-center justify-center overflow-hidden p-4"
+              onWheel={handleWheel}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              <img
+                src={url}
+                alt="Receipt"
+                className="max-w-[90vw] max-h-[80vh] object-contain rounded-xl shadow-2xl select-none border border-white/5"
+                style={{
+                  transform: `scale(${zoomLevel}) translate(${imgPos.x / zoomLevel}px, ${imgPos.y / zoomLevel}px)`,
+                  cursor: zoomLevel > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+                  transition: isDragging ? 'none' : 'transform 0.2s ease'
+                }}
+                onMouseDown={handleImgMouseDown}
+                draggable={false}
+              />
+            </div>
+
+            {/* Bottom controls */}
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-slate-900/80 backdrop-blur-md rounded-full px-5 py-3 border border-white/10 shadow-2xl">
+              <button onClick={handleZoomOut} disabled={zoomLevel <= 1} className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white text-lg font-bold transition disabled:opacity-30 disabled:cursor-not-allowed">−</button>
+              <span className="text-white text-xs font-black min-w-[50px] text-center">{Math.round(zoomLevel * 100)}%</span>
+              <button onClick={handleZoomIn} disabled={zoomLevel >= 5} className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white text-lg font-bold transition disabled:opacity-30 disabled:cursor-not-allowed">+</button>
+              <div className="w-px h-6 bg-white/20"></div>
+              <button onClick={() => { setZoomLevel(1); setImgPos({ x: 0, y: 0 }); }} className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition" title="Reset Zoom">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
               </button>
-              <button onClick={onClose} className="px-6 py-3 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold uppercase tracking-widest transition shadow-lg shadow-brand-500/20 m3-button m3-button-filled magnetic-button">
-                Back / ආපසු
+              <button onClick={() => window.open(url, '_blank')} className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition" title="Open in New Tab">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
               </button>
             </div>
           </div>
-        </div>
-      );
+        );
+      };
 
       const showNotification = (data) => {
         setNotification(data);
@@ -6623,7 +6611,7 @@
             >
               <div className="animate-fade-in max-w-5xl mx-auto">
                 {activeTab === 'profile' && <ProfileView currentUser={currentUser} incomes={incomes} expenses={expenses} userTotalContribution={userTotalContribution} balanceToPay={balanceToPay} users={users} projectSettings={projectSettings} onUpdateAccess={updateProjectAccess} />}
-                {activeTab === 'dashboard' && <DashboardView incomes={incomes} expenses={expenses} setActiveTab={setActiveTab} currentUser={currentUser} userTotalContribution={userTotalContribution} balanceToPay={balanceToPay} users={users} projectSettings={projectSettings} onUpdateAccess={updateProjectAccess} handleTabSwitch={handleTabSwitch} />}
+                {activeTab === 'dashboard' && <DashboardView incomes={incomes} expenses={expenses} setActiveTab={setActiveTab} currentUser={currentUser} userTotalContribution={userTotalContribution} balanceToPay={balanceToPay} users={users} onViewReceipt={setViewingReceipt} projectSettings={projectSettings} onUpdateAccess={updateProjectAccess} handleTabSwitch={handleTabSwitch} />}
 
                 {activeTab === 'income-page' && (
                   <div className="space-y-8 animate-fade-in">
@@ -6684,8 +6672,6 @@
                 {activeTab === 'donations-view' && <DonationsView incomes={incomes} users={users} setActiveTab={setActiveTab} />}
               </div>
 
-              {viewingReceipt && <ReceiptModal url={viewingReceipt} onClose={() => setViewingReceipt(null)} />}
-
               {currentUser?.role === 'admin' && (
                 <div className="text-center mt-12 mb-8 flex justify-center animate-fade-in">
                   <button 
@@ -6736,6 +6722,14 @@
               </button>
             ))}
           </footer>
+
+          {viewingReceipt && (
+            <ReceiptModal
+              url={typeof viewingReceipt === 'string' ? viewingReceipt : viewingReceipt.url}
+              title={typeof viewingReceipt === 'string' ? 'Receipt / බිල්පත' : (viewingReceipt.title || 'Receipt / බිල්පත')}
+              onClose={() => setViewingReceipt(null)}
+            />
+          )}
         </div>
       );
     }
