@@ -4318,7 +4318,7 @@
       );
     }
 
-    function ExpenseForm({ onComplete, currentUser, users, projectSettings }) {
+    function ExpenseForm({ onComplete, currentUser, users, projectSettings, showNotification }) {
       const hasAccess = useMemo(() => {
         if (currentUser?.role === 'admin') return true;
         if (projectSettings?.allow_expense_entry === false) return false;
@@ -4357,6 +4357,42 @@
       const [loading, setLoading] = useState(false);
       const [error, setError] = useState('');
 
+      const [sessionId] = useState(() => 'scan-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now());
+      const [remoteReceiptUrl, setRemoteReceiptUrl] = useState(null);
+      const [remoteUploading, setRemoteUploading] = useState(false);
+
+      useEffect(() => {
+        if (!sessionId) return;
+
+        const channel = supabase.channel(`remote-scan-${sessionId}`);
+        
+        channel.on('broadcast', { event: 'receipt-uploading' }, () => {
+          setRemoteUploading(true);
+        });
+
+        channel.on('broadcast', { event: 'receipt-uploaded' }, (payload) => {
+          setRemoteUploading(false);
+          if (payload && payload.payload && payload.payload.receiptUrl) {
+            setRemoteReceiptUrl(payload.payload.receiptUrl);
+            if (showNotification) {
+              showNotification({
+                type: 'success',
+                title: 'Receipt Synced!',
+                sTitle: 'රිසිට්පත සාර්ථකව ලැබුණි.'
+              });
+            }
+          }
+        });
+
+        channel.subscribe((status) => {
+          console.log("Realtime subscribe status:", status);
+        });
+
+        return () => {
+          supabase.removeChannel(channel);
+        };
+      }, [sessionId]);
+
       const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
       const handleFormSubmit = async (e) => {
@@ -4369,7 +4405,7 @@
         setLoading(true); setError('');
 
         try {
-          let receipt_url = null;
+          let receipt_url = remoteReceiptUrl || null;
 
           if (receiptFile) {
             const fileExt = receiptFile.name.split('.').pop();
@@ -4434,6 +4470,7 @@
           setShowOtherWithdrawer(false);
           setOtherWithdrawers(['']);
           setReceiptFile(null);
+          setRemoteReceiptUrl(null);
           // Only reset form natively to clear file input file selection
           e.target.reset();
         } catch (err) {
@@ -4530,12 +4567,91 @@
                     </div>
                   )}
                 </div>
-                <div className="flex flex-col gap-1.5 mb-4 md:col-span-2 mt-4">
-                  <label className="text-sm font-medium text-slate-300 flex flex-col gap-0.5 leading-tight">
+                <div className="md:col-span-2 mt-6 border-t border-slate-800/60 pt-6">
+                  <label className="text-sm font-bold text-white flex flex-col gap-0.5 leading-tight mb-4">
                     <span>Receipt / Bill Photo (Optional)</span>
-                    <span className="text-[10.5px] text-brand-400 opacity-90">රිසිට් / බිල්පත් ඡායාරූපය</span>
+                    <span className="text-xs text-slate-400 font-normal">රිසිට් / බිල්පත් ඡායාරූපය (මෙහිදී පරිගණකයෙන් හෝ ජංගම දුරකතනයෙන් සම්බන්ධ කල හැක)</span>
                   </label>
-                  <input type="file" accept="image/*" onChange={(e) => setReceiptFile(e.target.files[0])} className="block w-full text-sm text-slate-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-slate-800 file:text-red-400 hover:file:bg-slate-700 transition mt-2" />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+                    {/* Method 1: Local upload */}
+                    <div className="glass-card rounded-2xl p-6 border border-slate-800/80 flex flex-col justify-center relative overflow-hidden group">
+                      <div className="absolute top-0 right-0 -mr-8 -mt-8 w-24 h-24 rounded-full blur-[30px] bg-brand-500/5 transition-all duration-300 group-hover:bg-brand-500/10"></div>
+                      <span className="text-xs font-bold text-brand-400 uppercase tracking-wider mb-3 block">Method 1: Direct Upload</span>
+                      <p className="text-xs text-slate-400 mb-4 leading-relaxed">Select a file directly from this device / මෙම උපාංගයෙන් ගොනුවක් තෝරන්න.</p>
+                      
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        id="receipt-file-input"
+                        disabled={!!remoteReceiptUrl}
+                        onChange={(e) => {
+                          setReceiptFile(e.target.files[0]);
+                          if (e.target.files[0]) {
+                            setRemoteReceiptUrl(null); // clear remote scan if local file chosen
+                          }
+                        }} 
+                        className="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-brand-400 hover:file:bg-slate-700 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" 
+                      />
+                      {receiptFile && (
+                        <div className="mt-3 flex items-center gap-2 text-xs text-brand-400 animate-fade-in font-bold">
+                          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                          <span>Local File Selected: {receiptFile.name}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Method 2: Remote Scanner */}
+                    <div className="glass-card rounded-2xl p-6 border border-slate-800/80 flex flex-col items-center justify-between relative overflow-hidden group">
+                      <div className="absolute top-0 right-0 -mr-8 -mt-8 w-24 h-24 rounded-full blur-[30px] bg-indigo-500/5 transition-all duration-300 group-hover:bg-indigo-500/10"></div>
+                      <div className="w-full">
+                        <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2 block">Method 2: Mobile QR Scanner</span>
+                        <p className="text-xs text-slate-400 mb-3 leading-relaxed">No cable? Scan QR with phone to capture receipt instantly / දුරකතන කැමරාවෙන් ස්කෑන් කර රිසිට්පත එකතු කරන්න.</p>
+                      </div>
+
+                      {remoteUploading ? (
+                        <div className="flex flex-col items-center justify-center py-6 animate-pulse">
+                          <div className="w-10 h-10 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin mb-3"></div>
+                          <span className="text-xs text-indigo-400 font-bold tracking-wide">Phone is uploading...</span>
+                          <span className="text-[10px] text-slate-500">දුරකතනය මඟින් රිසිට්පත උඩුගත වෙමින් පවතී...</span>
+                        </div>
+                      ) : remoteReceiptUrl ? (
+                        <div className="w-full flex items-center gap-4 bg-slate-900/60 border border-slate-800 p-3 rounded-2xl animate-fade-in relative z-10">
+                          <div className="w-16 h-16 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 shrink-0">
+                            <img src={remoteReceiptUrl} className="w-full h-full object-cover" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1 text-emerald-400 font-extrabold text-xs">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                              <span>Synced Successfully!</span>
+                            </div>
+                            <p className="text-[10px] text-slate-400 truncate mt-0.5">රිසිට්පත සාර්ථකව සම්බන්ධ කරන ලදි!</p>
+                            <button 
+                              type="button" 
+                              onClick={() => setRemoteReceiptUrl(null)} 
+                              className="text-[10px] text-red-400 hover:text-red-300 font-bold underline mt-1.5 block cursor-pointer"
+                            >
+                              Remove / ඉවත් කරන්න
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
+                          <div className="bg-white p-2 rounded-2xl shadow-lg border border-slate-800 shrink-0">
+                            <img 
+                              src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(`${window.location.origin}${window.location.pathname}?action=remote-scan&session=${sessionId}`)}`}
+                              alt="Scan to upload" 
+                              className="w-20 h-20"
+                            />
+                          </div>
+                          <div className="text-center sm:text-left">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 rounded-full text-[9px] font-black uppercase tracking-wider mb-2">Live WebSocket Link</span>
+                            <p className="text-[10px] text-slate-400 leading-normal max-w-[200px]">Scan with phone to open high-speed mobile receipt scanner / දුරකතනයෙන් ස්කෑන් කරන්න.</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -4558,6 +4674,277 @@
               )}
             </div>
           </form>
+        </div>
+      );
+    }
+
+    function RemoteScannerView({ sessionId }) {
+      const [cameraFile, setCameraFile] = useState(null);
+      const [localPreview, setLocalPreview] = useState(null);
+      const [compressing, setCompressing] = useState(false);
+      const [uploading, setUploading] = useState(false);
+      const [status, setStatus] = useState('idle'); // idle | reviewing | uploading | success | error
+      const [errorMsg, setErrorMsg] = useState('');
+
+      const channel = useMemo(() => supabase.channel(`remote-scan-${sessionId}`), [sessionId]);
+
+      useEffect(() => {
+        channel.subscribe((status) => {
+          console.log("Scanner connected to channel status:", status);
+        });
+        return () => {
+          supabase.removeChannel(channel);
+        };
+      }, [channel]);
+
+      const compressImage = (file) => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              let width = img.width;
+              let height = img.height;
+              
+              const maxDim = 1000;
+              if (width > maxDim || height > maxDim) {
+                if (width > height) {
+                  height = Math.round((height * maxDim) / width);
+                  width = maxDim;
+                } else {
+                  width = Math.round((width * maxDim) / height);
+                  height = maxDim;
+                }
+              }
+              
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, width, height);
+              
+              canvas.toBlob((blob) => {
+                if (blob) {
+                  resolve(new File([blob], file.name || 'receipt.jpg', { type: 'image/jpeg' }));
+                } else {
+                  resolve(file);
+                }
+              }, 'image/jpeg', 0.75);
+            };
+            img.onerror = () => reject(new Error('Failed to load image for compression'));
+            img.src = event.target.result;
+          };
+          reader.onerror = () => reject(new Error('Failed to read image file'));
+          reader.readAsDataURL(file);
+        });
+      };
+
+      const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setCameraFile(file);
+        setLocalPreview(URL.createObjectURL(file));
+        setStatus('reviewing');
+        setErrorMsg('');
+      };
+
+      const handleUpload = async () => {
+        if (!cameraFile) return;
+
+        setStatus('uploading');
+        setCompressing(true);
+        setErrorMsg('');
+
+        try {
+          channel.send({
+            type: 'broadcast',
+            event: 'receipt-uploading',
+            payload: {}
+          });
+
+          const compressed = await compressImage(cameraFile);
+          setCompressing(false);
+          setUploading(true);
+
+          const fileExt = compressed.name.split('.').pop();
+          const fileName = `remote-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+          const filePath = `${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('receipts')
+            .upload(filePath, compressed);
+
+          if (uploadError) throw uploadError;
+
+          const { data } = supabase.storage.from('receipts').getPublicUrl(filePath);
+          const receiptUrl = data.publicUrl;
+
+          await channel.send({
+            type: 'broadcast',
+            event: 'receipt-uploaded',
+            payload: { receiptUrl }
+          });
+
+          setStatus('success');
+          if (typeof window.confetti === 'function') {
+            window.confetti({ particleCount: 80, spread: 60, origin: { y: 0.8 } });
+          }
+        } catch (err) {
+          console.error("Upload error:", err);
+          setErrorMsg(err.message || 'Something went wrong during upload.');
+          setStatus('error');
+          channel.send({
+            type: 'broadcast',
+            event: 'receipt-uploaded',
+            payload: { receiptUrl: null }
+          });
+        } finally {
+          setCompressing(false);
+          setUploading(false);
+        }
+      };
+
+      const handleReset = () => {
+        setCameraFile(null);
+        setLocalPreview(null);
+        setStatus('idle');
+        setErrorMsg('');
+      };
+
+      return (
+        <div className="min-h-screen bg-[#020617] text-white flex flex-col justify-between p-6 relative overflow-hidden font-sans">
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[350px] h-[350px] bg-emerald-500/10 blur-[100px] rounded-full pointer-events-none"></div>
+
+          <header className="flex flex-col items-center pt-8 relative z-10">
+            <div className="w-14 h-14 bg-emerald-500/15 text-emerald-400 rounded-2xl flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(16,185,129,0.1)] border border-emerald-500/20">
+              <span className="material-symbols-rounded text-3xl">qr_code_scanner</span>
+            </div>
+            <h1 className="text-xl font-black tracking-tight text-white uppercase text-center leading-none">Remote Scanner</h1>
+            <p className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-[0.2em] mt-1">Quick Remote Scanner</p>
+          </header>
+
+          <main className="flex-1 flex flex-col items-center justify-center my-8 relative z-10 w-full max-w-sm mx-auto">
+            {status === 'idle' && (
+              <div className="glass-card w-full border border-slate-800/80 rounded-3xl p-8 text-center flex flex-col items-center gap-6 animate-fade-in shadow-2xl">
+                <div className="w-20 h-20 bg-slate-900 border border-slate-800 rounded-full flex items-center justify-center text-slate-500 shadow-inner">
+                  <span className="material-symbols-rounded text-4xl">photo_camera</span>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white mb-2">Capture receipt for PC Form</h2>
+                  <p className="text-xs text-slate-400 leading-relaxed px-2">
+                    Take a clear photo of the receipt/bill. It will automatically compress and sync to the expense form on your PC screen in real-time.
+                  </p>
+                  <p className="text-[11px] text-emerald-400/90 font-medium mt-2 italic">
+                    රිසිට්පතෙහි පැහැදිලි ඡායාරූපයක් ගන්න. එය ස්වයංක්‍රීයව පරිගණකයට සම්බන්ධ වේ.
+                  </p>
+                </div>
+                
+                <label className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 px-6 rounded-2xl transition cursor-pointer shadow-[0_10px_35px_rgba(16,185,129,0.3)] border border-emerald-500/20 active:scale-95 duration-150 text-sm">
+                  <span className="material-symbols-rounded">camera_alt</span>
+                  <span>Take Photo / ඡායාරූපයක් ගන්න</span>
+                  <input type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
+                </label>
+              </div>
+            )}
+
+            {status === 'reviewing' && (
+              <div className="glass-card w-full border border-slate-800/80 rounded-3xl p-6 text-center flex flex-col items-center gap-6 animate-fade-in shadow-2xl">
+                <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">Review Captured Photo</span>
+                
+                <div className="w-full aspect-[3/4] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 relative shadow-inner">
+                  <img src={localPreview} className="w-full h-full object-contain" />
+                </div>
+
+                <div className="flex gap-4 w-full">
+                  <button 
+                    onClick={handleReset} 
+                    className="flex-1 bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold py-3.5 px-4 rounded-xl border border-slate-800 transition active:scale-95 text-xs"
+                  >
+                    Retake / නැවත ගන්න
+                  </button>
+                  <button 
+                    onClick={handleUpload} 
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-4 rounded-xl border border-emerald-500/20 shadow-[0_5px_20px_rgba(16,185,129,0.2)] transition active:scale-95 text-xs"
+                  >
+                    Upload & Sync
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {status === 'uploading' && (
+              <div className="glass-card w-full border border-slate-800/80 rounded-3xl p-8 text-center flex flex-col items-center gap-6 animate-fade-in shadow-2xl">
+                <div className="relative py-8">
+                  <div className="w-16 h-16 rounded-full border-4 border-emerald-500/20 border-t-emerald-400 animate-spin"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="material-symbols-rounded text-emerald-400 text-2xl animate-pulse">cloud_upload</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-lg font-bold text-white">
+                    {compressing ? 'Compressing Image...' : 'Uploading & Syncing...'}
+                  </h2>
+                  <p className="text-xs text-slate-400 leading-normal">
+                    {compressing 
+                      ? 'Reducing image size for instant transfer / රිසිට්පතෙහි ප්‍රමාණය අඩු කරමින් පවතී...' 
+                      : 'Sending secure payload to PC screen / පරිගණකයට රිසිට්පත සම්බන්ධ කරමින් පවතී...'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {status === 'success' && (
+              <div className="glass-card w-full border border-slate-800/80 rounded-3xl p-8 text-center flex flex-col items-center gap-6 animate-fade-in shadow-2xl">
+                <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.2)] border border-emerald-500/20 animate-bounce">
+                  <span className="material-symbols-rounded text-3xl font-extrabold">check</span>
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-lg font-bold text-white">Receipt Synced Successfully!</h2>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    The receipt image has been uploaded and linked to the form on your PC screen in real-time. You can now save the expense on your PC.
+                  </p>
+                  <p className="text-[11px] text-emerald-400/90 font-medium italic">
+                    රිසිට්පත සාර්ථකව සම්බන්ධ කරන ලදි! දැන් ඔබට පරිගණකයෙන් වියදම් වාර්තාව සුරැකිය හැක.
+                  </p>
+                </div>
+
+                <div className="w-full h-px bg-slate-800"></div>
+
+                <button 
+                  onClick={handleReset} 
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white font-bold py-3.5 px-4 rounded-xl border border-slate-800 transition text-xs"
+                >
+                  Scan Another Receipt / තවත් රිසිට්පතක්
+                </button>
+              </div>
+            )}
+
+            {status === 'error' && (
+              <div className="glass-card w-full border border-slate-800/80 rounded-3xl p-8 text-center flex flex-col items-center gap-6 animate-fade-in shadow-2xl">
+                <div className="w-16 h-16 bg-red-500/10 text-red-400 rounded-full flex items-center justify-center border border-red-500/20">
+                  <span className="material-symbols-rounded text-3xl">error_outline</span>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white mb-2">Upload Failed</h2>
+                  <p className="text-xs text-red-300 font-bold mb-4 leading-normal">{errorMsg}</p>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    An error occurred while uploading. Please ensure your device has internet access and try again.
+                  </p>
+                </div>
+                <button 
+                  onClick={handleReset} 
+                  className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3.5 px-4 rounded-xl transition text-xs shadow-lg active:scale-95"
+                >
+                  Try Again / නැවත උත්සාහ කරන්න
+                </button>
+              </div>
+            )}
+          </main>
+
+          <footer className="text-center py-6 relative z-10 text-[9px] text-slate-600 font-bold uppercase tracking-[0.2em]">
+            Vesak Finance Remote Scanner &copy; 2026
+          </footer>
         </div>
       );
     }
@@ -6454,6 +6841,14 @@
         );
       }
 
+      const urlParams = new URLSearchParams(window.location.search);
+      const isRemoteScan = urlParams.get('action') === 'remote-scan';
+      const remoteSessionId = urlParams.get('session');
+
+      if (isRemoteScan && remoteSessionId) {
+        return <RemoteScannerView sessionId={remoteSessionId} />;
+      }
+
       if (loading) return <LoadingScreen />;
 
       return (
@@ -6645,7 +7040,7 @@
 
                 {activeTab === 'expense-page' && (
                   <div className="space-y-8 animate-fade-in">
-                    <ExpenseForm currentUser={currentUser} users={users} projectSettings={projectSettings} onComplete={(data) => {
+                    <ExpenseForm currentUser={currentUser} users={users} projectSettings={projectSettings} showNotification={showNotification} onComplete={(data) => {
                       fetchData();
                       if (data) showNotification({
                         type: 'blue',
