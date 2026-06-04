@@ -721,7 +721,10 @@
             const [canvasLoading, setCanvasLoading] = useState(false);
 
             const allDonations = useMemo(() => {
-                return [...incomes].sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
+                const eventCats = ['Kuuduwa Open', 'Exhibition Box - Day 1', 'Exhibition Box - Day 2', 'Exhibition Box - Day 3', 'Exhibition Box - Day 4', 'Exhibition Box - Day 5'];
+                return [...incomes]
+                    .filter(d => !eventCats.includes(d.donor_category))
+                    .sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
             }, [incomes]);
 
             const filtered = useMemo(() => {

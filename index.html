@@ -3153,7 +3153,7 @@
             </div>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mt-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-6 mt-8">
             <button onClick={() => handleTabSwitch('income-list')} className="glass-card rounded-3xl p-5 flex flex-col items-center justify-center gap-3 hover:bg-slate-800/80 border border-slate-700/30 hover:border-brand-500/50 transition-all group animate-fade-in delay-100">
               <div className="w-14 h-14 rounded-2xl bg-brand-500/10 text-brand-400 flex items-center justify-center group-hover:bg-brand-500 group-hover:text-white transition-all duration-500 shadow-inner group-hover:shadow-[0_0_20px_rgba(34,197,94,0.4)]">
                 <IconIncome />
@@ -3197,6 +3197,16 @@
                   {incomes.filter(i => i.status === 'Promised').length}
                 </span>
               )}
+            </button>
+
+            <button onClick={() => handleTabSwitch('event-income-list')} className="glass-card rounded-3xl p-5 flex flex-col items-center justify-center gap-3 hover:bg-slate-800/80 border border-slate-700/30 hover:border-pink-500/50 transition-all group animate-fade-in delay-200">
+              <div className="w-14 h-14 rounded-2xl bg-pink-500/10 text-pink-400 flex items-center justify-center group-hover:bg-pink-500 group-hover:text-white transition-all duration-500 shadow-inner group-hover:shadow-[0_0_20px_rgba(236,72,153,0.4)]">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" /></svg>
+              </div>
+              <div className="flex flex-col text-center">
+                <span className="font-bold text-slate-200 text-sm">Event Incomes</span>
+                <span className="text-[10px] text-slate-400 group-hover:text-pink-300 mt-0.5 font-medium">උත්සව ආදායම්</span>
+              </div>
             </button>
           </div>
 
@@ -3609,13 +3619,18 @@
       );
     }
 
-    function IncomeList({ incomes, users, setActiveTab }) {
+    function IncomeList({ incomes, users, setActiveTab, eventOnly = false }) {
       const [searchTerm, setSearchTerm] = useState('');
       const [sortBy, setSortBy] = useState('date-desc');
       const [filterDate, setFilterDate] = useState('');
 
       const validIncomes = incomes.filter(i => {
         if (i.status !== 'Received Today' || i.donation_type !== 'Cash') return false;
+        
+        const isEvent = ['Kuuduwa Open', 'Exhibition Box - Day 1', 'Exhibition Box - Day 2', 'Exhibition Box - Day 3', 'Exhibition Box - Day 4', 'Exhibition Box - Day 5'].includes(i.donor_category);
+        if (eventOnly && !isEvent) return false;
+        if (!eventOnly && isEvent) return false;
+
         if (filterDate && i.date !== filterDate) return false;
         if (searchTerm) {
           const lower = searchTerm.toLowerCase();
@@ -3665,8 +3680,8 @@
           </button>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
             <h2 className="text-xl font-bold text-white flex flex-col">
-              <span>All Income Records</span>
-              <span className="text-sm text-slate-400 font-normal mt-0.5">සියලුම ආදායම් වාර්තා</span>
+              <span>{eventOnly ? 'Event & Box Incomes' : 'All Income Records'}</span>
+              <span className="text-sm text-slate-400 font-normal mt-0.5">{eventOnly ? 'උත්සව සහ පින්කැට ආදායම්' : 'සියලුම ආදායම් වාර්තා'}</span>
             </h2>
             <ExportButtons onCsv={handleCSV} onPdf={handlePDF} />
           </div>
@@ -4132,7 +4147,7 @@
                     <span>Donor Category *</span>
                     <span className="text-[10.5px] text-brand-400 opacity-90">ආධාරකරුගේ වර්ගය</span>
                   </label>
-                  <div className="flex gap-4 mt-2">
+                  <div className="flex flex-wrap gap-4 mt-2">
                     <label className="flex items-center gap-2 cursor-pointer flex-col sm:flex-row bg-slate-900/50 p-2 px-4 rounded-lg border border-slate-800 hover:border-slate-700 transition">
                       <input type="radio" name="donor_category" value="Regular Donor" checked={formData.donor_category === 'Regular Donor'} onChange={(e) => setFormData({ ...formData, donor_category: e.target.value, name: '' })} className="text-brand-500 focus:ring-brand-500" />
                       <div className="flex flex-col text-center sm:text-left">
@@ -4147,8 +4162,37 @@
                         <span className="text-[10px] text-slate-400">ප්‍රධාන ආධාරකරු</span>
                       </div>
                     </label>
+                    <label className="flex items-center gap-2 cursor-pointer flex-col sm:flex-row bg-slate-900/50 p-2 px-4 rounded-lg border border-slate-800 hover:border-slate-700 transition">
+                      <input type="radio" name="donor_category" value="Event Collection" checked={['Kuuduwa Open', 'Exhibition Box - Day 1', 'Exhibition Box - Day 2', 'Exhibition Box - Day 3', 'Exhibition Box - Day 4', 'Exhibition Box - Day 5'].includes(formData.donor_category)} onChange={(e) => setFormData({ ...formData, donor_category: 'Kuuduwa Open', name: '' })} className="text-brand-500 focus:ring-brand-500" />
+                      <div className="flex flex-col text-center sm:text-left">
+                        <span className="text-sm">Event Collections</span>
+                        <span className="text-[10px] text-slate-400">උත්සව / පින්කැට</span>
+                      </div>
+                    </label>
                   </div>
                 </div>
+
+                {['Kuuduwa Open', 'Exhibition Box - Day 1', 'Exhibition Box - Day 2', 'Exhibition Box - Day 3', 'Exhibition Box - Day 4', 'Exhibition Box - Day 5'].includes(formData.donor_category) && (
+                  <div className="flex flex-col gap-1.5 mb-4 md:col-span-2">
+                    <label className="text-sm font-medium text-slate-300">Select Event / උත්සවය තෝරන්න</label>
+                    <select 
+                      value={formData.donor_category}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        donor_category: e.target.value, 
+                        name: e.target.value.includes('Exhibition Box') ? e.target.value : '' 
+                      })}
+                      className="bg-slate-900 border border-slate-700 text-slate-300 text-sm rounded-lg p-2.5 outline-none focus:border-brand-500"
+                    >
+                      <option value="Kuuduwa Open">Kuuduwa Open (කූඩුව විවෘත කළ දින මුදල්)</option>
+                      <option value="Exhibition Box - Day 1">Exhibition Day 1 Box (ප්‍රදර්ශන දිනය 1 - පින්කැටය)</option>
+                      <option value="Exhibition Box - Day 2">Exhibition Day 2 Box (ප්‍රදර්ශන දිනය 2 - පින්කැටය)</option>
+                      <option value="Exhibition Box - Day 3">Exhibition Day 3 Box (ප්‍රදර්ශන දිනය 3 - පින්කැටය)</option>
+                      <option value="Exhibition Box - Day 4">Exhibition Day 4 Box (ප්‍රදර්ශන දිනය 4 - පින්කැටය)</option>
+                      <option value="Exhibition Box - Day 5">Exhibition Day 5 Box (ප්‍රදර්ශන දිනය 5 - පින්කැටය)</option>
+                    </select>
+                  </div>
+                )}
 
                 {formData.donor_category === 'Main Donor' ? (
                   <div className="flex flex-col gap-1.5 mb-4 md:col-span-2">
@@ -4164,7 +4208,7 @@
                       ))}
                     </div>
                   </div>
-                ) : (
+                ) : ['Exhibition Box - Day 1', 'Exhibition Box - Day 2', 'Exhibition Box - Day 3', 'Exhibition Box - Day 4', 'Exhibition Box - Day 5'].includes(formData.donor_category) ? null : (
                   <InputField label="Name" sLabel="නම" name="name" value={formData.name} onChange={handleChange} required />
                 )}
                 <InputField label="Phone Number" sLabel="දුරකථන අංකය (අත්‍යවශ්‍ය නොවේ)" name="phone_number" value={formData.phone_number} onChange={handleChange} />
@@ -6387,7 +6431,7 @@
       useEffect(() => {
         const handleHashChange = () => {
           const hash = window.location.hash.replace('#', '');
-          const validTabs = ['dashboard', 'income-page', 'income-list', 'goods-list', 'expense-page', 'expense-list', 'pledges', 'profile', 'donations-view'];
+          const validTabs = ['dashboard', 'income-page', 'income-list', 'event-income-list', 'goods-list', 'expense-page', 'expense-list', 'pledges', 'profile', 'donations-view'];
           if (hash && validTabs.includes(hash)) {
             setActiveTab(hash);
           }
@@ -6540,7 +6584,7 @@
 
           // Determine current base tab (handling sub-pages)
           let baseTab = activeTab;
-          if (['income-list', 'goods-list'].includes(activeTab)) baseTab = 'income-page';
+          if (['income-list', 'goods-list', 'event-income-list'].includes(activeTab)) baseTab = 'income-page';
           if (activeTab === 'expense-list') baseTab = 'expense-page';
 
           const currentIndex = MAIN_TABS.indexOf(baseTab);
@@ -6565,7 +6609,7 @@
         const MAIN_TABS = ['dashboard', 'income-page', 'expense-page', 'pledges', 'profile'];
         // Special case for subpages
         let currentBase = activeTab;
-        if (['income-list', 'goods-list'].includes(activeTab)) currentBase = 'income-page';
+        if (['income-list', 'goods-list', 'event-income-list'].includes(activeTab)) currentBase = 'income-page';
         if (activeTab === 'expense-list') currentBase = 'expense-page';
 
         const currentIndex = MAIN_TABS.indexOf(currentBase);
@@ -7029,6 +7073,12 @@
                 {activeTab === 'income-list' && (
                   <div className="space-y-8 animate-fade-in">
                     <IncomeList incomes={incomes} users={users} setActiveTab={setActiveTab} />
+                  </div>
+                )}
+
+                {activeTab === 'event-income-list' && (
+                  <div className="space-y-8 animate-fade-in">
+                    <IncomeList incomes={incomes} users={users} setActiveTab={setActiveTab} eventOnly={true} />
                   </div>
                 )}
 

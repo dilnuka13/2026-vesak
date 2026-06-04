@@ -575,6 +575,7 @@
         { id: 'regular_donors', label: 'Regular', color: 'lime' },
         { id: 'expenses', label: 'Expenses', color: 'red' },
         { id: 'receipts', label: 'Receipts', color: 'amber' },
+        { id: 'reports', label: 'Reports', color: 'pink' },
         { id: 'shares', label: 'Shares', color: 'blue' },
         { id: 'users', label: 'User Mgmt', color: 'indigo' },
         { id: 'project_settings', label: 'Settings', color: 'slate' }
@@ -1319,11 +1320,11 @@
       }
 
       return (
-        <div className="flex min-h-screen relative">
+        <div className="flex min-h-screen relative print:block print:h-auto print:min-h-0 print:bg-white">
           <div className="neural-flow"></div>
           
           {/* M3 Navigation Rail (Admin) */}
-          <aside className="hidden lg:flex flex-col w-20 bg-m3-surfaceContainerLow border-r border-white/5 sticky top-0 h-screen z-40 items-center py-8 gap-6">
+          <aside className="hidden lg:flex flex-col w-20 bg-m3-surfaceContainerLow border-r border-white/5 sticky top-0 h-screen z-40 items-center py-8 gap-6 print:hidden">
             <div className="w-12 h-12 bg-m3-primaryContainer rounded-2xl flex items-center justify-center text-m3-onPrimaryContainer shadow-lg mb-4">
               <MaterialIcon name="shield" />
             </div>
@@ -1332,6 +1333,7 @@
               {[
                 { id: 'incomes', icon: 'payments', tooltip: 'Incomes' },
                 { id: 'expenses', icon: 'account_balance_wallet', tooltip: 'Expenses' },
+                { id: 'reports', icon: 'assessment', tooltip: 'Reports' },
                 { id: 'users', icon: 'group', tooltip: 'Users' },
                 { id: 'project_settings', icon: 'settings', tooltip: 'Settings' }
               ].map(item => (
@@ -1351,8 +1353,8 @@
             </button>
           </aside>
 
-          <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 relative z-10 overflow-y-auto h-screen" style={{ paddingTop: 'max(env(safe-area-inset-top), 1rem)' }}>
-            <header className="flex flex-col md:flex-row justify-between items-center mb-8 gap-6 surface-container p-6 rounded-m3-xl border border-white/5 shadow-xl">
+          <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 relative z-10 overflow-y-auto h-screen print:h-auto print:overflow-visible print:p-0 print:m-0 print:bg-white" style={{ paddingTop: 'max(env(safe-area-inset-top), 1rem)' }}>
+            <header className="flex flex-col md:flex-row justify-between items-center mb-8 gap-6 surface-container p-6 rounded-m3-xl border border-white/5 shadow-xl print:hidden">
                <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-m3-primaryContainer rounded-2xl flex items-center justify-center text-m3-onPrimaryContainer shadow-md">
                      <MaterialIcon name="admin_panel_settings" className="text-2xl" />
@@ -1483,9 +1485,9 @@
                 ))}
                 {expenses.length === 0 && <div className="col-span-full py-12 text-center text-slate-500">No expense records found.</div>}
               </div>
-            ) : activeTab === 'project_settings' ? null : (
-              <table className="w-full text-left text-sm whitespace-nowrap responsive-table border-separate border-spacing-y-2 px-4 sm:px-8">
-                <thead className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] opacity-70">
+            ) : (activeTab === 'project_settings' || activeTab === 'reports') ? null : (
+              <table className="w-full text-left text-sm whitespace-nowrap responsive-table border-separate border-spacing-y-2 px-4 sm:px-8 print:border-spacing-0 print:px-0">
+                <thead className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] opacity-70 print:border-b print:border-black">
                   {activeTab === 'users' ? (
                     <tr>
                       <th className="p-4 rounded-tl-lg">Username</th>
@@ -1778,6 +1780,149 @@
               </table>
             )}
 
+            {activeTab === 'reports' && (
+              <div className="py-8 bg-transparent print:bg-white print:py-0 print:m-0 w-full overflow-auto print:overflow-visible flex justify-center print:block">
+                <div className="bg-white text-black w-full max-w-[210mm] min-h-[297mm] print:min-h-0 p-8 md:p-12 shadow-2xl print:shadow-none animate-fade-in relative rounded-sm print:rounded-none">
+                  
+                  <div className="absolute top-8 right-8 print:hidden">
+                    <button onClick={() => window.print()} className="m3-button bg-black text-white hover:bg-slate-800 px-4 py-2 rounded-xl flex items-center gap-2 shadow-lg transition-transform hover:scale-105">
+                      <MaterialIcon name="print" /> Print
+                    </button>
+                  </div>
+
+                  {/* Header */}
+                  <div className="mb-8 text-center border-b-2 border-black pb-4 pr-32">
+                    <h2 className="text-2xl md:text-3xl font-black uppercase tracking-widest text-black">Financial Report</h2>
+                    <p className="text-lg font-bold mt-1 text-slate-800">අය වැය වාර්තාව</p>
+                  </div>
+                  
+                  {/* Summary */}
+                  <div className="grid grid-cols-3 gap-4 mb-8 text-center">
+                    <div className="p-4 border-2 border-slate-200 rounded-xl">
+                      <h3 className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Total Income</h3>
+                      <div className="text-lg md:text-xl font-black text-green-700">Rs. {Math.round(totalCashIncome).toLocaleString()}</div>
+                    </div>
+                    <div className="p-4 border-2 border-slate-200 rounded-xl">
+                      <h3 className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Total Expenses</h3>
+                      <div className="text-lg md:text-xl font-black text-red-700">Rs. {Math.round(totalExpense).toLocaleString()}</div>
+                    </div>
+                    <div className={`p-4 border-2 rounded-xl ${totalCashIncome - totalExpense >= 0 ? 'border-blue-200 bg-blue-50' : 'border-red-200 bg-red-50'}`}>
+                      <h3 className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Balance</h3>
+                      <div className={`text-lg md:text-xl font-black ${totalCashIncome - totalExpense >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
+                        Rs. {Math.round(totalCashIncome - totalExpense).toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    {/* Income Breakdown */}
+                    <div>
+                      <h3 className="text-lg font-black text-black mb-4 border-b border-slate-300 pb-2">අය (Income Breakdown)</h3>
+                      <div className="space-y-4">
+                        {(() => {
+                          const incomeGroups = {
+                            'ආධාර පෙට්ටි (Exhibition Boxes)': [],
+                            'ඕපනින් (Opening)': [],
+                            'මේන් ඩෝනර් (Main Donors)': [],
+                            'රෙගියුලර් ඩෝනර් (Regular Donors)': [],
+                            'වෙනත් (Other)': []
+                          };
+                          incomes.filter(i => i.status === 'Received Today' && i.donation_type === 'Cash').forEach(curr => {
+                            let cat = curr.donor_category || 'Other';
+                            if (cat.includes('Exhibition Box')) cat = 'ආධාර පෙට්ටි (Exhibition Boxes)';
+                            else if (cat === 'Kuuduwa Open') cat = 'ඕපනින් (Opening)';
+                            else if (cat === 'Main Donor') cat = 'මේන් ඩෝනර් (Main Donors)';
+                            else if (cat === 'Regular Donor') cat = 'රෙගියුලර් ඩෝනර් (Regular Donors)';
+                            else cat = 'වෙනත් (Other)';
+                            incomeGroups[cat].push(curr);
+                          });
+                          
+                          return Object.entries(incomeGroups).map(([catName, items]) => {
+                            const catTotal = items.reduce((sum, i) => sum + Number(i.amount || 0), 0);
+                            
+                            // Group items by name
+                            const groupedByName = {};
+                            items.forEach(i => {
+                              const name = i.name || 'Anonymous';
+                              groupedByName[name] = (groupedByName[name] || 0) + Number(i.amount || 0);
+                            });
+
+                            return (
+                              <div key={catName} className="break-inside-avoid">
+                                <div className="flex justify-between font-bold text-sm bg-slate-100 p-2 rounded">
+                                  <span>{catName}</span>
+                                  <span>Rs. {Math.round(catTotal).toLocaleString()}</span>
+                                </div>
+                                {Object.keys(groupedByName).length > 0 && (
+                                  <ul className="mt-1 space-y-1 pl-2 mb-2">
+                                    {Object.entries(groupedByName).map(([name, amount], idx) => (
+                                      <li key={idx} className="flex justify-between text-xs text-slate-600 border-b border-slate-50 pb-1">
+                                        <span className="truncate pr-2">{name}</span>
+                                        <span className="whitespace-nowrap">{Math.round(amount).toLocaleString()}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    </div>
+
+                    {/* Expense Breakdown */}
+                    <div>
+                      <h3 className="text-lg font-black text-black mb-4 border-b border-slate-300 pb-2">වැය (Expense Breakdown)</h3>
+                      <div className="space-y-4">
+                        {(() => {
+                          const expenseGroups = {};
+                          expenses.forEach(curr => {
+                            const reason = curr.reason || 'Other';
+                            if (!expenseGroups[reason]) expenseGroups[reason] = [];
+                            expenseGroups[reason].push(curr);
+                          });
+
+                          return Object.entries(expenseGroups).map(([reasonName, items]) => {
+                            const reasonTotal = items.reduce((sum, i) => sum + Number(i.amount_taken || 0), 0);
+                            
+                            // Group items by name
+                            const groupedByName = {};
+                            items.forEach(i => {
+                              const name = i.name || 'Unknown';
+                              groupedByName[name] = (groupedByName[name] || 0) + Number(i.amount_taken || 0);
+                            });
+
+                            return (
+                              <div key={reasonName} className="break-inside-avoid">
+                                <div className="flex justify-between font-bold text-sm bg-slate-100 p-2 rounded">
+                                  <span>{reasonName}</span>
+                                  <span>Rs. {Math.round(reasonTotal).toLocaleString()}</span>
+                                </div>
+                                {Object.keys(groupedByName).length > 0 && (
+                                  <ul className="mt-1 space-y-1 pl-2 mb-2">
+                                    {Object.entries(groupedByName).map(([name, amount], idx) => (
+                                      <li key={idx} className="flex justify-between text-xs text-slate-600 border-b border-slate-50 pb-1">
+                                        <span className="truncate pr-2">{name}</span>
+                                        <span className="whitespace-nowrap">{Math.round(amount).toLocaleString()}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            );
+                          });
+                        })()}
+                        {expenses.length === 0 && (
+                          <div className="text-slate-500 text-xs">No expense data</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            )}
+
             {activeTab === 'project_settings' && (
               <div className="p-8 max-w-2xl mx-auto">
                 <div className="mb-8 text-center">
@@ -1892,6 +2037,7 @@
                 {[
                   { id: 'incomes', icon: 'payments', label: 'Incomes' },
                   { id: 'expenses', icon: 'account_balance_wallet', label: 'Expenses' },
+                  { id: 'reports', icon: 'assessment', label: 'Reports' },
                   { id: 'users', icon: 'group', label: 'Users' },
                   { id: 'project_settings', icon: 'settings', label: 'Settings' }
                 ].map(item => (
@@ -1922,7 +2068,10 @@
                   {editIncome.donation_type === 'Cash' ? (
                     <>
                       <InputField label="Amount (Rs)" type="number" value={editIncome.amount} onChange={e => setEditIncome({...editIncome, amount: e.target.value})} prefix="Rs." />
-                      <InputField label="Donor Category" type="select" options={['Main Donor', 'Regular Donor']} value={editIncome.donor_category} onChange={e => setEditIncome({...editIncome, donor_category: e.target.value})} />
+                      <InputField label="Donor Category" type="select" options={['Main Donor', 'Regular Donor', 'Kuuduwa Open', 'Exhibition Box - Day 1', 'Exhibition Box - Day 2', 'Exhibition Box - Day 3', 'Exhibition Box - Day 4', 'Exhibition Box - Day 5']} value={editIncome.donor_category} onChange={e => {
+                        const newCat = e.target.value;
+                        setEditIncome({...editIncome, donor_category: newCat, name: newCat.includes('Exhibition Box') ? newCat : editIncome.name});
+                      }} />
                     </>
                   ) : (
                     <>
