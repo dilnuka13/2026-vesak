@@ -52,6 +52,30 @@
           },
           borderRadius: {
             'm3-xl': '28px',
+          },
+          animation: {
+            'fade-slide-in': 'fadeSlideIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+            'scale-in': 'scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+            'slide-up': 'slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+            'pulse-glow': 'pulseGlow 2s infinite ease-in-out',
+          },
+          keyframes: {
+            fadeSlideIn: {
+              '0%': { opacity: '0', transform: 'translateY(16px) scale(0.98)' },
+              '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+            },
+            scaleIn: {
+              '0%': { opacity: '0', transform: 'scale(0.93)' },
+              '100%': { opacity: '1', transform: 'scale(1)' },
+            },
+            slideUp: {
+              '0%': { opacity: '0', transform: 'translateY(24px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            pulseGlow: {
+              '0%, 100%': { boxShadow: '0 0 15px rgba(34, 197, 94, 0.15)' },
+              '50%': { boxShadow: '0 0 30px rgba(34, 197, 94, 0.35)' }
+            }
           }
         }
       }
@@ -178,7 +202,7 @@
       font-size: 14px;
       font-weight: 600;
       letter-spacing: 0.3px;
-      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
       cursor: pointer;
       transform-style: preserve-3d;
       font-family: 'Plus Jakarta Sans', sans-serif;
@@ -248,11 +272,11 @@
     }
     
     .m3-card-elevated {
-      background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(2, 6, 23, 0.8));
+      background: linear-gradient(145deg, rgba(15, 23, 42, 0.85), rgba(2, 6, 23, 0.75));
       backdrop-filter: blur(24px) saturate(180%);
       border-radius: 28px;
       border: 1px solid rgba(255, 255, 255, 0.08);
-      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
       transform-style: preserve-3d;
       position: relative;
       overflow: hidden;
@@ -271,13 +295,13 @@
       left: 100%;
     }
     .m3-card-elevated:hover {
-      background: linear-gradient(145deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.9));
-      transform: translateY(-8px) rotateX(2deg) rotateY(-2deg) scale(1.02);
+      background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.85));
+      transform: translateY(-8px) rotateX(1deg) rotateY(-1deg) scale(1.01);
       box-shadow: 
         0 20px 40px rgba(0,0,0,0.5),
-        0 0 80px rgba(34,197,94,0.1),
+        0 0 80px rgba(34,197,94,0.12),
         inset 0 1px 0 rgba(255,255,255,0.1);
-      border-color: rgba(34, 197, 94, 0.2);
+      border-color: rgba(34, 197, 94, 0.25);
     }
 
     .glass-m3 {
@@ -290,6 +314,16 @@
         inset 0 1px 0 rgba(255,255,255,0.05);
     }
 
+    .glass-card {
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 
+        0 15px 35px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
     /* 3D Tilt Effect for interactive elements */
     .magnetic-button, .m3-card-elevated {
       will-change: transform;
@@ -298,7 +332,7 @@
     /* Floating animation */
     @keyframes float {
       0%, 100% { transform: translateY(0) rotateX(0) rotateY(0); }
-      50% { transform: translateY(-10px) rotateX(2deg) rotateY(2deg); }
+      50% { transform: translateY(-10px) rotateX(1deg) rotateY(1deg); }
     }
     .float-3d {
       animation: float 6s ease-in-out infinite;
@@ -326,7 +360,7 @@
     /* Material Symbols enhancement */
     .material-symbols-rounded {
       font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-      transition: all 0.3s ease;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
     }
     
@@ -357,6 +391,11 @@
       perspective: 1000px;
       transform-style: preserve-3d;
     }
+
+    /* M3 Pill transition custom easing */
+    .active-pill-ease {
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.3s;
+    }
   </style>
 </head>
 <body class="min-h-screen relative overflow-x-hidden selection:bg-brand-500/30 selection:text-brand-300">
@@ -369,7 +408,28 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useMemo } = React;
+
+    const MaterialIcon = ({ name, className = "" }) => (
+      <span className={`material-symbols-rounded ${className}`} style={{ fontSize: 'inherit', display: 'inline-block', verticalAlign: 'middle' }}>{name}</span>
+    );
+
+    const normalizeEventType = (record) => (!record?.event_type || record.event_type === 'vesak') ? 'vesak' : 'poson';
+
+    const SafeImage = ({ src, alt = '', className = '', onClick, iconClassName = 'text-lg' }) => {
+      const [failed, setFailed] = useState(false);
+      useEffect(() => { setFailed(false); }, [src]);
+      if (!src || failed) {
+        return (
+          <div className={`flex items-center justify-center bg-slate-800 text-slate-500 ${className}`} onClick={onClick} role={onClick ? 'button' : undefined}>
+            <MaterialIcon name="image_not_supported" className={iconClassName} />
+          </div>
+        );
+      }
+      return (
+        <img src={src} alt={alt} className={className} onClick={onClick} onError={() => setFailed(true)} loading="lazy" />
+      );
+    };
 
     const supabaseUrl = 'https://yqpkgybmjdovdnmekpnw.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxcGtneWJtamRvdmRubWVrcG53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjUwMjAsImV4cCI6MjA5MjEwMTAyMH0.7C9jv1_zDRxSMCgs0tWfiNUGXGOkCLz5RE0CCDoc_yA';
@@ -502,22 +562,49 @@
     // Components
     const InputField = ({ label, type="text", name, value, onChange, options, autoComplete, prefix, required }) => (
       <div className="flex flex-col gap-1.5 mb-5 w-full group">
-        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">{label} {required && '*'}</label>
+        <label className="text-[10px] font-black text-slate-400 group-focus-within:text-brand-400 uppercase tracking-widest ml-1.5 transition-colors duration-300">
+          {label} {required && <span className="text-red-500">*</span>}
+        </label>
         {type === 'textarea' ? (
-          <textarea name={name} value={value || ''} onChange={onChange} required={required} className="bg-slate-950/50 border border-slate-800 text-white text-sm rounded-2xl p-3 outline-none h-28 focus:border-brand-500/50 transition-all focus:ring-4 focus:ring-brand-500/5"></textarea>
+          <textarea 
+            name={name} 
+            value={value || ''} 
+            onChange={onChange} 
+            required={required} 
+            className="bg-slate-950/40 border border-slate-800 hover:border-slate-700 focus:border-brand-500/80 text-white text-sm rounded-2xl p-3.5 outline-none h-28 transition-all duration-300 focus:ring-4 focus:ring-brand-500/10 placeholder:text-slate-600 backdrop-blur-md"
+          ></textarea>
         ) : type === 'select' ? (
-          <select name={name} value={value || ''} onChange={onChange} required={required} className="bg-slate-950/50 border border-slate-800 text-white text-sm rounded-2xl p-3 outline-none focus:border-brand-500/50 transition-all focus:ring-4 focus:ring-brand-500/5 appearance-none cursor-pointer">
-             <option value="">Select Option</option>
-             {options && options.map(o => <option key={o} value={o} className="bg-slate-900">{o}</option>)}
-          </select>
+          <div className="relative">
+            <select 
+              name={name} 
+              value={value || ''} 
+              onChange={onChange} 
+              required={required} 
+              className="bg-slate-950/40 border border-slate-800 hover:border-slate-700 focus:border-brand-500/80 text-white text-sm rounded-2xl p-3.5 pr-10 outline-none transition-all duration-300 focus:ring-4 focus:ring-brand-500/10 appearance-none cursor-pointer w-full backdrop-blur-md"
+            >
+               <option value="" className="bg-slate-950">Select Option</option>
+               {options && options.map(o => <option key={o} value={o} className="bg-slate-950">{o}</option>)}
+            </select>
+            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-brand-400 transition-colors duration-300">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+            </div>
+          </div>
         ) : (
           <div className="relative">
             {prefix && (
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <span className="text-slate-500 text-sm font-bold">{prefix}</span>
+                <span className="text-slate-500 text-sm font-bold group-focus-within:text-brand-400 transition-colors duration-300">{prefix}</span>
               </div>
             )}
-            <input type={type} name={name} value={value || ''} onChange={onChange} required={required} autoComplete={autoComplete} className={`bg-slate-950/50 border border-slate-800 text-white text-sm rounded-2xl p-3 outline-none focus:border-brand-500/50 transition-all focus:ring-4 focus:ring-brand-500/5 w-full ${prefix ? 'pl-11' : ''}`} />
+            <input 
+              type={type} 
+              name={name} 
+              value={value || ''} 
+              onChange={onChange} 
+              required={required} 
+              autoComplete={autoComplete} 
+              className={`bg-slate-950/40 border border-slate-800 hover:border-slate-700 focus:border-brand-500/80 text-white text-sm rounded-2xl p-3.5 outline-none transition-all duration-300 focus:ring-4 focus:ring-brand-500/10 w-full backdrop-blur-md ${prefix ? 'pl-12' : ''}`} 
+            />
           </div>
         )}
       </div>
@@ -525,7 +612,7 @@
 
     const Modal = ({ title, children, onClose }) => (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-        <div className="glass-card border border-white/5 rounded-[2.5rem] p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto relative shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+        <div className="glass-card border border-white/5 rounded-[2.5rem] p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto relative shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-scale-in">
           <button onClick={onClose} className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center bg-slate-800/50 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-full transition-all text-xl">&times;</button>
           <div className="mb-8">
             <h2 className="text-2xl font-black text-white tracking-tight">{title}</h2>
@@ -547,7 +634,7 @@
         <div className="flex items-center gap-1.5">
           {user?.avatar_url ? (
             <div className="w-5 h-5 rounded-full overflow-hidden border border-slate-600 shrink-0 shadow-sm">
-              <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+              <SafeImage src={user.avatar_url} alt="" className="w-full h-full object-cover" iconClassName="text-[10px]" />
             </div>
           ) : (
             <div className="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center border border-slate-600 shrink-0 shadow-sm text-slate-400">
@@ -555,6 +642,350 @@
             </div>
           )}
           <span className={`font-medium text-slate-300 ${showFullName ? 'text-sm' : 'text-xs whitespace-nowrap'}`}>{displayName}</span>
+        </div>
+      );
+    };
+
+    // Animated SVG Charts Components
+    const SimpleChart = ({ income, expense }) => {
+      const max = Math.max(income, expense, 1);
+      const incomePct = (income / max) * 100;
+      const expensePct = (expense / max) * 100;
+
+      return (
+        <div className="glass-card p-6 rounded-[2rem] flex flex-col justify-center border border-white/5 bg-slate-900/40">
+          <h3 className="text-base font-bold mb-6 flex flex-col gap-1 text-white uppercase tracking-wider">
+            <span>Overall Income vs Expenses</span>
+            <span className="text-[10px] text-slate-500 font-normal normal-case">සමස්ථ ආදායම් සහ වියදම්</span>
+          </h3>
+          <div className="flex flex-col gap-6 w-full">
+            <div>
+              <div className="flex justify-between items-end mb-2">
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-slate-300">Total Valid Income</span>
+                </div>
+                <span className="text-sm font-bold text-brand-400">LKR. {Math.round(income).toLocaleString()}</span>
+              </div>
+              <div className="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-white/5 relative">
+                <div className="bg-brand-500 h-full rounded-full transition-all duration-1000" style={{ width: `${incomePct}%` }}></div>
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between items-end mb-2">
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-slate-300">Total Expenses</span>
+                </div>
+                <span className="text-sm font-bold text-red-400">LKR. {Math.round(expense).toLocaleString()}</span>
+              </div>
+              <div className="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-white/5 relative">
+                <div className="bg-red-500 h-full rounded-full transition-all duration-1000" style={{ width: `${expensePct}%` }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const TodayStatsChart = ({ incomes, expenses }) => {
+      const today = new Date().toISOString().split('T')[0];
+      const todayIncome = incomes.filter(i => i.date === today && i.status === 'Received Today' && i.donation_type === 'Cash').reduce((sum, i) => sum + Number(i.amount || 0), 0);
+      const todayExpense = expenses.filter(e => e.date === today).reduce((sum, e) => sum + Number(e.amount_taken || 0), 0);
+
+      const max = Math.max(todayIncome, todayExpense, 1);
+      const incPct = (todayIncome / max) * 100;
+      const expPct = (todayExpense / max) * 100;
+
+      return (
+        <div className="glass-card p-6 rounded-[2rem] flex flex-col justify-center border border-white/5 bg-slate-900/40">
+          <h3 className="text-base font-bold mb-6 flex flex-col gap-1 text-white uppercase tracking-wider">
+            <span>Today's Overview</span>
+            <span className="text-[10px] text-slate-500 font-normal normal-case">අද දින සාරාංශය</span>
+          </h3>
+          <div className="flex flex-col gap-6 w-full">
+            <div>
+              <div className="flex justify-between items-end mb-2">
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-slate-300">Today's Income</span>
+                </div>
+                <span className="text-sm font-bold text-brand-400">LKR. {Math.round(todayIncome).toLocaleString()}</span>
+              </div>
+              <div className="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-white/5 relative">
+                <div className="bg-brand-500 h-full rounded-full transition-all duration-1000" style={{ width: `${incPct}%` }}></div>
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between items-end mb-2">
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-slate-300">Today's Expenses</span>
+                </div>
+                <span className="text-sm font-bold text-red-400">LKR. {Math.round(todayExpense).toLocaleString()}</span>
+              </div>
+              <div className="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-white/5 relative">
+                <div className="bg-red-500 h-full rounded-full transition-all duration-1000" style={{ width: `${expPct}%` }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const LastWeekStatsChart = ({ incomes, expenses }) => {
+      const todayDate = new Date();
+      const lastWeekDate = new Date();
+      lastWeekDate.setDate(todayDate.getDate() - 6);
+
+      const todayStr = todayDate.toISOString().split('T')[0];
+      const lastWeekStr = lastWeekDate.toISOString().split('T')[0];
+
+      const lastWeekIncome = incomes.filter(i => {
+        if (i.status !== 'Received Today' || i.donation_type !== 'Cash') return false;
+        return i.date >= lastWeekStr && i.date <= todayStr;
+      }).reduce((sum, i) => sum + Number(i.amount || 0), 0);
+
+      const lastWeekExpense = expenses.filter(e => {
+        return e.date >= lastWeekStr && e.date <= todayStr;
+      }).reduce((sum, e) => sum + Number(e.amount_taken || 0), 0);
+
+      const max = Math.max(lastWeekIncome, lastWeekExpense, 1);
+      const incPct = (lastWeekIncome / max) * 100;
+      const expPct = (lastWeekExpense / max) * 100;
+
+      return (
+        <div className="glass-card p-6 rounded-[2rem] flex flex-col justify-center border border-white/5 bg-slate-900/40">
+          <h3 className="text-base font-bold mb-6 flex flex-col gap-1 text-white uppercase tracking-wider">
+            <span>Last 7 Days</span>
+            <span className="text-[10px] text-slate-500 font-normal normal-case">පසුගිය දින 7 සාරාංශය</span>
+          </h3>
+          <div className="flex flex-col gap-6 w-full">
+            <div>
+              <div className="flex justify-between items-end mb-2">
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-slate-300">Income (ආදායම)</span>
+                </div>
+                <span className="text-sm font-bold text-brand-400">LKR. {Math.round(lastWeekIncome).toLocaleString()}</span>
+              </div>
+              <div className="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-white/5 relative">
+                <div className="bg-brand-500 h-full rounded-full transition-all duration-1000" style={{ width: `${incPct}%` }}></div>
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between items-end mb-2">
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-slate-300">Expenses (වියදම්)</span>
+                </div>
+                <span className="text-sm font-bold text-red-400">LKR. {Math.round(lastWeekExpense).toLocaleString()}</span>
+              </div>
+              <div className="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-white/5 relative">
+                <div className="bg-red-500 h-full rounded-full transition-all duration-1000" style={{ width: `${expPct}%` }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const DailyBarChart = ({ incomes, expenses }) => {
+      const [offsetDays, setOffsetDays] = useState(0);
+      const [selectedDetails, setSelectedDetails] = useState(null);
+      const chartRef = React.useRef(null);
+      const [brandColor, setBrandColor] = useState('#22c55e');
+
+      useEffect(() => {
+        if (chartRef.current) {
+          const color = getComputedStyle(chartRef.current).getPropertyValue('--brand-500').trim();
+          if (color) setBrandColor(color);
+        }
+      });
+
+      const days = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - (i + offsetDays));
+        days.push(d.toISOString().split('T')[0]);
+      }
+
+      const data = days.map(day => {
+        const dayIncomes = incomes.filter(i => i.date === day && i.status === 'Received Today' && i.donation_type === 'Cash');
+        const dayExpenses = expenses.filter(e => e.date === day);
+        const dayGoods = incomes.filter(i => i.date === day && i.status === 'Received Today' && i.donation_type === 'Goods');
+
+        const inc = dayIncomes.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+        const exp = dayExpenses.reduce((sum, item) => sum + Number(item.amount_taken || 0), 0);
+        const dObj = new Date(day);
+        const label = dObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        return { date: day, label, inc, exp, dayIncomes, dayExpenses, dayGoods };
+      });
+
+      const maxVal = Math.max(...data.map(d => Math.max(d.inc, d.exp)), 100);
+
+      const svgWidth = 700;
+      const svgHeight = 250;
+      const margin = { top: 20, right: 20, bottom: 30, left: 60 };
+      const chartWidth = svgWidth - margin.left - margin.right;
+      const chartHeight = svgHeight - margin.top - margin.bottom;
+
+      const formatYAxis = (val) => {
+        if (val >= 100000) return (val / 100000).toFixed(1) + 'L';
+        if (val >= 1000) return (val / 1000).toFixed(0) + 'k';
+        return val;
+      };
+
+      const formatCurrencyLocal = (amount) => {
+        if(!amount) return "LKR. 0";
+        return "LKR. " + Math.round(parseFloat(amount)).toLocaleString('en-US');
+      };
+
+      return (
+        <div ref={chartRef} className="glass-card p-6 rounded-[2.5rem] flex flex-col border border-white/5 overflow-hidden bg-slate-900/40 relative">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-start mb-6 gap-4">
+            <h3 className="text-base font-bold flex flex-col gap-1 text-white uppercase tracking-wider">
+              <span>Financial Trend By Week</span>
+              <span className="text-[10px] text-slate-500 font-normal normal-case">සතිපතා මූල්‍ය ප්‍රවණතාවය</span>
+            </h3>
+
+            <div className="flex bg-slate-950/40 rounded-xl border border-slate-800 p-1 w-fit">
+              <button
+                type="button"
+                onClick={() => { setOffsetDays(prev => prev + 7); setSelectedDetails(null); }}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-1"
+              >
+                &larr; Prev
+              </button>
+              <div className="w-[1px] bg-slate-800 mx-1"></div>
+              <button
+                type="button"
+                onClick={() => { setOffsetDays(prev => Math.max(0, prev - 7)); setSelectedDetails(null); }}
+                disabled={offsetDays === 0}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-1 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                Next &rarr;
+              </button>
+            </div>
+          </div>
+
+          <div className="w-full relative min-h-[200px] sm:min-h-[250px] overflow-hidden">
+            <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-full drop-shadow-lg" preserveAspectRatio="xMidYMid meet">
+
+              {/* Horizontal Grid Lines */}
+              {[4, 3, 2, 1, 0].map(tick => {
+                const y = margin.top + (chartHeight / 4) * tick;
+                const v = (maxVal / 4) * (4 - tick);
+                return (
+                  <g key={tick}>
+                    <line x1={margin.left} y1={y} x2={svgWidth - margin.right} y2={y} stroke="#1e293b" strokeWidth="1" strokeDasharray="4 4" />
+                    <text x={margin.left - 10} y={y + 4} fill="#64748b" fontSize="12" textAnchor="end" fontFamily="sans-serif">
+                      {formatYAxis(v)}
+                    </text>
+                  </g>
+                );
+              })}
+
+              {/* Bars */}
+              {data.map((d, i) => {
+                const xCenter = margin.left + (chartWidth / 7) * (i + 0.5);
+                const incHeight = (d.inc / maxVal) * chartHeight;
+                const incY = margin.top + chartHeight - incHeight;
+                const expHeight = (d.exp / maxVal) * chartHeight;
+                const expY = margin.top + chartHeight - expHeight;
+                const barWidth = 14;
+                const spacing = 4;
+
+                return (
+                  <g key={i} className="group">
+                    <rect x={xCenter - barWidth - spacing - 10} y={margin.top} width={(barWidth * 2) + spacing + 20} height={chartHeight} fill="transparent" className="hover:fill-slate-800/20 transition-colors duration-300" />
+
+                    <rect
+                      x={xCenter - barWidth - (spacing / 2)}
+                      y={incY}
+                      width={barWidth}
+                      height={incHeight > 0 ? incHeight : 0}
+                      fill={brandColor}
+                      rx="3"
+                      className="cursor-pointer transition-all duration-700 hover:brightness-125 hover:stroke-white stroke-1"
+                      onClick={() => setSelectedDetails({ type: 'income', date: d.date, label: d.label, records: d.dayIncomes })}
+                    >
+                      <title>View Incomes: Rs. {d.inc.toLocaleString()}</title>
+                    </rect>
+
+                    <rect
+                      x={xCenter + (spacing / 2)}
+                      y={expY}
+                      width={barWidth}
+                      height={expHeight > 0 ? expHeight : 0}
+                      fill="#ef4444"
+                      rx="3"
+                      className="cursor-pointer transition-all duration-700 hover:brightness-125 hover:stroke-white stroke-1"
+                      onClick={() => setSelectedDetails({ type: 'expense', date: d.date, label: d.label, records: d.dayExpenses })}
+                    >
+                      <title>View Expenses: Rs. {d.exp.toLocaleString()}</title>
+                    </rect>
+
+                    {d.dayGoods.length > 0 && (
+                      <circle
+                        cx={xCenter}
+                        cy={margin.top - 8}
+                        r="5"
+                        fill="#eab308"
+                        className="cursor-pointer transition-all duration-300 hover:brightness-125 hover:stroke-white stroke-1"
+                        onClick={() => setSelectedDetails({ type: 'goods', date: d.date, label: d.label, records: d.dayGoods })}
+                      >
+                        <title>View Goods Donations: {d.dayGoods.length} items</title>
+                      </circle>
+                    )}
+
+                    <text x={xCenter} y={svgHeight - 8} fill="#94a3b8" fontSize="11" textAnchor="middle" fontFamily="sans-serif">
+                      {d.label.split(' ')[1]} {d.label.split(' ')[0]}
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+
+          {selectedDetails ? (
+            <div className="mt-4 bg-slate-950/40 p-4 border border-white/5 rounded-2xl animate-fade-in flex flex-col">
+              <div className="flex justify-between items-center mb-4 border-b border-white/5 pb-2">
+                <h4 className={`font-bold text-sm ${selectedDetails.type === 'income' ? 'text-brand-400' : selectedDetails.type === 'expense' ? 'text-red-400' : 'text-yellow-400'}`}>
+                  {selectedDetails.type === 'income' ? 'Income Records / ආදායම්' : selectedDetails.type === 'expense' ? 'Expense Records / වියදම්' : 'Goods Donations / බඩු භාණ්ඩ'} - {selectedDetails.label}
+                </h4>
+                <button type="button" onClick={() => setSelectedDetails(null)} className="text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-700/50 w-6 h-6 flex justify-center items-center rounded-full transition text-lg leading-none">&times;</button>
+              </div>
+
+              <div className="max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                {selectedDetails.records.length === 0 ? (
+                  <div className="text-xs text-slate-500 text-center py-6">No records found for this date. / වාර්තා කිසිවක් නැත.</div>
+                ) : (
+                  <ul className="space-y-2">
+                    {selectedDetails.records.map((r, idx) => (
+                      <li key={idx} className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-xs p-3 rounded-xl bg-slate-950/20 border border-white/5 hover:bg-slate-900/40 transition gap-1">
+                        <span className="text-slate-300 font-medium">
+                          {selectedDetails.type === 'income' ? r.name : selectedDetails.type === 'expense' ? r.reason : r.name}
+                        </span>
+                        <span className={`font-bold ${selectedDetails.type === 'income' ? 'text-brand-400' : selectedDetails.type === 'expense' ? 'text-red-400' : 'text-yellow-400'}`}>
+                          {selectedDetails.type === 'income' ? formatCurrencyLocal(r.amount) : selectedDetails.type === 'expense' ? formatCurrencyLocal(r.amount_taken) : `${r.item_description} (x${r.quantity})`}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-4 sm:gap-6 mt-6 justify-center bg-slate-950/20 py-3 px-4 rounded-2xl border border-white/5">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 bg-brand-500 rounded border border-brand-400"></div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Income / ආදායම්</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 bg-red-500 rounded border border-red-400"></div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Expense / වියදම්</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 bg-yellow-500 rounded-full border border-yellow-400"></div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Goods / ද්‍රව්‍ය</span>
+              </div>
+            </div>
+          )}
         </div>
       );
     };
@@ -568,6 +999,7 @@
       const [showBackupNotice, setShowBackupNotice] = useState(false);
 
       const ADMIN_TABS = [
+        { id: 'dashboard', label: 'Dashboard', color: 'brand' },
         { id: 'incomes', label: 'All Incomes', color: 'brand' },
         { id: 'cash_incomes', label: 'Cash', color: 'brand' },
         { id: 'goods_incomes', label: 'Goods', color: 'purple' },
@@ -578,14 +1010,18 @@
         { id: 'reports', label: 'Reports', color: 'pink' },
         { id: 'shares', label: 'Shares', color: 'blue' },
         { id: 'users', label: 'User Mgmt', color: 'indigo' },
-        { id: 'project_settings', label: 'Settings', color: 'slate' }
+        { id: 'project_settings', label: 'Settings', color: 'slate' },
+        { id: 'invitations', label: 'Invitations', color: 'amber' }
       ];
 
       const [incomes, setIncomes] = useState([]);
       const [expenses, setExpenses] = useState([]);
       const [appUsers, setAppUsers] = useState([]);
       const [loading, setLoading] = useState(false);
-      const [activeTab, setActiveTab] = useState(window.location.hash.replace('#', '') || 'incomes');
+      const [activeTab, setActiveTab] = useState(window.location.hash.replace('#', '') || 'dashboard');
+      const [menuOpen, setMenuOpen] = useState(false);
+      
+      const [editingEvent, setEditingEvent] = useState(null);
 
       // Sync tab state with URL hash
       useEffect(() => {
@@ -640,6 +1076,14 @@
       // Filters
       const [searchTerm, setSearchTerm] = useState('');
       const [filterDate, setFilterDate] = useState('');
+      const [eventFilter, setEventFilter] = useState('all'); // all | vesak | poson
+
+      const matchesEventFilter = (record) => {
+        if (eventFilter === 'all') return true;
+        return normalizeEventType(record) === eventFilter;
+      };
+
+      const exportFilenameSuffix = eventFilter === 'all' ? '' : `_${eventFilter}`;
 
       const formatCurrency = (amount) => {
         if(!amount) return "LKR. 0";
@@ -647,21 +1091,37 @@
       };
 
       const [allSessions, setAllSessions] = useState([]);
+      const [vesakSettings, setVesakSettings] = useState({ id: 1, is_published: false, dates: '[]', time_start: '18:30', time_end: '02:00', map_link: '', members: '', anniversary: '1', gallery_links: [], description: '' });
+      const [posonSettings, setPosonSettings] = useState({ id: 1, is_published: false, dates: '[]', time_start: '18:30', time_end: '02:00', map_link: '', members: '', anniversary: '1', gallery_links: [], description: '' });
+      const [invitationEventType, setInvitationEventType] = useState('vesak');
 
       const fetchData = async () => {
         setLoading(true);
-        const [inc, exp, usersRes, sessionsRes, settingsRes] = await Promise.all([
+        const [inc, exp, usersRes, sessionsRes, settingsRes, vesakRes, posonRes] = await Promise.all([
           supabase.from('incomes').select('*').order('created_at', { ascending: false }),
           supabase.from('expenses').select('*').order('created_at', { ascending: false }),
           supabase.from('app_users').select('*').order('username'),
           supabase.from('user_sessions').select('*').order('last_active', { ascending: false }),
-          supabase.from('project_settings').select('*').maybeSingle()
+          supabase.from('project_settings').select('*').maybeSingle(),
+          supabase.from('vesak_invitation').select('*').eq('id', 1).maybeSingle(),
+          supabase.from('poson_invitation').select('*').eq('id', 1).maybeSingle()
         ]);
         if (inc.data) setIncomes(inc.data);
         if (exp.data) setExpenses(exp.data);
         if (usersRes.data) setAppUsers(usersRes.data);
         if (sessionsRes && sessionsRes.data) setAllSessions(sessionsRes.data);
         if (settingsRes && settingsRes.data) setProjectSettings(settingsRes.data);
+        if (vesakRes && vesakRes.data) {
+           let parsedGallery = [];
+           try { parsedGallery = typeof vesakRes.data.gallery_links === 'string' ? JSON.parse(vesakRes.data.gallery_links) : vesakRes.data.gallery_links; } catch(e){}
+           setVesakSettings({ ...vesakRes.data, gallery_links: Array.isArray(parsedGallery) ? parsedGallery : [] });
+        }
+        if (posonRes && posonRes.data) {
+           let parsedGallery = [];
+           try { parsedGallery = typeof posonRes.data.gallery_links === 'string' ? JSON.parse(posonRes.data.gallery_links) : posonRes.data.gallery_links; } catch(e){}
+           setPosonSettings({ ...posonRes.data, gallery_links: Array.isArray(parsedGallery) ? parsedGallery : [] });
+        }
+
         setLoading(false);
       };
 
@@ -1036,6 +1496,128 @@
         }
       };
 
+      const handleGalleryUpload = async (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
+        setActionLoading(true);
+        try {
+          const ext = file.name.split('.').pop();
+          const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+          const { error } = await supabase.storage.from('gallery_images').upload(fileName, file);
+          if(error) throw error;
+          
+          const { data: publicUrlData } = supabase.storage.from('gallery_images').getPublicUrl(fileName);
+          
+          const newItem = { title: file.name, url: publicUrlData.publicUrl, type: 'image', path: fileName };
+          
+          if(invitationEventType === 'vesak') {
+            setVesakSettings(prev => ({...prev, gallery_links: [...(prev.gallery_links || []), newItem]}));
+          } else {
+            setPosonSettings(prev => ({...prev, gallery_links: [...(prev.gallery_links || []), newItem]}));
+          }
+          window.showToast("Image uploaded successfully!", "success");
+        } catch(err) {
+          window.showToast("Upload failed: " + err.message, "error");
+        } finally {
+          setActionLoading(false);
+          e.target.value = ''; // Reset input
+        }
+      };
+
+      const handleAddGalleryLink = () => {
+        const title = prompt("Enter Title (e.g. පළමු වෙසක් කූඩුව):");
+        if(!title) return;
+        const url = prompt("Enter Link URL (e.g. TikTok/Youtube url):");
+        if(!url) return;
+        
+        const newItem = { title, url, type: 'link' };
+        if(invitationEventType === 'vesak') {
+          setVesakSettings(prev => ({...prev, gallery_links: [...(prev.gallery_links || []), newItem]}));
+        } else {
+          setPosonSettings(prev => ({...prev, gallery_links: [...(prev.gallery_links || []), newItem]}));
+        }
+      };
+
+      const handleRemoveGalleryItem = async (index) => {
+        if(!window.confirm('Are you sure you want to remove this item?')) return;
+        const settings = invitationEventType === 'vesak' ? vesakSettings : posonSettings;
+        const item = settings.gallery_links[index];
+        
+        if(item.type === 'image' && item.path) {
+          setActionLoading(true);
+          try {
+            await supabase.storage.from('gallery_images').remove([item.path]);
+          } catch(err) {
+            console.error("Storage delete error:", err);
+          }
+          setActionLoading(false);
+        }
+        
+        const newLinks = [...settings.gallery_links];
+        newLinks.splice(index, 1);
+        if(invitationEventType === 'vesak') setVesakSettings({...settings, gallery_links: newLinks});
+        else setPosonSettings({...settings, gallery_links: newLinks});
+      };
+
+      const handleSaveInvitationSettings = async (e) => {
+        e.preventDefault();
+        setActionLoading(true);
+        try {
+          if (invitationEventType === 'vesak') {
+             const { error } = await supabase.from('vesak_invitation').upsert([{...vesakSettings, gallery_links: JSON.stringify(vesakSettings.gallery_links), id: 1}]);
+             if (error) throw error;
+          } else {
+             const { error } = await supabase.from('poson_invitation').upsert([{...posonSettings, gallery_links: JSON.stringify(posonSettings.gallery_links), id: 1}]);
+             if (error) throw error;
+          }
+          window.showToast("Invitation settings saved successfully!", "success");
+          fetchData();
+        } catch (err) {
+          window.showToast("Error saving invitation settings: " + err.message, "error");
+        } finally {
+          setActionLoading(false);
+        }
+      };
+
+      const handlePublishInvitation = async (type) => {
+         setActionLoading(true);
+         try {
+            if (type === 'vesak') {
+               const { error: e1 } = await supabase.from('vesak_invitation').upsert([{...vesakSettings, gallery_links: JSON.stringify(vesakSettings.gallery_links), id: 1, is_published: true}]);
+               if(e1) throw e1;
+               const { error: e2 } = await supabase.from('poson_invitation').upsert([{...posonSettings, gallery_links: JSON.stringify(posonSettings.gallery_links), id: 1, is_published: false}]);
+               if(e2) throw e2;
+            } else {
+               const { error: e1 } = await supabase.from('poson_invitation').upsert([{...posonSettings, gallery_links: JSON.stringify(posonSettings.gallery_links), id: 1, is_published: true}]);
+               if(e1) throw e1;
+               const { error: e2 } = await supabase.from('vesak_invitation').upsert([{...vesakSettings, gallery_links: JSON.stringify(vesakSettings.gallery_links), id: 1, is_published: false}]);
+               if(e2) throw e2;
+            }
+            window.showToast(type.toUpperCase() + " has been published to the website!", "success");
+            fetchData();
+         } catch(err) {
+            window.showToast("Error publishing: " + err.message, "error");
+         } finally {
+            setActionLoading(false);
+         }
+      };
+
+      const handleUnpublishInvitation = async (type) => {
+         setActionLoading(true);
+         try {
+            const tableName = type === 'vesak' ? 'vesak_invitation' : 'poson_invitation';
+            const settings = type === 'vesak' ? vesakSettings : posonSettings;
+            const { error } = await supabase.from(tableName).upsert([{...settings, gallery_links: JSON.stringify(settings.gallery_links), id: 1, is_published: false}]);
+            if(error) throw error;
+            window.showToast(type.toUpperCase() + " has been unpublished!", "info");
+            fetchData();
+         } catch(err) {
+            window.showToast("Error unpublishing: " + err.message, "error");
+         } finally {
+            setActionLoading(false);
+         }
+      };
+
        const handleSaveProjectSettings = async (e) => {
         e.preventDefault();
         setActionLoading(true);
@@ -1082,6 +1664,7 @@
 
       // Filtering Logic
       const filteredIncomes = incomes.filter(inc => {
+        if (!matchesEventFilter(inc)) return false;
         if (activeTab === 'main_donors' && inc.donor_category !== 'Main Donor') return false;
         if (activeTab === 'regular_donors' && inc.donor_category !== 'Regular Donor') return false;
         if (activeTab === 'cash_incomes' && inc.donation_type !== 'Cash') return false;
@@ -1095,6 +1678,7 @@
       });
 
       const filteredExpenses = expenses.filter(exp => {
+        if (!matchesEventFilter(exp)) return false;
         if(filterDate && exp.date !== filterDate) return false;
         if(searchTerm) {
           const s = searchTerm.toLowerCase();
@@ -1102,6 +1686,18 @@
         }
         return true;
       });
+
+      const statsIncomes = useMemo(() => (
+        eventFilter === 'all' ? incomes : incomes.filter(i => normalizeEventType(i) === eventFilter)
+      ), [incomes, eventFilter]);
+
+      const statsExpenses = useMemo(() => (
+        eventFilter === 'all' ? expenses : expenses.filter(e => normalizeEventType(e) === eventFilter)
+      ), [expenses, eventFilter]);
+
+      const dashboardCashIncome = statsIncomes.filter(i => i.status === 'Received Today' && i.donation_type === 'Cash').reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      const dashboardExpense = statsExpenses.reduce((sum, item) => sum + Number(item.amount_taken || 0), 0);
+      const dashboardBalance = dashboardCashIncome - dashboardExpense;
 
       const groupedMainDonors = React.useMemo(() => {
         if (activeTab !== 'main_donors') return [];
@@ -1150,37 +1746,39 @@
 
       // Export Handlers
       const exportIncomesCSV = () => {
-        const headers = ["ID", "Date", "Name", "Phone", "Type", "Status", "Amount", "Reported By", "Donor Category", "Item Description"];
+        const headers = ["ID", "Date", "Event", "Name", "Phone", "Type", "Status", "Amount", "Reported By", "Donor Category", "Item Description"];
         const rows = [headers, ...filteredIncomes.map(i => [
-          i.id, i.date, i.name, i.phone_number || '-', i.donation_type, i.status, 
+          i.id, i.date, normalizeEventType(i), i.name, i.phone_number || '-', i.donation_type, i.status,
           i.amount || 0, i.reported_by || '-', i.donor_category || '-', i.item_description || '-'
         ])];
-        exportToCSV("Admin_Incomes_Report", rows);
+        exportToCSV(`Admin_Incomes_Report${exportFilenameSuffix}`, rows);
       };
 
       const exportIncomesPDF = () => {
-        const headers = ["ID", "Date", "Name", "Type", "Status", "Amount/Details"];
+        const filterLabel = eventFilter === 'all' ? 'All Events' : eventFilter.charAt(0).toUpperCase() + eventFilter.slice(1);
+        const headers = ["ID", "Date", "Event", "Name", "Type", "Status", "Amount/Details"];
         const rows = filteredIncomes.map(i => [
-          i.id, i.date, i.name, i.donation_type, i.status, 
+          i.id, i.date, normalizeEventType(i), i.name, i.donation_type, i.status,
           i.donation_type === 'Cash' ? `LKR.${i.amount}` : `${i.item_description} (x${i.quantity})`
         ]);
-        exportToPDF("Income Records (Admin Report)", headers, rows, "Admin_Incomes_Report");
+        exportToPDF(`Income Records (${filterLabel})`, headers, rows, `Admin_Incomes_Report${exportFilenameSuffix}`);
       };
 
       const exportExpensesCSV = () => {
-        const headers = ["ID", "Date", "Time", "Reason", "Withdrawer", "Amount"];
+        const headers = ["ID", "Date", "Time", "Event", "Reason", "Withdrawer", "Amount"];
         const rows = [headers, ...filteredExpenses.map(e => [
-          e.id, e.date, e.time, e.reason, e.withdrawer_name, e.amount_taken
+          e.id, e.date, e.time, normalizeEventType(e), e.reason, e.withdrawer_name, e.amount_taken
         ])];
-        exportToCSV("Admin_Expenses_Report", rows);
+        exportToCSV(`Admin_Expenses_Report${exportFilenameSuffix}`, rows);
       };
 
       const exportExpensesPDF = () => {
-        const headers = ["ID", "Date", "Reason", "Withdrawer", "Amount"];
+        const filterLabel = eventFilter === 'all' ? 'All Events' : eventFilter.charAt(0).toUpperCase() + eventFilter.slice(1);
+        const headers = ["ID", "Date", "Event", "Reason", "Withdrawer", "Amount"];
         const rows = filteredExpenses.map(e => [
-          e.id, e.date, e.reason, e.withdrawer_name, `LKR.${e.amount_taken}`
+          e.id, e.date, normalizeEventType(e), e.reason, e.withdrawer_name, `LKR.${e.amount_taken}`
         ]);
-        exportToPDF("Expense Records (Admin Report)", headers, rows, "Admin_Expenses_Report");
+        exportToPDF(`Expense Records (${filterLabel})`, headers, rows, `Admin_Expenses_Report${exportFilenameSuffix}`);
       };
 
       // Backup Logic
@@ -1268,35 +1866,31 @@
         }
       };
 
-      const MaterialIcon = ({ name, className = "" }) => (
-        <span className={`material-symbols-rounded ${className}`} style={{ fontSize: 'inherit', display: 'inline-block', verticalAlign: 'middle' }}>{name}</span>
-      );
-
       if (!loggedIn || authMode === 'reset') {
         return (
           <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
             <div className="neural-flow"></div>
             
-            <div className="surface-container p-10 rounded-m3-xl w-full max-w-md animate-fade-in relative z-10 border border-white/5 shadow-2xl luminous">
-              <div className="flex justify-center mb-8">
-                <div className="w-16 h-16 rounded-2xl bg-m3-primaryContainer text-m3-onPrimaryContainer flex items-center justify-center shadow-lg">
+            <div className="bg-slate-900/60 backdrop-blur-3xl border border-white/10 p-8 sm:p-10 rounded-[2.5rem] w-full max-w-md animate-fade-slide-in relative z-10 shadow-[0_25px_60px_rgba(0,0,0,0.6)] shadow-brand-500/5 hover:border-brand-500/20 transition-all duration-500">
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 rounded-[20px] bg-brand-500/10 text-brand-400 flex items-center justify-center border border-brand-500/25 shadow-lg group-hover:scale-110 transition-all">
                   <MaterialIcon name="admin_panel_settings" className="text-3xl" />
                 </div>
               </div>
               <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold text-white tracking-tight">Admin Portal</h1>
-                <p className="text-slate-400 text-sm mt-1">Management & Control Center</p>
+                <h1 className="text-3xl font-extrabold text-white tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">Admin Portal</h1>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1.5">Management & Control Center</p>
               </div>
               
               {authMode === 'login' && (
-                <form onSubmit={handleLogin} className="flex flex-col gap-6 animate-fade-in">
-                  {error && <div className="text-red-400 bg-red-500/10 p-4 rounded-2xl text-sm text-center border border-red-500/20">{error}</div>}
-                  <InputField label="Email Address" type="email" name="email" value={creds.email} onChange={e => setCreds({...creds, email: e.target.value})} />
-                  <InputField label="Password" type="password" name="password" value={creds.pass} onChange={e => setCreds({...creds, pass: e.target.value})} />
+                <form onSubmit={handleLogin} className="flex flex-col gap-5">
+                  {error && <div className="text-red-400 bg-red-500/10 p-4 rounded-2xl text-xs text-center border border-red-500/20 animate-pulse">{error}</div>}
+                  <InputField label="Email Address" type="email" name="email" value={creds.email} onChange={e => setCreds({...creds, email: e.target.value})} required />
+                  <InputField label="Password" type="password" name="password" value={creds.pass} onChange={e => setCreds({...creds, pass: e.target.value})} required />
                   <div className="flex justify-end -mt-2">
-                    <button type="button" onClick={() => {setAuthMode('forgot'); setError('');}} className="text-xs text-m3-primary hover:underline font-medium">Forgot Password?</button>
+                    <button type="button" onClick={() => {setAuthMode('forgot'); setError('');}} className="text-xs text-brand-400 hover:text-brand-300 hover:underline font-bold transition-all">Forgot Password?</button>
                   </div>
-                  <button type="submit" disabled={authLoading} className="m3-button m3-button-filled h-14 !rounded-2xl w-full shadow-lg">
+                  <button type="submit" disabled={authLoading} className="m3-button m3-button-filled h-14 !rounded-2xl w-full shadow-lg mt-2">
                     {authLoading ? <MaterialIcon name="sync" className="animate-spin" /> : <MaterialIcon name="login" />}
                     Login / පිවිසෙන්න
                   </button>
@@ -1304,14 +1898,27 @@
               )}
 
               {authMode === 'forgot' && (
-                <form onSubmit={handleForgotPassword} className="flex flex-col gap-6 animate-fade-in">
-                  <p className="text-sm text-slate-300 text-center px-4">Enter your email address to receive a password reset link.</p>
-                  {error && <div className="text-red-400 bg-red-500/10 p-4 rounded-2xl text-sm text-center border border-red-500/20">{error}</div>}
-                  <InputField label="Email Address" type="email" name="email" value={creds.email} onChange={e => setCreds({...creds, email: e.target.value})} />
-                  <button type="submit" disabled={authLoading} className="m3-button m3-button-filled h-14 !rounded-2xl w-full shadow-lg">
-                    {authLoading ? 'Sending...' : 'Send Reset Link'}
+                <form onSubmit={handleForgotPassword} className="flex flex-col gap-5">
+                  <p className="text-xs text-slate-300 text-center px-4 leading-relaxed">Enter your email address to receive a secure password reset link.</p>
+                  {error && <div className="text-red-400 bg-red-500/10 p-4 rounded-2xl text-xs text-center border border-red-500/20">{error}</div>}
+                  <InputField label="Email Address" type="email" name="email" value={creds.email} onChange={e => setCreds({...creds, email: e.target.value})} required />
+                  <button type="submit" disabled={authLoading} className="m3-button m3-button-filled h-14 !rounded-2xl w-full shadow-lg mt-2">
+                    {authLoading ? <MaterialIcon name="sync" className="animate-spin" /> : <MaterialIcon name="mail" />}
+                    Send Reset Link
                   </button>
-                  <button type="button" onClick={() => {setAuthMode('login'); setError('');}} className="m3-button m3-button-tonal w-full">Back to Login</button>
+                  <button type="button" onClick={() => {setAuthMode('login'); setError('');}} className="m3-button m3-button-tonal h-12 !rounded-2xl w-full mt-1">Back to Login</button>
+                </form>
+              )}
+
+              {authMode === 'reset' && (
+                <form onSubmit={handleResetPassword} className="flex flex-col gap-5">
+                  <p className="text-xs text-slate-300 text-center px-4 leading-relaxed">Enter your new administrator password below.</p>
+                  {error && <div className="text-red-400 bg-red-500/10 p-4 rounded-2xl text-xs text-center border border-red-500/20">{error}</div>}
+                  <InputField label="New Password" type="password" name="password" value={creds.pass} onChange={e => setCreds({...creds, pass: e.target.value})} required />
+                  <button type="submit" disabled={authLoading} className="m3-button m3-button-filled h-14 !rounded-2xl w-full shadow-lg mt-2">
+                    {authLoading ? <MaterialIcon name="sync" className="animate-spin" /> : <MaterialIcon name="lock_reset" />}
+                    Update Password
+                  </button>
                 </form>
               )}
             </div>
@@ -1324,31 +1931,44 @@
           <div className="neural-flow"></div>
           
           {/* M3 Navigation Rail (Admin) */}
-          <aside className="hidden lg:flex flex-col w-20 bg-m3-surfaceContainerLow border-r border-white/5 sticky top-0 h-screen z-40 items-center py-8 gap-6 print:hidden">
-            <div className="w-12 h-12 bg-m3-primaryContainer rounded-2xl flex items-center justify-center text-m3-onPrimaryContainer shadow-lg mb-4">
-              <MaterialIcon name="shield" />
+          <aside className="hidden lg:flex flex-col w-20 bg-slate-950/40 backdrop-blur-3xl border-r border-white/5 sticky top-0 h-screen z-40 items-center py-8 gap-6 print:hidden">
+            <div className="w-12 h-12 bg-brand-500/10 rounded-2xl flex items-center justify-center text-brand-400 border border-brand-500/25 shadow-lg mb-4">
+              <MaterialIcon name="shield" className="text-xl" />
             </div>
             
-            <nav className="flex flex-col gap-4 flex-1">
+            <nav className="flex flex-col gap-5 flex-1 w-full px-2">
               {[
-                { id: 'incomes', icon: 'payments', tooltip: 'Incomes' },
-                { id: 'expenses', icon: 'account_balance_wallet', tooltip: 'Expenses' },
-                { id: 'reports', icon: 'assessment', tooltip: 'Reports' },
-                { id: 'users', icon: 'group', tooltip: 'Users' },
-                { id: 'project_settings', icon: 'settings', tooltip: 'Settings' }
-              ].map(item => (
-                <button 
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`w-14 h-14 flex items-center justify-center rounded-2xl transition-all duration-300 ${activeTab === item.id ? 'bg-m3-secondaryContainer text-m3-onSecondaryContainer' : 'text-m3-onSurface hover:bg-white/5'}`}
-                  title={item.tooltip}
-                >
-                  <MaterialIcon name={item.icon} className={activeTab === item.id ? 'FILL' : ''} />
-                </button>
-              ))}
+                { id: 'dashboard', icon: 'dashboard', label: 'Dashboard' },
+                { id: 'incomes', icon: 'payments', label: 'Incomes' },
+                { id: 'expenses', icon: 'account_balance_wallet', label: 'Expenses' },
+                { id: 'reports', icon: 'assessment', label: 'Reports' },
+                { id: 'users', icon: 'group', label: 'Users' },
+                { id: 'shares', icon: 'pie_chart', label: 'Shares' },
+                { id: 'project_settings', icon: 'settings', label: 'Settings' },
+                { id: 'invitations', icon: 'festival', label: 'Invitations' }
+              ].map(item => {
+                const isActive = activeTab === item.id || 
+                  (item.id === 'incomes' && ['cash_incomes', 'goods_incomes', 'main_donors', 'regular_donors'].includes(activeTab));
+                
+                return (
+                  <button 
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className="w-full py-2 flex flex-col items-center justify-center relative group"
+                    title={item.label}
+                  >
+                    <div className="relative w-14 h-8 flex items-center justify-center rounded-full overflow-hidden">
+                      {/* Active indicator pill */}
+                      <div className={`absolute inset-0 bg-brand-500/25 rounded-full transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isActive ? 'scale-100 opacity-100' : 'scale-x-0 opacity-0 group-hover:scale-x-75 group-hover:opacity-50'}`}></div>
+                      <MaterialIcon name={item.icon} className={`relative z-10 text-xl transition-transform duration-300 ${isActive ? 'text-brand-400 scale-110' : 'text-slate-400 group-hover:text-white'}`} />
+                    </div>
+                    <span className={`text-[9px] font-bold tracking-wider mt-1.5 transition-colors duration-300 ${isActive ? 'text-brand-400 font-extrabold' : 'text-slate-500 group-hover:text-slate-300'}`}>{item.label}</span>
+                  </button>
+                );
+              })}
             </nav>
             
-            <button onClick={handleLogout} className="w-12 h-12 flex items-center justify-center text-m3-outline hover:text-red-400 transition-colors">
+            <button onClick={handleLogout} className="w-12 h-12 flex items-center justify-center text-slate-500 hover:text-red-400 transition-colors duration-300 hover:bg-red-500/10 rounded-2xl">
               <MaterialIcon name="logout" />
             </button>
           </aside>
@@ -1364,15 +1984,57 @@
                      <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Control & Statistics</p>
                   </div>
                </div>
-               <div className="flex gap-2">
-                  <a href="index.html" className="m3-button m3-button-tonal !px-4">
-                     <MaterialIcon name="home" />
-                     Home
+               <div className="flex items-center gap-2 sm:gap-3 relative flex-wrap justify-end">
+                  <a href="index.html" className="hidden sm:flex items-center gap-2 m3-button m3-button-tonal !h-10 !px-3 text-xs !rounded-xl border border-brand-500/20 text-brand-300 hover:text-white">
+                    <SafeImage src="logo.png" alt="" className="w-5 h-5 object-contain" iconClassName="text-xs" />
+                    Vesak
                   </a>
-                  <button onClick={fetchData} className="m3-button m3-button-filled !px-4">
-                     <MaterialIcon name="refresh" className={loading ? 'animate-spin' : ''} />
-                     Refresh
+                  <a href="poson/index.html" className="hidden sm:flex items-center gap-2 m3-button m3-button-tonal !h-10 !px-3 text-xs !rounded-xl border border-amber-500/20 text-amber-300 hover:text-white">
+                    <SafeImage src="poson_logo.png" alt="" className="w-5 h-5 object-contain" iconClassName="text-xs" />
+                    Poson
+                  </a>
+                  <button onClick={handleLogout} className="m3-button m3-button-outlined !border-red-500/30 !text-red-400 hover:!bg-red-500/10 !h-10 !px-4 text-xs !rounded-xl flex items-center gap-2">
+                     <MaterialIcon name="logout" className="text-[16px]" />
+                     Logout
                   </button>
+
+                  <div className="relative">
+                    <button 
+                      onClick={() => setMenuOpen(!menuOpen)} 
+                      className="w-10 h-10 rounded-xl bg-slate-900/60 border border-white/5 flex items-center justify-center hover:bg-slate-800 transition text-slate-300 hover:text-white"
+                      title="Quick Menu"
+                    >
+                       <MaterialIcon name="more_vert" />
+                    </button>
+                    {menuOpen && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)}></div>
+                        <div className="absolute right-0 mt-2 w-56 bg-slate-900/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl z-50 p-2 animate-scale-in">
+                          <div className="px-3 py-1.5 text-[9px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5 mb-1">Festival Apps / යාන්ත්‍රණ</div>
+                          <a href="index.html" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-brand-300 hover:text-white hover:bg-brand-500/10 rounded-xl transition">
+                            <div className="w-7 h-7 rounded-lg bg-brand-500/10 border border-brand-500/20 overflow-hidden flex items-center justify-center shrink-0">
+                              <SafeImage src="logo.png" alt="Vesak" className="w-full h-full object-contain p-0.5" iconClassName="text-sm" />
+                            </div>
+                            Vesak App
+                          </a>
+                          <a href="poson/index.html" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-amber-300 hover:text-white hover:bg-amber-500/10 rounded-xl transition">
+                            <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 overflow-hidden flex items-center justify-center shrink-0">
+                              <SafeImage src="poson_logo.png" alt="Poson" className="w-full h-full object-contain p-0.5" iconClassName="text-sm" />
+                            </div>
+                            Poson App
+                          </a>
+                          <div className="px-3 py-1.5 text-[9px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5 my-1">Quick Actions</div>
+                          <button onClick={() => { fetchData(); setMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-white/5 rounded-xl transition text-left">
+                            <MaterialIcon name="refresh" className={`text-[16px] ${loading ? 'animate-spin' : ''}`} /> Refresh Data
+                          </button>
+                          <hr className="border-white/5 my-1" />
+                          <button onClick={() => { handleLogout(); setMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl transition text-left">
+                            <MaterialIcon name="logout" className="text-[16px]" /> Logout
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                </div>
             </header>
 
@@ -1393,36 +2055,178 @@
               </div>
             )}
 
+            {/* M3 Dashboard Stats Grid */}
+            {['dashboard', 'incomes', 'cash_incomes', 'goods_incomes', 'main_donors', 'regular_donors', 'expenses', 'reports', 'shares'].includes(activeTab) && (
+              <div className="space-y-3 mb-8">
+              {eventFilter !== 'all' && (
+                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${eventFilter === 'vesak' ? 'bg-brand-500/10 text-brand-300 border-brand-500/30' : 'bg-amber-500/10 text-amber-300 border-amber-500/30'}`}>
+                  <MaterialIcon name="filter_alt" className="text-sm" />
+                  Showing {eventFilter} records only / {eventFilter === 'vesak' ? 'වෙසක්' : 'පොසොන්'} වාර්තා පමණි
+                </div>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 animate-[fade-slide-in_0.6s_cubic-bezier(0.34,1.56,0.64,1)_both]">
+                {/* Card 1: Total Income */}
+                <div className="m3-card-elevated p-6 flex flex-col justify-between min-h-[140px] border border-white/5 hover:border-brand-500/30 transition-all duration-300 relative group overflow-hidden">
+                  <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-brand-500/5 rounded-full blur-2xl group-hover:bg-brand-500/10 transition-all"></div>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Total Income</span>
+                      <h3 className="text-2xl font-black text-white tracking-tight">{formatCurrency(dashboardCashIncome)}</h3>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center border border-brand-500/25 shadow-lg">
+                      <MaterialIcon name="payments" className="text-brand-400" />
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center text-xs text-slate-500">
+                    <span>මුළු එකතු වූ මුදල</span>
+                    <span className="text-brand-400 font-bold">Cash Received</span>
+                  </div>
+                </div>
+
+                {/* Card 2: Total Expenses */}
+                <div className="m3-card-elevated p-6 flex flex-col justify-between min-h-[140px] border border-white/5 hover:border-red-500/30 transition-all duration-300 relative group overflow-hidden">
+                  <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-red-500/5 rounded-full blur-2xl group-hover:bg-red-500/10 transition-all"></div>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Total Expenses</span>
+                      <h3 className="text-2xl font-black text-white tracking-tight">{formatCurrency(dashboardExpense)}</h3>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-red-500/10 text-red-400 flex items-center justify-center border border-red-500/25 shadow-lg">
+                      <MaterialIcon name="account_balance_wallet" className="text-red-400" />
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center text-xs text-slate-500">
+                    <span>මුළු වියදම් මුදල</span>
+                    <span className="text-red-400 font-bold">Funds Spent</span>
+                  </div>
+                </div>
+
+                {/* Card 3: Net Balance */}
+                <div className="m3-card-elevated p-6 flex flex-col justify-between min-h-[140px] border border-white/5 hover:border-blue-500/30 transition-all duration-300 relative group overflow-hidden">
+                  <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/10 transition-all"></div>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Net Balance</span>
+                      <h3 className={`text-2xl font-black tracking-tight ${dashboardBalance >= 0 ? 'text-blue-400' : 'text-red-400'}`}>{formatCurrency(dashboardBalance)}</h3>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/25 shadow-lg">
+                      <MaterialIcon name="savings" className="text-blue-400" />
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center text-xs text-slate-500">
+                    <span>ඉතිරි මුදල</span>
+                    <span className="text-blue-400 font-bold">Net Balance</span>
+                  </div>
+                </div>
+
+                {/* Card 4: Financial Goal Progress */}
+                <div className="m3-card-elevated p-6 flex flex-col justify-between min-h-[140px] border border-white/5 hover:border-purple-500/30 transition-all duration-300 relative group overflow-hidden">
+                  <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-purple-500/5 rounded-full blur-2xl group-hover:bg-purple-500/10 transition-all"></div>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Target Progress</span>
+                      <div className="flex items-baseline gap-2">
+                        <h3 className="text-2xl font-black text-white tracking-tight">
+                          {Number(projectSettings?.project_financial_goal || 0) > 0 ? Math.min(100, Math.round((dashboardCashIncome / Number(projectSettings?.project_financial_goal || 0)) * 100)) : 0}%
+                        </h3>
+                        <span className="text-[9px] text-slate-400 font-bold">of {Number(projectSettings?.project_financial_goal || 0) ? Math.round(Number(projectSettings?.project_financial_goal || 0)/1000) + 'k' : '0'}</span>
+                      </div>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center border border-purple-500/25 shadow-lg">
+                      <MaterialIcon name="track_changes" className="text-purple-400" />
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-white/5">
+                      <div className="bg-gradient-to-r from-purple-500 to-indigo-500 h-full rounded-full transition-all duration-1000 relative" style={{ width: `${Number(projectSettings?.project_financial_goal || 0) > 0 ? Math.min(100, Math.round((dashboardCashIncome / Number(projectSettings?.project_financial_goal || 0)) * 100)) : 0}%` }}>
+                        <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center text-[10px] text-slate-500 mt-2">
+                      <span>ඉලක්කය කරා ගමන</span>
+                      <span className="text-purple-400 font-bold">{formatCurrency(Number(projectSettings?.project_financial_goal || 0))} Goal</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              </div>
+            )}
+
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
               <div className="w-full lg:w-auto">
                 {/* Desktop Choice Chips */}
-                <div className="hidden lg:flex flex-wrap gap-2">
-                  {ADMIN_TABS.map(tab => (
-                    <button 
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`px-5 py-2 rounded-full text-xs font-bold transition-all border ${activeTab === tab.id ? 'bg-m3-secondaryContainer text-m3-onSecondaryContainer border-transparent shadow-md scale-105' : 'bg-transparent text-m3-outline border-m3-outline/30 hover:border-m3-outline hover:text-m3-onSurface'}`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
+                {(() => {
+                  const showIncomesTabs = ['incomes', 'cash_incomes', 'goods_incomes', 'main_donors', 'regular_donors'].includes(activeTab);
+                  const showExpensesTabs = ['expenses', 'receipts'].includes(activeTab);
+                  let visibleTabs = [];
+                  if (showIncomesTabs) {
+                    visibleTabs = ADMIN_TABS.filter(t => ['incomes', 'cash_incomes', 'goods_incomes', 'main_donors', 'regular_donors'].includes(t.id));
+                  } else if (showExpensesTabs) {
+                    visibleTabs = ADMIN_TABS.filter(t => ['expenses', 'receipts'].includes(t.id));
+                  }
+                  
+                  if (visibleTabs.length === 0) return null;
+                  
+                  return (
+                    <div className="hidden lg:flex flex-wrap gap-2">
+                      {visibleTabs.map(tab => (
+                        <button 
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          className={`px-4 py-2 rounded-full text-[11px] font-bold tracking-wider transition-all border ${activeTab === tab.id ? 'bg-brand-500/20 text-brand-300 border-brand-500/30 shadow-[0_0_15px_rgba(34,197,94,0.1)] scale-105' : 'bg-slate-900/40 text-slate-400 border-white/5 hover:border-slate-700 hover:text-white'}`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             
             <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-              {(activeTab !== 'shares' && activeTab !== 'users') && (
+              {['incomes', 'cash_incomes', 'goods_incomes', 'main_donors', 'regular_donors', 'expenses', 'receipts'].includes(activeTab) && (
                 <>
-                  <input type="date" value={filterDate} onChange={e=>setFilterDate(e.target.value)} className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500 outline-none w-full sm:w-auto" />
-                  <input type="text" placeholder="Search..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-brand-500 outline-none w-full sm:w-48" />
+                  <div className="flex rounded-xl border border-slate-800 overflow-hidden shrink-0 w-full sm:w-auto">
+                    {[
+                      { value: 'all', label: 'All', sub: 'සියල්ල' },
+                      { value: 'vesak', label: 'Vesak', sub: 'වෙසක්' },
+                      { value: 'poson', label: 'Poson', sub: 'පොසොන්' }
+                    ].map(opt => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setEventFilter(opt.value)}
+                        className={`px-3 py-2 text-[10px] font-bold uppercase tracking-wider transition-all flex-1 sm:flex-none sm:min-w-[72px] ${eventFilter === opt.value
+                          ? opt.value === 'vesak' ? 'bg-brand-500/20 text-brand-300' : opt.value === 'poson' ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-700 text-white'
+                          : 'bg-slate-950/40 text-slate-500 hover:text-slate-300'}`}
+                      >
+                        <span className="block">{opt.label}</span>
+                        <span className="block text-[8px] font-medium normal-case opacity-70">{opt.sub}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="relative w-full sm:w-auto">
+                    <input type="date" value={filterDate} onChange={e=>setFilterDate(e.target.value)} className="bg-slate-950/40 border border-slate-800 focus:border-brand-500/50 rounded-xl px-4 py-2.5 text-xs text-white focus:ring-4 focus:ring-brand-500/5 outline-none transition-all w-full sm:w-auto cursor-pointer" />
+                  </div>
+                  <div className="relative w-full sm:w-48">
+                    <input type="text" placeholder="Search..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} className="bg-slate-950/40 border border-slate-800 focus:border-brand-500/50 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white focus:ring-4 focus:ring-brand-500/5 outline-none transition-all w-full" />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-[16px] flex items-center">
+                      <MaterialIcon name="search" />
+                    </span>
+                  </div>
                   <div className="flex gap-2">
-                    <button onClick={(activeTab === 'incomes' || activeTab === 'cash_incomes' || activeTab === 'goods_incomes' || activeTab === 'main_donors' || activeTab === 'regular_donors') ? exportIncomesCSV : exportExpensesCSV} className="m3-button m3-button-tonal flex-1">CSV</button>
-                    <button onClick={(activeTab === 'incomes' || activeTab === 'cash_incomes' || activeTab === 'goods_incomes' || activeTab === 'main_donors' || activeTab === 'regular_donors') ? exportIncomesPDF : exportExpensesPDF} className="m3-button m3-button-tonal !text-red-400 !bg-red-500/10 hover:!bg-red-500/20 flex-1 border border-red-500/20">PDF</button>
+                    <button onClick={(activeTab === 'incomes' || activeTab === 'cash_incomes' || activeTab === 'goods_incomes' || activeTab === 'main_donors' || activeTab === 'regular_donors') ? exportIncomesCSV : exportExpensesCSV} className="m3-button m3-button-tonal !h-10 !px-4 text-xs flex-1 !rounded-xl">
+                      <MaterialIcon name="table_chart" className="text-[16px]" /> CSV
+                    </button>
+                    <button onClick={(activeTab === 'incomes' || activeTab === 'cash_incomes' || activeTab === 'goods_incomes' || activeTab === 'main_donors' || activeTab === 'regular_donors') ? exportIncomesPDF : exportExpensesPDF} className="m3-button m3-button-outlined !border-red-500/30 !text-red-400 hover:!bg-red-500/10 !h-10 !px-4 text-xs flex-1 !rounded-xl">
+                      <MaterialIcon name="picture_as_pdf" className="text-[16px]" /> PDF
+                    </button>
                   </div>
                 </>
               )}
               {activeTab === 'users' && (
-                <button onClick={() => setAddUserModal(true)} className="m3-button m3-button-filled magnetic-button w-full sm:w-auto shadow-[0_0_15px_rgba(34,197,94,0.3)]">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
+                <button onClick={() => setAddUserModal(true)} className="m3-button m3-button-filled magnetic-button w-full sm:w-auto shadow-[0_0_15px_rgba(34,197,94,0.3)] !rounded-xl !h-11">
+                  <MaterialIcon name="person_add" className="text-[18px]" />
                   Add New User
                 </button>
               )}
@@ -1436,7 +2240,7 @@
                   <div key={exp.id} className="glass-card bg-slate-900/40 rounded-3xl overflow-hidden border border-white/5 flex flex-col group hover:border-amber-500/30 transition-all duration-500 hover:scale-[1.02]">
                     <div className="aspect-[4/3] bg-slate-950 relative overflow-hidden flex items-center justify-center">
                       {exp.receipt_url ? (
-                        <img src={exp.receipt_url} alt="Receipt" className="w-full h-full object-contain cursor-pointer hover:scale-105 transition duration-500" onClick={() => window.open(exp.receipt_url, '_blank')} />
+                        <SafeImage src={exp.receipt_url} alt="Receipt" className="w-full h-full object-contain cursor-pointer hover:scale-105 transition duration-500" onClick={() => window.open(exp.receipt_url, '_blank')} iconClassName="text-3xl" />
                       ) : (
                         <div className="flex flex-col items-center gap-2 text-slate-600">
                           <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
@@ -1470,6 +2274,9 @@
                         <span className="text-[10px] font-bold text-slate-400">{exp.date}</span>
                       </div>
                       <h4 className="text-white font-semibold text-sm line-clamp-1 mb-1">{exp.reason}</h4>
+                      <span className={`inline-block mb-2 px-2 py-0.5 rounded text-[9px] font-black uppercase ${normalizeEventType(exp) === 'vesak' ? 'bg-green-500/10 text-green-400' : 'bg-amber-500/10 text-amber-400'}`}>
+                        {normalizeEventType(exp)}
+                      </span>
                       <div className="flex items-center gap-1.5 mb-3">
                         <span className="text-slate-400 text-[11px]">Paid to:</span>
                         <ReporterBadge name={exp.withdrawer_name} users={appUsers} />
@@ -1483,9 +2290,9 @@
                     </div>
                   </div>
                 ))}
-                {expenses.length === 0 && <div className="col-span-full py-12 text-center text-slate-500">No expense records found.</div>}
+                {filteredExpenses.length === 0 && <div className="col-span-full py-12 text-center text-slate-500">No expense records found{eventFilter !== 'all' ? ` for ${eventFilter}` : ''}.</div>}
               </div>
-            ) : (activeTab === 'project_settings' || activeTab === 'reports') ? null : (
+            ) : (activeTab === 'project_settings' || activeTab === 'reports' || activeTab === 'invitations' || activeTab === 'dashboard') ? null : (
               <table className="w-full text-left text-sm whitespace-nowrap responsive-table border-separate border-spacing-y-2 px-4 sm:px-8 print:border-spacing-0 print:px-0">
                 <thead className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] opacity-70 print:border-b print:border-black">
                   {activeTab === 'users' ? (
@@ -1524,23 +2331,23 @@
                   ) : (
                     <tr>
                       <th className="p-4 rounded-tl-lg hidden sm:table-cell">Date & Time</th>
-                      <th className="p-4 hidden sm:table-cell">Withdrawer</th>
+                      <th className="p-4">Withdrawer</th>
                       <th className="p-4">Reason</th>
                       <th className="p-4">Amount</th>
-                      <th className="p-4">Receipt</th>
+                      <th className="p-4 hidden sm:table-cell">Receipt</th>
                       <th className="p-4 rounded-tr-lg text-right">Actions</th>
                     </tr>
                   )}
                 </thead>
                 <tbody className="divide-y divide-slate-800/50">
-                  {activeTab === 'main_donors' && groupedMainDonors.map(group => (
+                  {activeTab === 'main_donors' && groupedMainDonors.map((group, index) => (
                     <React.Fragment key={group.key}>
-                      <tr className="bg-slate-900/40 rounded-2xl border border-white/5 hover:bg-slate-800/40 transition cursor-pointer" onClick={() => toggleDonorExpand(group.key)}>
+                      <tr style={{ animationDelay: `${index * 0.04}s` }} className="bg-slate-900/40 rounded-2xl border border-white/5 hover:bg-slate-800/40 transition-all duration-350 cursor-pointer hover:border-brand-500/25 hover:scale-[1.005] hover:shadow-lg animate-[fade-slide-in_0.4s_cubic-bezier(0.34,1.56,0.64,1)_both]" onClick={() => toggleDonorExpand(group.key)}>
                         <td className="p-4 font-bold text-white group-hover:text-brand-400 transition-colors rounded-l-2xl" data-label="Donor Name"><ReporterBadge name={group.name} users={appUsers} showFullName={true} /></td>
                         <td className="p-4 text-slate-500 font-medium" data-label="Donations Count">{group.records.length} Times</td>
                         <td className="p-4 text-brand-400 font-black" data-label="Total Amount">Rs. {Math.round(group.total).toLocaleString()}</td>
                         <td className="p-4 text-right rounded-r-2xl" data-label="Details">
-                          <button className="m3-button m3-button-tonal flex-1">
+                          <button className="m3-button m3-button-tonal flex-1 !h-9 !px-4 !rounded-xl">
                             {expandedDonors.has(group.key) ? 'Hide' : 'View Details'}
                           </button>
                         </td>
@@ -1550,16 +2357,16 @@
                           <td colSpan="4" className="p-0 bg-slate-900/30">
                             <div className="p-4 space-y-2 border-l-2 border-brand-500 ml-4 my-2">
                               {group.records.map((r, idx) => (
-                                <div key={idx} className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-800/40 p-3 rounded-lg border border-slate-800/50 gap-2">
+                                <div key={idx} className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-800/60 p-3 rounded-lg border border-slate-800/50 gap-2 hover:border-brand-500/30 transition-all duration-300">
                                   <div className="flex flex-col">
                                     <span className="text-xs text-slate-400">Date: {r.date} {r.created_at ? `| ${new Date(r.created_at).toLocaleTimeString()}` : ''}</span>
                                     <span className="text-sm text-white font-medium">{r.item_description || 'Cash Donation'}</span>
                                   </div>
                                   <div className="flex items-center gap-4">
                                     <span className="text-brand-400 font-bold">Rs. {Math.round(r.amount).toLocaleString()}</span>
-                                    <div className="flex gap-1">
-                                      <button onClick={(e) => { e.stopPropagation(); setEditIncome(r); }} className="p-1 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition text-[10px] font-bold">Edit</button>
-                                      <button onClick={(e) => { e.stopPropagation(); handleDeleteIncome(r.id); }} className="p-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition text-[10px] font-bold">Del</button>
+                                    <div className="flex gap-1.5">
+                                      <button onClick={(e) => { e.stopPropagation(); setEditIncome(r); }} className="p-1.5 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition text-[10px] font-bold">Edit</button>
+                                      <button onClick={(e) => { e.stopPropagation(); handleDeleteIncome(r.id); }} className="p-1.5 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition text-[10px] font-bold">Del</button>
                                     </div>
                                   </div>
                                 </div>
@@ -1571,8 +2378,8 @@
                     </React.Fragment>
                   ))}
 
-                  {(activeTab === 'incomes' || activeTab === 'cash_incomes' || activeTab === 'goods_incomes' || activeTab === 'regular_donors') && filteredIncomes.map(inc => (
-                    <tr key={inc.id} className="bg-slate-900/40 border border-white/5 hover:bg-slate-800/40 transition block sm:table-row rounded-2xl mb-3 sm:mb-0 overflow-hidden">
+                  {(activeTab === 'incomes' || activeTab === 'cash_incomes' || activeTab === 'goods_incomes' || activeTab === 'regular_donors') && filteredIncomes.map((inc, index) => (
+                    <tr key={inc.id} style={{ animationDelay: `${index * 0.04}s` }} className="bg-slate-900/40 border border-white/5 hover:bg-slate-800/40 transition block sm:table-row rounded-2xl mb-3 sm:mb-0 overflow-hidden hover:border-brand-500/25 hover:scale-[1.005] hover:shadow-lg animate-[fade-slide-in_0.4s_cubic-bezier(0.34,1.56,0.64,1)_both]">
                       <td className="p-4 text-slate-500 hidden sm:table-cell text-[10px] font-bold uppercase rounded-l-2xl" data-label="Date">{inc.date}</td>
                       <td className="p-4 block sm:table-cell w-full" data-label="Name">
                         <div className="hidden sm:block">
@@ -1590,6 +2397,9 @@
                           <div className="text-brand-400 font-black text-sm">
                             {inc.amount ? `Rs.${Math.round(inc.amount).toLocaleString()}` : '-'}
                           </div>
+                          <span className={`mt-1 inline-block px-2 py-0.5 rounded text-[9px] font-black uppercase w-fit ${normalizeEventType(inc) === 'vesak' ? 'bg-green-500/10 text-green-400' : 'bg-amber-500/10 text-amber-400'}`}>
+                            {normalizeEventType(inc)}
+                          </span>
                         </div>
                       </td>
                       <td className="p-4 hidden md:table-cell" data-label="Type"><span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter ${inc.donation_type === 'Cash' ? 'bg-brand-500/10 text-brand-400' : 'bg-purple-500/10 text-purple-400'}`}>{inc.donation_type}</span></td>
@@ -1598,11 +2408,14 @@
                       </td>
                       <td className="p-4 text-brand-400 font-black text-sm hidden sm:table-cell" data-label="Amount">{inc.amount ? `Rs.${Math.round(inc.amount).toLocaleString()}` : '-'}</td>
                       <td className="p-4 hidden sm:table-cell" data-label="Status">
-                        <span className={`px-2 py-1 rounded text-[10px] ${inc.status === 'Received Today' ? 'bg-brand-500/20 text-brand-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                        <span className={`px-2 py-1 rounded text-[10px] font-bold ${inc.status === 'Received Today' ? 'bg-brand-500/20 text-brand-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
                           {inc.status}
                         </span>
+                        <span className={`ml-1 px-2 py-1 rounded text-[9px] font-black uppercase ${!inc.event_type || inc.event_type === 'vesak' ? 'bg-green-500/10 text-green-400' : 'bg-amber-500/10 text-amber-400'}`}>
+                          {inc.event_type || 'vesak'}
+                        </span>
                       </td>
-                      <td className="p-4 text-right whitespace-nowrap hidden sm:table-cell" data-label="Actions">
+                      <td className="p-4 text-right whitespace-nowrap hidden sm:table-cell rounded-r-2xl" data-label="Actions">
                         <button onClick={() => handleToggleStatus(inc)} disabled={actionLoading} className={`p-1.5 rounded-md mr-1.5 transition text-[10px] font-bold disabled:opacity-50 ${inc.status === 'Received Today' ? 'bg-yellow-500/20 text-yellow-500' : 'bg-brand-500/20 text-brand-400'}`} title="Toggle Status">
                           {inc.status === 'Received Today' ? 'Pledge' : 'Receive'}
                         </button>
@@ -1612,9 +2425,9 @@
                     </tr>
                   ))}
                   
-                  {activeTab === 'expenses' && filteredExpenses.map(exp => (
-                    <tr key={exp.id} className="bg-slate-900/30 border border-white/5 rounded-2xl hover:bg-slate-800/40 transition-all duration-300 block sm:table-row mb-3 sm:mb-0 overflow-hidden">
-                      <td className="p-4 text-slate-500 hidden sm:table-cell text-[10px] font-bold uppercase" data-label="Date">{exp.date}</td>
+                  {activeTab === 'expenses' && filteredExpenses.map((exp, index) => (
+                    <tr key={exp.id} style={{ animationDelay: `${index * 0.04}s` }} className="bg-slate-900/30 border border-white/5 rounded-2xl hover:bg-slate-800/40 transition-all duration-300 block sm:table-row mb-3 sm:mb-0 overflow-hidden hover:border-red-500/25 hover:scale-[1.005] hover:shadow-lg animate-[fade-slide-in_0.4s_cubic-bezier(0.34,1.56,0.64,1)_both]">
+                      <td className="p-4 text-slate-500 hidden sm:table-cell text-[10px] font-bold uppercase rounded-l-2xl" data-label="Date">{exp.date}</td>
                       <td className="p-4 font-medium text-white hidden sm:table-cell text-xs" data-label="Withdrawer"><ReporterBadge name={exp.withdrawer_name} users={appUsers} showFullName={true} /></td>
                       <td className="p-4 max-w-[200px] text-slate-400 text-xs sm:text-sm block sm:table-cell w-full" data-label="Reason">
                         <div className="hidden sm:block truncate">{exp.reason}</div>
@@ -1631,6 +2444,9 @@
                           <div className="text-red-400 font-black text-sm">
                             Rs.{Math.round(exp.amount_taken).toLocaleString()}
                           </div>
+                          <span className={`mt-1 inline-block px-2 py-0.5 rounded text-[9px] font-black uppercase w-fit ${normalizeEventType(exp) === 'vesak' ? 'bg-green-500/10 text-green-400' : 'bg-amber-500/10 text-amber-400'}`}>
+                            {normalizeEventType(exp)}
+                          </span>
                         </div>
                       </td>
                       <td className="p-4 text-red-400 font-black text-sm hidden sm:table-cell" data-label="Amount">Rs.{Math.round(exp.amount_taken).toLocaleString()}</td>
@@ -1644,18 +2460,21 @@
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                           </span>
                         )}
+                        <span className={`block mt-1 px-2 py-0.5 rounded text-[9px] font-black uppercase w-fit ${!exp.event_type || exp.event_type === 'vesak' ? 'bg-green-500/10 text-green-400' : 'bg-amber-500/10 text-amber-400'}`}>
+                          {exp.event_type || 'vesak'}
+                        </span>
                       </td>
-                      <td className="p-4 text-right whitespace-nowrap hidden sm:table-cell" data-label="Actions">
+                      <td className="p-4 text-right whitespace-nowrap hidden sm:table-cell rounded-r-2xl" data-label="Actions">
                         <button onClick={() => setEditExpense(exp)} disabled={actionLoading} className="p-1.5 bg-blue-500/20 text-blue-400 rounded-md mr-1.5 hover:bg-blue-500/30 transition text-[10px] font-bold disabled:opacity-50">Edit</button>
                         <button onClick={() => handleDeleteExpense(exp.id)} disabled={actionLoading} className="p-1.5 bg-red-500/20 text-red-400 rounded-md hover:bg-red-500/30 transition text-[10px] font-bold disabled:opacity-50">Del</button>
                       </td>
                     </tr>
                   ))}
 
-                  {activeTab === 'users' && appUsers.map(user => {
+                  {activeTab === 'users' && appUsers.map((user, index) => {
                     const userSessions = allSessions.filter(s => s.user_id === user.id);
                     return (
-                      <tr key={user.id} className="border-b border-slate-800/50 hover:bg-slate-800/40 transition cursor-pointer" onClick={() => toggleUserExpand(user.id)}>
+                      <tr key={user.id} style={{ animationDelay: `${index * 0.04}s` }} className="border-b border-slate-800/50 hover:bg-slate-800/40 transition cursor-pointer hover:scale-[1.002] duration-300 animate-[fade-slide-in_0.4s_cubic-bezier(0.34,1.56,0.64,1)_both]" onClick={() => toggleUserExpand(user.id)}>
                         <td className="p-4" data-label="Username">
                            <div className="flex items-center gap-2">
                              <svg className={`w-4 h-4 text-slate-500 transition-transform ${expandedUsers.has(user.id) ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
@@ -1669,12 +2488,12 @@
                                <span className="bg-brand-500/20 text-brand-400 px-2 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit">
                                  <div className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse"></div>
                                  {userSessions.length} Device{userSessions.length > 1 ? 's' : ''}
-                               </span>
+                                </span>
                                {expandedUsers.has(user.id) && (
                                  <div className="flex flex-col gap-1 mt-1 bg-slate-900/80 p-2 rounded-lg border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
                                     <div className="text-[9px] text-slate-400 font-bold uppercase mb-1 flex justify-between items-center border-b border-slate-700/50 pb-1">
                                       Sessions
-                                      <button onClick={(e) => { e.stopPropagation(); handleClearAllUserSessions(user.id); }} className="text-red-400 hover:text-red-300 bg-red-500/10 px-2 py-0.5 rounded-md">Clear All</button>
+                                      <button onClick={(e) => { e.stopPropagation(); handleClearAllUserSessions(user.id); }} className="text-red-400 hover:text-red-300 bg-red-500/10 px-2 py-0.5 rounded-md font-bold">Clear All</button>
                                     </div>
                                     {userSessions.map(s => (
                                        <div key={s.id} className="flex justify-between items-center text-[10px] py-1 border-b border-slate-700/30 last:border-0">
@@ -1703,28 +2522,28 @@
                            ) : (
                              <span className="bg-slate-800/50 text-slate-500 px-2.5 py-1.5 rounded-xl text-[10px] font-bold border border-slate-700/50">2FA OFF</span>
                            )}
+                          </td>
+                          <td className="p-4" data-label="Reset Requested">
+                           {user.reset_requested ? <span className="bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded text-[10px] font-bold animate-pulse">Yes / ඔව්</span> : <span className="text-slate-500 text-[10px]">No</span>}
                          </td>
-                         <td className="p-4" data-label="Reset Requested">
-                          {user.reset_requested ? <span className="bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded text-[10px] font-bold animate-pulse">Yes / ඔව්</span> : <span className="text-slate-500 text-[10px]">No</span>}
-                        </td>
-                        <td className="p-4 text-right whitespace-nowrap" data-label="Actions">
-                          <button onClick={(e) => { 
-                            e.stopPropagation(); 
-                            setEditUser({
-                               ...user,
-                               income_access: projectSettings?.income_access_list?.split(',').map(s=>s.trim()).includes(user.username) || false,
-                               expense_access: projectSettings?.expense_access_list?.split(',').map(s=>s.trim()).includes(user.username) || false,
-                               pledge_access: projectSettings?.pledge_access_list?.split(',').map(s=>s.trim()).includes(user.username) || false
-                            }); 
-                          }} disabled={actionLoading} className="p-1.5 bg-blue-500/20 text-blue-400 rounded-md hover:bg-blue-500/30 transition text-[10px] font-bold disabled:opacity-50 mr-1.5">Edit</button>
-                          <button onClick={(e) => { e.stopPropagation(); handleResetFaceId(user); }} disabled={actionLoading} className="p-1.5 bg-red-500/20 text-red-400 rounded-md hover:bg-red-500/30 transition text-[10px] font-bold disabled:opacity-50 mr-1.5" title="Reset Passkeys">Del Passkeys</button>
-                           {user.two_factor_enabled && (
-                             <button onClick={(e) => { e.stopPropagation(); handleReset2FA(user); }} disabled={actionLoading} className="p-1.5 bg-red-500/10 text-red-400 border border-red-500/30 rounded-md hover:bg-red-500/20 transition text-[10px] font-black disabled:opacity-50 mr-1.5" title="Remove 2FA">Remove 2FA</button>
-                           )}
-                          <button onClick={(e) => { e.stopPropagation(); handleGenerateTempPassword(user); }} disabled={actionLoading} className="p-1.5 bg-indigo-500/20 text-indigo-400 rounded-md hover:bg-indigo-500/30 transition text-[10px] font-bold disabled:opacity-50">Temp Pass</button>
-                        </td>
-                      </tr>
-                    );
+                         <td className="p-4 text-right whitespace-nowrap" data-label="Actions">
+                           <button onClick={(e) => { 
+                             e.stopPropagation(); 
+                             setEditUser({
+                                ...user,
+                                income_access: projectSettings?.income_access_list?.split(',').map(s=>s.trim()).includes(user.username) || false,
+                                expense_access: projectSettings?.expense_access_list?.split(',').map(s=>s.trim()).includes(user.username) || false,
+                                pledge_access: projectSettings?.pledge_access_list?.split(',').map(s=>s.trim()).includes(user.username) || false
+                             }); 
+                           }} disabled={actionLoading} className="p-1.5 bg-blue-500/20 text-blue-400 rounded-md hover:bg-blue-500/30 transition text-[10px] font-bold disabled:opacity-50 mr-1.5">Edit</button>
+                           <button onClick={(e) => { e.stopPropagation(); handleResetFaceId(user); }} disabled={actionLoading} className="p-1.5 bg-red-500/20 text-red-400 rounded-md hover:bg-red-500/30 transition text-[10px] font-bold disabled:opacity-50 mr-1.5" title="Reset Passkeys">Del Passkeys</button>
+                            {user.two_factor_enabled && (
+                              <button onClick={(e) => { e.stopPropagation(); handleReset2FA(user); }} disabled={actionLoading} className="p-1.5 bg-red-500/10 text-red-400 border border-red-500/30 rounded-md hover:bg-red-500/20 transition text-[10px] font-black disabled:opacity-50 mr-1.5" title="Remove 2FA">Remove 2FA</button>
+                            )}
+                           <button onClick={(e) => { e.stopPropagation(); handleGenerateTempPassword(user); }} disabled={actionLoading} className="p-1.5 bg-indigo-500/20 text-indigo-400 rounded-md hover:bg-indigo-500/30 transition text-[10px] font-bold disabled:opacity-50">Temp Pass</button>
+                         </td>
+                       </tr>
+                     );
                   })}
 
                   {activeTab === 'shares' && (
@@ -1743,8 +2562,8 @@
                           </div>
                         </td>
                       </tr>
-                      {sponsorShares.map((s, idx) => (
-                        <tr key={idx} className="border-b border-slate-800/50 hover:bg-slate-800/40 transition">
+                      {sponsorShares.map((s, index) => (
+                        <tr key={index} style={{ animationDelay: `${index * 0.04}s` }} className="border-b border-slate-800/50 hover:bg-slate-800/40 transition hover:scale-[1.002] duration-300 animate-[fade-slide-in_0.4s_cubic-bezier(0.34,1.56,0.64,1)_both]">
                           <td className="p-4 font-medium text-white" data-label="Donor Name"><ReporterBadge name={s.name} users={appUsers} showFullName={true} /></td>
                           <td className="p-4 text-slate-300" data-label="Contribution">{formatCurrency(s.amount)}</td>
                           <td className="p-4" data-label="Percentage">
@@ -1762,13 +2581,13 @@
                   )}
 
                   {((activeTab === 'incomes' || activeTab === 'cash_incomes' || activeTab === 'goods_incomes' || activeTab === 'regular_donors') && filteredIncomes.length === 0) && (
-                    <tr><td colSpan="8" className="p-8 text-center text-slate-500">No income records found.</td></tr>
+                    <tr><td colSpan="8" className="p-8 text-center text-slate-500">No income records found{eventFilter !== 'all' ? ` for ${eventFilter}` : ''}.</td></tr>
                   )}
                   {(activeTab === 'main_donors' && groupedMainDonors.length === 0) && (
                     <tr><td colSpan="4" className="p-8 text-center text-slate-500">No main donors found.</td></tr>
                   )}
                   {(activeTab === 'expenses' && filteredExpenses.length === 0) && (
-                    <tr><td colSpan="6" className="p-8 text-center text-slate-500">No expense records found.</td></tr>
+                    <tr><td colSpan="6" className="p-8 text-center text-slate-500">No expense records found{eventFilter !== 'all' ? ` for ${eventFilter}` : ''}.</td></tr>
                   )}
                   {(activeTab === 'shares' && sponsorShares.length === 0) && (
                     <tr><td colSpan="4" className="p-8 text-center text-slate-500">No main contributors found.</td></tr>
@@ -1778,6 +2597,20 @@
                   )}
                 </tbody>
               </table>
+            )}
+
+            {activeTab === 'dashboard' && (
+              <div className="p-6 sm:p-8 space-y-8 animate-fade-in overflow-hidden">
+                {/* Daily Trend Chart (Large) */}
+                <DailyBarChart incomes={statsIncomes} expenses={statsExpenses} />
+
+                {/* Sub-Charts Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <SimpleChart income={dashboardCashIncome} expense={dashboardExpense} />
+                  <TodayStatsChart incomes={statsIncomes} expenses={statsExpenses} />
+                  <LastWeekStatsChart incomes={statsIncomes} expenses={statsExpenses} />
+                </div>
+              </div>
             )}
 
             {activeTab === 'reports' && (
@@ -1962,7 +2795,7 @@
                           </div>
                           <label className="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" checked={projectSettings.allow_income_entry !== false} onChange={e => setProjectSettings({...projectSettings, allow_income_entry: e.target.checked})} className="sr-only peer" />
-                            <div className="w-11 h-6 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-brand-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                            <div className="w-12 h-7 bg-slate-950/40 border border-slate-800 rounded-full peer transition-all duration-300 peer-checked:bg-brand-500/20 peer-checked:border-brand-500 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5 peer-checked:after:bg-brand-400"></div>
                           </label>
                         </div>
                       </div>
@@ -1976,7 +2809,7 @@
                           </div>
                           <label className="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" checked={projectSettings.allow_expense_entry !== false} onChange={e => setProjectSettings({...projectSettings, allow_expense_entry: e.target.checked})} className="sr-only peer" />
-                            <div className="w-11 h-6 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-brand-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                            <div className="w-12 h-7 bg-slate-950/40 border border-slate-800 rounded-full peer transition-all duration-300 peer-checked:bg-brand-500/20 peer-checked:border-brand-500 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5 peer-checked:after:bg-brand-400"></div>
                           </label>
                         </div>
                       </div>
@@ -1990,7 +2823,7 @@
                           </div>
                           <label className="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" checked={projectSettings.allow_pledge_entry !== false} onChange={e => setProjectSettings({...projectSettings, allow_pledge_entry: e.target.checked})} className="sr-only peer" />
-                            <div className="w-11 h-6 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-brand-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                            <div className="w-12 h-7 bg-slate-950/40 border border-slate-800 rounded-full peer transition-all duration-300 peer-checked:bg-brand-500/20 peer-checked:border-brand-500 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5 peer-checked:after:bg-brand-400"></div>
                           </label>
                         </div>
                       </div>
@@ -2012,7 +2845,7 @@
                           </div>
                           <label className="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" checked={projectSettings.public_portal_enabled !== false} onChange={e => setProjectSettings({...projectSettings, public_portal_enabled: e.target.checked})} className="sr-only peer" />
-                            <div className="w-14 h-7 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-brand-500 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all shadow-lg"></div>
+                            <div className="w-12 h-7 bg-slate-950/40 border border-slate-800 rounded-full peer transition-all duration-300 peer-checked:bg-brand-500/20 peer-checked:border-brand-500 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5 peer-checked:after:bg-brand-400"></div>
                           </label>
                         </div>
                       </div>
@@ -2029,29 +2862,262 @@
                     </button>
                   </div>
                 </form>
+
+                {/* Database Backup Controls */}
+                <div className="mt-8 glass-card p-6 sm:p-8 rounded-[2rem] border border-white/5 space-y-6">
+                  <div>
+                    <h4 className="text-sm font-black text-brand-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                      <MaterialIcon name="backup" className="text-brand-400" />
+                      Daily Database Backup / දත්ත උපස්ථය
+                    </h4>
+                    <p className="text-xs text-slate-400">එදිනෙදා දත්ත වල ආරක්ෂාව සඳහා දත්ත ගොනු (.sql හෝ .xlsx ආකාරයෙන්) බාගත කර සුරක්ෂිතව තබා ගන්න.</p>
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <button 
+                      type="button" 
+                      onClick={generateSQLBackup} 
+                      className="flex-1 m3-button m3-button-tonal hover:border-brand-500/30 flex items-center justify-center gap-2 !h-12 !rounded-xl text-xs font-bold transition-all"
+                    >
+                      <MaterialIcon name="download" /> Download SQL Backup (.sql)
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={generateXLSXBackup} 
+                      className="flex-1 m3-button m3-button-tonal hover:border-emerald-500/30 flex items-center justify-center gap-2 !h-12 !rounded-xl text-xs font-bold transition-all"
+                    >
+                      <MaterialIcon name="table_view" /> Download Excel Backup (.xlsx)
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
+
+              {activeTab === 'invitations' && (
+                <div className="animate-fade-in">
+                  
+                  {!editingEvent ? (
+                    <>
+                      <header className="mb-8">
+                        <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+                          <MaterialIcon name="festival" className="text-amber-500" />
+                          Invitation Dashboard
+                        </h2>
+                        <p className="text-slate-400 mt-2">Manage and publish your event invitation pages.</p>
+                      </header>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Vesak Card */}
+                        <div className={`glass-card p-6 rounded-[2.5rem] border ${vesakSettings.is_published ? 'border-brand-500/50 shadow-[0_0_30px_rgba(34,197,94,0.15)]' : 'border-white/5'} relative overflow-hidden group transition-all`}>
+                            <div className="absolute top-6 right-6">
+                                {vesakSettings.is_published ? (
+                                    <span className="bg-brand-500/20 text-brand-400 px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 border border-brand-500/30">
+                                      <span className="w-2 h-2 rounded-full bg-brand-400 animate-pulse"></span> Published LIVE
+                                    </span>
+                                ) : (
+                                    <span className="bg-slate-500/20 text-slate-400 px-4 py-1.5 rounded-full text-xs font-bold border border-slate-500/30">Unpublished</span>
+                                )}
+                            </div>
+                            <div className="flex flex-col gap-5 mt-2">
+                                <div className="w-14 h-14 rounded-2xl bg-brand-500/10 flex items-center justify-center border border-brand-500/20 overflow-hidden">
+                                  <SafeImage src="logo.png" alt="Vesak Logo" className="w-full h-full object-contain p-1" iconClassName="text-xl" />
+                                </div>
+                                <div>
+                                  <h3 className="text-2xl font-black text-white tracking-tight mb-2">Vesak Festival</h3>
+                                  <p className="text-sm text-slate-400 leading-relaxed">Manage the details, schedule, and dynamic gallery for the upcoming Vesak lantern exhibition.</p>
+                                </div>
+                                
+                                <div className="flex flex-col sm:flex-row gap-3 mt-4 pt-6 border-t border-white/5">
+                                    <button onClick={() => { setInvitationEventType('vesak'); setEditingEvent('vesak'); }} className="flex-1 bg-white/5 hover:bg-white/10 text-white py-3.5 rounded-xl font-bold text-sm transition-all border border-white/10 flex items-center justify-center gap-2">
+                                      <MaterialIcon name="edit" className="text-sm" /> Edit Details
+                                    </button>
+                                    {vesakSettings.is_published ? (
+                                        <button onClick={() => handleUnpublishInvitation('vesak')} disabled={actionLoading} className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 py-3.5 rounded-xl font-bold text-sm transition-all border border-red-500/20 flex items-center justify-center gap-2">
+                                          <MaterialIcon name="visibility_off" className="text-sm" /> Unpublish
+                                        </button>
+                                    ) : (
+                                        <button onClick={() => handlePublishInvitation('vesak')} disabled={actionLoading} className="flex-1 bg-brand-500 hover:bg-brand-400 text-white shadow-lg shadow-brand-500/30 py-3.5 rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2">
+                                          <MaterialIcon name="rocket_launch" className="text-sm" /> Publish to Live
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Poson Card */}
+                        <div className={`glass-card p-6 rounded-[2.5rem] border ${posonSettings.is_published ? 'border-amber-500/50 shadow-[0_0_30px_rgba(245,158,11,0.15)]' : 'border-white/5'} relative overflow-hidden group transition-all`}>
+                            <div className="absolute top-6 right-6">
+                                {posonSettings.is_published ? (
+                                    <span className="bg-amber-500/20 text-amber-400 px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 border border-amber-500/30">
+                                      <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> Published LIVE
+                                    </span>
+                                ) : (
+                                    <span className="bg-slate-500/20 text-slate-400 px-4 py-1.5 rounded-full text-xs font-bold border border-slate-500/30">Unpublished</span>
+                                )}
+                            </div>
+                            <div className="flex flex-col gap-5 mt-2">
+                                <div className="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 overflow-hidden">
+                                  <SafeImage src="poson_logo.png" alt="Poson Logo" className="w-full h-full object-contain p-1" iconClassName="text-xl" />
+                                </div>
+                                <div>
+                                  <h3 className="text-2xl font-black text-white tracking-tight mb-2">Poson Festival</h3>
+                                  <p className="text-sm text-slate-400 leading-relaxed">Manage the details, schedule, and dynamic gallery for the upcoming Poson lantern exhibition.</p>
+                                </div>
+                                
+                                <div className="flex flex-col sm:flex-row gap-3 mt-4 pt-6 border-t border-white/5">
+                                    <button onClick={() => { setInvitationEventType('poson'); setEditingEvent('poson'); }} className="flex-1 bg-white/5 hover:bg-white/10 text-white py-3.5 rounded-xl font-bold text-sm transition-all border border-white/10 flex items-center justify-center gap-2">
+                                      <MaterialIcon name="edit" className="text-sm" /> Edit Details
+                                    </button>
+                                    {posonSettings.is_published ? (
+                                        <button onClick={() => handleUnpublishInvitation('poson')} disabled={actionLoading} className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 py-3.5 rounded-xl font-bold text-sm transition-all border border-red-500/20 flex items-center justify-center gap-2">
+                                          <MaterialIcon name="visibility_off" className="text-sm" /> Unpublish
+                                        </button>
+                                    ) : (
+                                        <button onClick={() => handlePublishInvitation('poson')} disabled={actionLoading} className="flex-1 bg-amber-500 hover:bg-amber-400 text-white shadow-lg shadow-amber-500/30 py-3.5 rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2">
+                                          <MaterialIcon name="rocket_launch" className="text-sm" /> Publish to Live
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <header className="mb-8 flex items-center gap-4">
+                        <button type="button" onClick={() => setEditingEvent(null)} className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 text-white transition-all hover:-translate-x-1">
+                          <MaterialIcon name="arrow_back" />
+                        </button>
+                        <div>
+                          <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+                            Editing <span className={editingEvent === 'vesak' ? 'text-brand-400' : 'text-amber-400'}>{editingEvent === 'vesak' ? 'Vesak' : 'Poson'}</span>
+                          </h2>
+                          <p className="text-slate-400 text-sm mt-1">Configure all details for the public invitation page.</p>
+                        </div>
+                      </header>
+
+                      <form onSubmit={handleSaveInvitationSettings} className="space-y-8">
+                        
+                        {/* Section 1: Basic Info */}
+                        <div className="glass-card p-6 md:p-8 rounded-[2rem] border border-white/5 space-y-6">
+                          <div className="flex items-center gap-3 mb-6">
+                            <div className={`w-8 h-8 rounded-lg ${editingEvent === 'vesak' ? 'bg-brand-500/20 text-brand-400' : 'bg-amber-500/20 text-amber-400'} flex items-center justify-center`}>
+                              <MaterialIcon name="info" className="text-sm" />
+                            </div>
+                            <h3 className="text-lg font-bold text-white uppercase tracking-widest">Basic Information</h3>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <InputField label="Anniversary / කීවෙනි වරටද (e.g. 3)" type="number" value={invitationEventType === 'vesak' ? vesakSettings.anniversary : posonSettings.anniversary} onChange={e => invitationEventType === 'vesak' ? setVesakSettings({...vesakSettings, anniversary: e.target.value}) : setPosonSettings({...posonSettings, anniversary: e.target.value})} required />
+                            <InputField label="Organizers / සාමාජිකයින් (e.g. දිල්නුක, ඉමේෂ්)" type="text" value={invitationEventType === 'vesak' ? vesakSettings.members : posonSettings.members} onChange={e => invitationEventType === 'vesak' ? setVesakSettings({...vesakSettings, members: e.target.value}) : setPosonSettings({...posonSettings, members: e.target.value})} required />
+                          </div>
+                          <InputField label="Description / ආරාධනා පිළිබඳ විස්තරය" type="textarea" value={invitationEventType === 'vesak' ? vesakSettings.description : posonSettings.description} onChange={e => invitationEventType === 'vesak' ? setVesakSettings({...vesakSettings, description: e.target.value}) : setPosonSettings({...posonSettings, description: e.target.value})} required />
+                        </div>
+
+                        {/* Section 2: Schedule & Map */}
+                        <div className="glass-card p-6 md:p-8 rounded-[2rem] border border-white/5 space-y-6">
+                          <div className="flex items-center gap-3 mb-6">
+                            <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center">
+                              <MaterialIcon name="schedule" className="text-sm" />
+                            </div>
+                            <h3 className="text-lg font-bold text-white uppercase tracking-widest">Schedule & Location</h3>
+                          </div>
+
+                          <InputField label="Exhibition Dates / ප්‍රදර්ශනය කරන දිනයන් (e.g. 2026-05-30, 2026-05-31)" type="text" value={invitationEventType === 'vesak' ? vesakSettings.dates : posonSettings.dates} onChange={e => invitationEventType === 'vesak' ? setVesakSettings({...vesakSettings, dates: e.target.value}) : setPosonSettings({...posonSettings, dates: e.target.value})} required />
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <InputField label="Start Time / ආරම්භක වේලාව" type="time" value={invitationEventType === 'vesak' ? vesakSettings.time_start : posonSettings.time_start} onChange={e => invitationEventType === 'vesak' ? setVesakSettings({...vesakSettings, time_start: e.target.value}) : setPosonSettings({...posonSettings, time_start: e.target.value})} required />
+                             <InputField label="End Time / අවසන් වන වේලාව" type="time" value={invitationEventType === 'vesak' ? vesakSettings.time_end : posonSettings.time_end} onChange={e => invitationEventType === 'vesak' ? setVesakSettings({...vesakSettings, time_end: e.target.value}) : setPosonSettings({...posonSettings, time_end: e.target.value})} required />
+                          </div>
+                          <InputField label="Google Map Link (iframe src url)" type="text" value={invitationEventType === 'vesak' ? vesakSettings.map_link : posonSettings.map_link} onChange={e => invitationEventType === 'vesak' ? setVesakSettings({...vesakSettings, map_link: e.target.value}) : setPosonSettings({...posonSettings, map_link: e.target.value})} required />
+                        </div>
+                        
+                        {/* Section 3: Gallery */}
+                        <div className="glass-card p-6 md:p-8 rounded-[2rem] border border-white/5 space-y-6">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-pink-500/20 text-pink-400 flex items-center justify-center">
+                                <MaterialIcon name="photo_library" className="text-sm" />
+                              </div>
+                              <h3 className="text-lg font-bold text-white uppercase tracking-widest">Gallery Items</h3>
+                            </div>
+                            
+                            <div className="flex gap-3">
+                               <button type="button" onClick={handleAddGalleryLink} className="bg-pink-500/10 text-pink-400 border border-pink-500/30 hover:bg-pink-500/20 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"><MaterialIcon name="link" className="text-sm" /> Add Link</button>
+                               <label className="bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5">
+                                 <MaterialIcon name="upload" className="text-sm" /> Upload Image
+                                 <input type="file" accept="image/*" className="hidden" onChange={handleGalleryUpload} />
+                               </label>
+                            </div>
+                          </div>
+
+                          <div className="space-y-3 bg-slate-900/30 p-4 rounded-2xl border border-white/5">
+                            {((invitationEventType === 'vesak' ? vesakSettings.gallery_links : posonSettings.gallery_links) || []).map((item, idx) => (
+                              <div key={idx} className="flex items-center justify-between bg-slate-900/80 p-4 rounded-xl border border-white/5 hover:border-white/10 transition-all">
+                                <div className="flex items-center gap-4 truncate">
+                                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${item.type === 'image' ? 'bg-blue-500/10 text-blue-400' : 'bg-pink-500/10 text-pink-400'}`}>
+                                    <MaterialIcon name={item.type === 'image' ? 'image' : 'link'} />
+                                  </div>
+                                  <div className="truncate">
+                                    <p className="text-sm text-white font-bold truncate">{item.title}</p>
+                                    <a href={item.url} target="_blank" className="text-[11px] text-slate-400 hover:text-brand-400 transition-all truncate block mt-0.5">{item.url}</a>
+                                  </div>
+                                </div>
+                                <button type="button" onClick={() => handleRemoveGalleryItem(idx)} className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl shrink-0 transition-all">
+                                  <MaterialIcon name="delete" />
+                                </button>
+                              </div>
+                            ))}
+                            {((invitationEventType === 'vesak' ? vesakSettings.gallery_links : posonSettings.gallery_links) || []).length === 0 && (
+                              <div className="py-10 flex flex-col items-center justify-center text-slate-500">
+                                <MaterialIcon name="image_not_supported" className="text-4xl mb-2 opacity-50" />
+                                <p className="text-sm font-medium">No gallery items added yet.</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Action Bar */}
+                        <div className="flex gap-4 pt-6 sticky bottom-4 z-50">
+                          <button type="submit" disabled={actionLoading} className="w-full bg-brand-600 hover:bg-brand-500 text-white font-black uppercase tracking-widest py-5 rounded-2xl transition-all shadow-[0_15px_30px_rgba(34,197,94,0.3)] hover:shadow-[0_20px_40px_rgba(34,197,94,0.4)] hover:-translate-y-1 disabled:opacity-50 flex items-center justify-center gap-2">
+                            {actionLoading ? 'Saving...' : 'Save Settings Only'}
+                          </button>
+                        </div>
+                      </form>
+                    </>
+                  )}
+                </div>
+              )}
           </div>
           </main>
-             <footer className="lg:hidden fixed bottom-0 left-0 right-0 glass-m3 border-t border-white/5 z-50 flex justify-between items-center px-2 pt-3 pb-[max(env(safe-area-inset-bottom),_1rem)] overflow-x-auto no-scrollbar">
+             <footer className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-950/60 backdrop-blur-3xl border-t border-white/5 z-50 flex justify-between items-center px-2 pt-3 pb-[max(env(safe-area-inset-bottom),_1rem)] overflow-x-auto no-scrollbar">
                 {[
+                  { id: 'dashboard', icon: 'dashboard', label: 'Dashboard' },
                   { id: 'incomes', icon: 'payments', label: 'Incomes' },
                   { id: 'expenses', icon: 'account_balance_wallet', label: 'Expenses' },
                   { id: 'reports', icon: 'assessment', label: 'Reports' },
                   { id: 'users', icon: 'group', label: 'Users' },
-                  { id: 'project_settings', icon: 'settings', label: 'Settings' }
-                ].map(item => (
-                  <button 
-                    key={item.id}
-                    onClick={() => setActiveTab(item.id)}
-                    className={`flex flex-col items-center gap-1 min-w-[70px] py-1 transition-all duration-300 ${activeTab === item.id ? 'text-m3-primary' : 'text-m3-outline'}`}
-                  >
-                    <div className={`w-12 h-8 rounded-full flex items-center justify-center transition-all ${activeTab === item.id ? 'bg-m3-secondaryContainer text-m3-onSecondaryContainer' : ''}`}>
-                      <MaterialIcon name={item.icon} className={activeTab === item.id ? 'FILL' : ''} />
-                    </div>
-                    <span className="text-[10px] font-bold tracking-wider">{item.label}</span>
-                  </button>
-                ))}
+                  { id: 'shares', icon: 'pie_chart', label: 'Shares' },
+                  { id: 'project_settings', icon: 'settings', label: 'Settings' },
+                  { id: 'invitations', icon: 'festival', label: 'Invitations' }
+                ].map(item => {
+                  const isActive = activeTab === item.id || 
+                    (item.id === 'incomes' && ['cash_incomes', 'goods_incomes', 'main_donors', 'regular_donors'].includes(activeTab));
+
+                  return (
+                    <button 
+                      key={item.id}
+                      onClick={() => setActiveTab(item.id)}
+                      className="flex flex-col items-center gap-1 flex-1 py-1 transition-all relative group"
+                    >
+                      <div className="relative w-14 h-8 flex items-center justify-center rounded-full overflow-hidden">
+                        {/* Active indicator pill */}
+                        <div className={`absolute inset-0 bg-brand-500/25 rounded-full transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isActive ? 'scale-100 opacity-100' : 'scale-x-0 opacity-0 group-hover:scale-x-75 group-hover:opacity-50'}`}></div>
+                        <MaterialIcon name={item.icon} className={`relative z-10 text-xl transition-transform duration-300 ${isActive ? 'text-brand-400 scale-110' : 'text-slate-400'}`} />
+                      </div>
+                      <span className={`text-[9px] font-bold tracking-wider transition-colors duration-300 ${isActive ? 'text-brand-400 font-extrabold' : 'text-slate-500'}`}>{item.label}</span>
+                    </button>
+                  );
+                })}
              </footer>
         
 
@@ -2082,14 +3148,15 @@
                   
                   <InputField label="Status" type="select" options={['Received Today', 'Promised']} value={editIncome.status} onChange={e => setEditIncome({...editIncome, status: e.target.value})} />
                   <InputField label="Reported By" value={editIncome.reported_by} onChange={e => setEditIncome({...editIncome, reported_by: e.target.value})} />
+                  <InputField label="Event Type / උත්සවය" type="select" options={['vesak', 'poson']} value={editIncome.event_type || 'vesak'} onChange={e => setEditIncome({...editIncome, event_type: e.target.value})} />
                   
                   <div className="md:col-span-2">
                     <InputField label="Description / Notes" type="textarea" value={editIncome.description} onChange={e => setEditIncome({...editIncome, description: e.target.value})} />
                   </div>
                 </div>
                 <div className="flex gap-3 mt-4">
-                  <button type="button" onClick={() => setEditIncome(null)} className="m3-button m3-button-tonal flex-1 h-12 m3-button m3-button-tonal">Cancel</button>
-                  <button type="submit" disabled={actionLoading} className="m3-button m3-button-filled magnetic-button flex-1 h-12 disabled:opacity-50 m3-button m3-button-filled magnetic-button">Save Changes</button>
+                  <button type="button" onClick={() => setEditIncome(null)} className="m3-button m3-button-tonal flex-1 h-12">Cancel</button>
+                  <button type="submit" disabled={actionLoading} className="m3-button m3-button-filled magnetic-button flex-1 h-12 disabled:opacity-50">Save Changes</button>
                 </div>
               </form>
             </Modal>
@@ -2107,12 +3174,15 @@
                   <InputField label="Amount Taken" type="number" value={editExpense.amount_taken} onChange={e => setEditExpense({...editExpense, amount_taken: e.target.value})} prefix="Rs." />
                   <InputField label="Date" type="date" value={editExpense.date} onChange={e => setEditExpense({...editExpense, date: e.target.value})} />
                   <InputField label="Time" type="time" value={editExpense.time} onChange={e => setEditExpense({...editExpense, time: e.target.value})} />
+                  <div className="md:col-span-2">
+                    <InputField label="Event Type / උත්සවය" type="select" options={['vesak', 'poson']} value={editExpense.event_type || 'vesak'} onChange={e => setEditExpense({...editExpense, event_type: e.target.value})} />
+                  </div>
                   <div className="md:col-span-2 mt-2">
                     <label className="text-sm font-medium text-slate-300 block mb-2">Receipt / රිසිට් පත</label>
                     <div className="flex items-center gap-4">
                       {editExpense.receipt_url ? (
                         <div className="relative group">
-                          <img src={editExpense.receipt_url} className="w-20 h-20 object-cover rounded-lg border border-slate-700" />
+                          <SafeImage src={editExpense.receipt_url} className="w-20 h-20 object-cover rounded-lg border border-slate-700" alt="Receipt" iconClassName="text-xl" />
                           <button type="button" onClick={() => window.open(editExpense.receipt_url, '_blank')} className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center rounded-lg">
                             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                           </button>
@@ -2131,7 +3201,7 @@
                   </div>
                 </div>
                 <div className="flex gap-3 mt-6">
-                  <button type="button" onClick={() => setEditExpense(null)} className="m3-button m3-button-tonal flex-1 h-12 m3-button m3-button-tonal">Cancel</button>
+                  <button type="button" onClick={() => setEditExpense(null)} className="m3-button m3-button-tonal flex-1 h-12">Cancel</button>
                   <button type="submit" disabled={actionLoading} className="m3-button m3-button-filled !bg-red-600 hover:!bg-red-500 !text-white magnetic-button flex-1 h-12 disabled:opacity-50">Save Changes</button>
                 </div>
               </form>
@@ -2145,7 +3215,7 @@
                   <div className="relative group">
                     <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-brand-500/30 shadow-[0_0_20px_rgba(34,197,94,0.2)] bg-slate-800">
                       {editUser.avatar_url ? (
-                        <img src={editUser.avatar_url} className="w-full h-full object-cover" alt="Avatar" />
+                        <SafeImage src={editUser.avatar_url} className="w-full h-full object-cover" alt="Avatar" iconClassName="text-2xl" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-slate-600">
                           <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
@@ -2287,7 +3357,7 @@
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input type="checkbox" checked={editUser.income_access} onChange={e => setEditUser({...editUser, income_access: e.target.checked})} className="sr-only peer" />
-                          <div className="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-brand-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                          <div className="w-12 h-7 bg-slate-950/40 border border-slate-800 rounded-full peer transition-all duration-300 peer-checked:bg-brand-500/20 peer-checked:border-brand-500 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5 peer-checked:after:bg-brand-400"></div>
                         </label>
                       </div>
                       <div className="flex items-center justify-between bg-slate-900/50 p-3 rounded-lg border border-slate-800">
@@ -2297,7 +3367,7 @@
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input type="checkbox" checked={editUser.expense_access} onChange={e => setEditUser({...editUser, expense_access: e.target.checked})} className="sr-only peer" />
-                          <div className="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-brand-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                          <div className="w-12 h-7 bg-slate-950/40 border border-slate-800 rounded-full peer transition-all duration-300 peer-checked:bg-brand-500/20 peer-checked:border-brand-500 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5 peer-checked:after:bg-brand-400"></div>
                         </label>
                       </div>
                       <div className="flex items-center justify-between bg-slate-900/50 p-3 rounded-lg border border-slate-800">
@@ -2307,15 +3377,15 @@
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input type="checkbox" checked={editUser.pledge_access} onChange={e => setEditUser({...editUser, pledge_access: e.target.checked})} className="sr-only peer" />
-                          <div className="w-9 h-5 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-brand-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                          <div className="w-12 h-7 bg-slate-950/40 border border-slate-800 rounded-full peer transition-all duration-300 peer-checked:bg-brand-500/20 peer-checked:border-brand-500 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5 peer-checked:after:bg-brand-400"></div>
                         </label>
                       </div>
                     </div>
                   </div>
                 </div>
                 <div className="flex gap-3 mt-4">
-                  <button type="button" onClick={() => setEditUser(null)} className="m3-button m3-button-tonal flex-1 h-12 m3-button m3-button-tonal">Cancel</button>
-                  <button type="submit" disabled={actionLoading} className="m3-button m3-button-filled magnetic-button flex-1 h-12 disabled:opacity-50 m3-button m3-button-filled magnetic-button">Save Details</button>
+                  <button type="button" onClick={() => setEditUser(null)} className="m3-button m3-button-tonal flex-1 h-12">Cancel</button>
+                  <button type="submit" disabled={actionLoading} className="m3-button m3-button-filled magnetic-button flex-1 h-12 disabled:opacity-50">Save Details</button>
                 </div>
               </form>
             </Modal>
@@ -2376,7 +3446,7 @@
                   <p className="text-[10px] text-slate-400">Note: New users will be forced to change this temporary password upon their first login. Since they are added here, they will instantly appear as selectable Main Donors and Withdrawers.</p>
                 </div>
                 <div className="flex gap-3 mt-4">
-                  <button type="button" onClick={() => setAddUserModal(false)} className="m3-button m3-button-tonal flex-1 h-12 m3-button m3-button-tonal">Cancel</button>
+                  <button type="button" onClick={() => setAddUserModal(false)} className="m3-button m3-button-tonal flex-1 h-12">Cancel</button>
                   <button type="submit" disabled={actionLoading} className="m3-button m3-button-filled magnetic-button w-full sm:w-auto shadow-[0_0_15px_rgba(34,197,94,0.3)]">Create User</button>
                 </div>
               </form>

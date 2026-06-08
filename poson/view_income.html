@@ -8,9 +8,9 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="theme-color" content="#020617" />
-    <link rel="apple-touch-icon" href="logo.png" />
-    <link rel="icon" href="logo.png" type="image/png" />
-    <title>Vesak Lantern Project - Donation Portal</title>
+    <link rel="apple-touch-icon" href="../poson_logo.png" />
+    <link rel="icon" href="../poson_logo.png" type="image/png" />
+    <title>Poson Festival 2026 - Donation Portal</title>
 
     <!-- Material Symbols Rounded -->
     <link rel="stylesheet"
@@ -28,15 +28,15 @@
                 extend: {
                     colors: {
                         brand: {
-                            400: '#4ade80',
-                            500: '#22c55e',
-                            600: '#16a34a',
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
                         },
                         m3: {
-                            primary: '#22c55e',
-                            onPrimary: '#022c15',
-                            primaryContainer: '#14532d',
-                            onPrimaryContainer: '#86efac',
+                            primary: '#f59e0b',
+                            onPrimary: '#451a03',
+                            primaryContainer: '#78350f',
+                            onPrimaryContainer: '#fde68a',
                             surface: '#020617',
                             onSurface: '#f8fafc',
                         }
@@ -58,9 +58,9 @@
 
     <style>
         :root {
-            --brand-400: #4ade80;
-            --brand-500: #22c55e;
-            --brand-600: #16a34a;
+            --brand-400: #fbbf24;
+            --brand-500: #f59e0b;
+            --brand-600: #d97706;
         }
 
         body {
@@ -119,7 +119,7 @@
             top: -50%;
             left: -50%;
             background-image:
-                radial-gradient(circle at 20% 30%, rgba(34, 197, 94, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 20% 30%, rgba(245, 158, 11, 0.08) 0%, transparent 40%),
                 radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.05) 0%, transparent 40%),
                 radial-gradient(circle at 50% 20%, rgba(59, 130, 246, 0.03) 0%, transparent 40%);
             animation: flow 25s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
@@ -195,7 +195,7 @@
         .delay-500 { animation-delay: 500ms; }
 
         .neon-text {
-            text-shadow: 0 0 10px rgba(34, 197, 94, 0.5), 0 0 20px rgba(34, 197, 94, 0.3);
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.5), 0 0 20px rgba(245, 158, 11, 0.3);
         }
 
         .shimmer-sweep {
@@ -218,7 +218,7 @@
             border-radius: 50%;
             position: relative;
             padding: 3px;
-            background: conic-gradient(from 0deg, transparent, #22c55e);
+            background: conic-gradient(from 0deg, transparent, #f59e0b);
             animation: rotate 1s linear infinite;
         }
 
@@ -227,7 +227,7 @@
             position: absolute;
             inset: 0;
             border-radius: 50%;
-            background: conic-gradient(from 0deg, transparent, transparent, transparent, #22c55e);
+            background: conic-gradient(from 0deg, transparent, transparent, transparent, #f59e0b);
             filter: blur(10px);
         }
 
@@ -278,7 +278,7 @@
                 background: rgba(15, 23, 42, 0.6) !important;
                 border-radius: 24px !important;
                 border: 1px solid rgba(255, 255, 255, 0.05) !important;
-                border-left: 4px solid var(--border-color, #10b981) !important;
+                border-left: 4px solid var(--border-color, #f59e0b) !important;
                 gap: 4px 12px;
             }
 
@@ -291,7 +291,7 @@
             .mob-icon-cell {
                 grid-area: icon;
                 align-self: start;
-                pt-1;
+                padding-top: 4px;
             }
 
             .mob-info-cell {
@@ -312,25 +312,23 @@
 
         /* Maintenance Mode Styles */
         .maintenance-container {
-            background: radial-gradient(circle at 50% 50%, rgba(34, 197, 94, 0.05) 0%, transparent 70%);
+            background: radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.05) 0%, transparent 70%);
         }
 
         .maintenance-icon {
-            filter: drop-shadow(0 0 30px rgba(34, 197, 94, 0.3));
+            filter: drop-shadow(0 0 30px rgba(245, 158, 11, 0.3));
             animation: maintenance-float 4s ease-in-out infinite;
         }
 
         @keyframes maintenance-float {
-
-            0%,
-            100% {
+            0%, 100% {
                 transform: translateY(0) scale(1);
-                filter: drop-shadow(0 0 20px rgba(34, 197, 94, 0.2));
+                filter: drop-shadow(0 0 20px rgba(245, 158, 11, 0.2));
             }
 
             50% {
                 transform: translateY(-15px) scale(1.05);
-                filter: drop-shadow(0 0 40px rgba(34, 197, 94, 0.4));
+                filter: drop-shadow(0 0 40px rgba(245, 158, 11, 0.4));
             }
         }
 
@@ -392,21 +390,21 @@
                 canvas.width = width;
                 canvas.height = height;
 
-                // Modern Premium Theme Palette (Indigo/Slate with Gold Accents)
+                // Modern Premium Theme Palette (Slate with Gold Accents for Poson)
                 const theme = {
                     background: '#FFFFFF',
                     surface: '#F8FAFC',
-                    primary: '#1E1B4B',     // Deep Indigo
-                    secondary: '#312E81',   // Vibrant Indigo
+                    primary: '#451A03',     // Deep Amber/Brown
+                    secondary: '#78350F',   // Amber
                     accent: '#D97706',      // Gold/Bronze accent
                     accentLight: '#FEF3C7', // Soft gold tint
                     textPrimary: '#0F172A', // Slate 900
                     textSecondary: '#475569', // Slate 600
                     textMuted: '#94A3B8',   // Slate 400
                     border: '#E2E8F0',      // Slate 200
-                    success: '#10B981',     // Emerald
-                    successLight: '#D1FAE5',
-                    watermark: '#F1F5F9'    // Extremely subtle watermark
+                    success: '#D97706',     // Amber
+                    successLight: '#FEF3C7',
+                    watermark: '#F1F5F9'    
                 };
 
                 // Helper function for rounded rectangles
@@ -428,15 +426,15 @@
                 const loadImages = () => {
                     const logo = new Image();
                     logo.crossOrigin = "anonymous";
-                    logo.src = 'logo.png';
+                    logo.src = '../poson_logo.png';
 
                     const verify = new Image();
                     verify.crossOrigin = "anonymous";
-                    verify.src = 've1rify.png';
+                    verify.src = '../ve1rify.png';
 
                     const dcIcon = new Image();
                     dcIcon.crossOrigin = "anonymous";
-                    dcIcon.src = 'dc.png';
+                    dcIcon.src = '../dc.png';
 
                     return Promise.all([
                         new Promise(r => { logo.onload = () => r(logo); logo.onerror = () => r(null); }),
@@ -450,7 +448,7 @@
                     ctx.fillStyle = theme.background;
                     ctx.fillRect(0, 0, width, height);
 
-                    // ========== WATERMARK (Subtle Lotus inspired) ==========
+                    // ========== WATERMARK (Subtle Stupa inspired) ==========
                     ctx.save();
                     ctx.globalAlpha = 0.04;
                     ctx.translate(width / 2, height / 2);
@@ -508,11 +506,11 @@
                     ctx.textAlign = "center";
                     ctx.font = `bold 28px sans-serif`;
                     ctx.fillStyle = theme.primary;
-                    ctx.fillText("VESAK LANTERN PROJECT 2026", width / 2, 175);
+                    ctx.fillText("POSON FESTIVAL 2026", width / 2, 175);
 
                     ctx.font = `500 14px sans-serif`;
                     ctx.fillStyle = theme.textSecondary;
-                    ctx.fillText("මහා වෙසක් කූඩු ව්‍යාපෘතිය - දික්හේනපුර", width / 2, 200);
+                    ctx.fillText("මහා පොසොන් උත්සවය - දික්හේනපුර", width / 2, 200);
 
                     ctx.beginPath();
                     ctx.moveTo(width / 2 - 150, 215);
@@ -537,7 +535,7 @@
                     ctx.font = `bold 13px monospace`;
                     ctx.fillStyle = theme.textSecondary;
                     ctx.textAlign = "left";
-                    ctx.fillText(`Receipt No: VLP/2026/${id}`, 70, 340);
+                    ctx.fillText(`Receipt No: PFP/2026/${id}`, 70, 340);
                     ctx.textAlign = "right";
                     ctx.fillText(`Date Issued: ${dateStr}`, width - 70, 340);
                     ctx.textAlign = "center";
@@ -679,7 +677,7 @@
 
                     ctx.font = `bold 11px sans-serif`;
                     ctx.fillStyle = theme.textMuted;
-                    ctx.fillText("This Dana is offered for the success of the Vesak Lantern Project and the happiness of all beings.", width / 2, height - 205);
+                    ctx.fillText("This Dana is offered for the success of the Poson Festival and the happiness of all beings.", width / 2, height - 205);
 
                     ctx.beginPath();
                     ctx.moveTo(50, height - 175);
@@ -693,7 +691,7 @@
                     ctx.fillText('071 615 5666 (Isara Dilnuka)  |  071 084 6810 (Imesh Nilhan)', width / 2, height - 150);
                     ctx.fillText('isaradilnuka2005@gmail.com  |  imeshnilhan21@gmail.com', width / 2, height - 130);
                     ctx.font = `500 10px sans-serif`;
-                    ctx.fillText('Near New Temple, Dikhenapura · Vesak Lantern Project 2026', width / 2, height - 110);
+                    ctx.fillText('Near New Temple, Dikhenapura · Poson Festival 2026', width / 2, height - 110);
                     ctx.fillText('This is a computer-generated receipt and requires no signature.', width / 2, height - 90);
 
                     ctx.font = `bold 10px monospace`;
@@ -782,7 +780,7 @@
                     <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5">
                         <div className="flex items-center gap-4">
                             <div className="w-16 h-16 bg-brand-500/10 rounded-[2rem] flex items-center justify-center p-3 shadow-2xl shadow-brand-500/20">
-                                <img src="logo.png" className="w-full h-full object-contain" alt="Logo" />
+                                <img src="../poson_logo.png" className="w-full h-full object-contain" alt="Logo" />
                             </div>
                             <div>
                                 <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight neon-text">Public Portal</h1>
@@ -958,75 +956,75 @@
                                                  <p className="text-sm text-slate-400 leading-relaxed pt-1">ඔබ ලබාදුන් පරිත්‍යාග වල විස්තර සහ රිසිට්පත් මෙතැනින් ලබාගත හැක.</p>
                                              </div>
 
-                                            <div className="space-y-4">
-                                                <div className="relative">
-                                                    <MaterialIcon name="phone" className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500" />
-                                                    <input
-                                                        type="tel"
-                                                        value={phoneSearch}
-                                                        onChange={e => { setPhoneSearch(e.target.value); setPhoneSearchResult(null); }}
-                                                        onKeyDown={e => e.key === 'Enter' && handlePhoneSearch()}
-                                                        placeholder="Phone Number / දුරකථන අංකය"
-                                                        className="w-full bg-slate-900/50 border border-slate-700/50 text-white rounded-2xl pl-14 pr-6 py-5 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all font-bold tracking-wide"
-                                                    />
-                                                </div>
-                                                <button onClick={handlePhoneSearch} className="w-full py-5 bg-brand-600 hover:bg-brand-500 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl transition shadow-xl shadow-brand-500/20 active:scale-95 shimmer-bg flex flex-col items-center justify-center gap-1">
-                                                    <span>Search Records</span>
-                                                    <span className="text-[9px] opacity-70">වාර්තා සොයන්න</span>
-                                                </button>
-                                            </div>
+                                             <div className="space-y-4">
+                                                 <div className="relative">
+                                                     <MaterialIcon name="phone" className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500" />
+                                                     <input
+                                                         type="tel"
+                                                         value={phoneSearch}
+                                                         onChange={e => { setPhoneSearch(e.target.value); setPhoneSearchResult(null); }}
+                                                         onKeyDown={e => e.key === 'Enter' && handlePhoneSearch()}
+                                                         placeholder="Phone Number / දුරකථන අංකය"
+                                                         className="w-full bg-slate-900/50 border border-slate-700/50 text-white rounded-2xl pl-14 pr-6 py-5 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all font-bold tracking-wide"
+                                                     />
+                                                 </div>
+                                                 <button onClick={handlePhoneSearch} className="w-full py-5 bg-brand-600 hover:bg-brand-500 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl transition shadow-xl shadow-brand-500/20 active:scale-95 shimmer-bg flex flex-col items-center justify-center gap-1">
+                                                     <span>Search Records</span>
+                                                     <span className="text-[9px] opacity-70">වාර්තා සොයන්න</span>
+                                                 </button>
+                                             </div>
 
-                                            {phoneSearchResult === 'not_found' && (
-                                                <div className="p-5 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-start gap-4 animate-fade-in">
-                                                    <div className="w-10 h-10 rounded-xl bg-red-500/20 text-red-400 flex items-center justify-center shrink-0">
-                                                        <MaterialIcon name="error" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-red-400 text-sm font-black uppercase tracking-tight">No Records Found / වාර්තා හමු නොවීය</p>
-                                                        <p className="text-red-300/60 text-xs mt-1">මෙම අංකය සඳහා කිසිදු වාර්තාවක් හමු නොවීය. කරුණාකර අංකය පරීක්ෂා කරන්න.</p>
-                                                    </div>
-                                                </div>
-                                            )}
+                                             {phoneSearchResult === 'not_found' && (
+                                                 <div className="p-5 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-start gap-4 animate-fade-in">
+                                                     <div className="w-10 h-10 rounded-xl bg-red-500/20 text-red-400 flex items-center justify-center shrink-0">
+                                                         <MaterialIcon name="error" />
+                                                     </div>
+                                                     <div>
+                                                         <p className="text-red-400 text-sm font-black uppercase tracking-tight">No Records Found / වාර්තා හමු නොවීය</p>
+                                                         <p className="text-red-300/60 text-xs mt-1">මෙම අංකය සඳහා කිසිදු වාර්තාවක් හමු නොවීය. කරුණාකර අංකය පරීක්ෂා කරන්න.</p>
+                                                     </div>
+                                                 </div>
+                                             )}
 
-                                            {phoneSearchResult === 'found' && (
-                                                <div className="space-y-4 animate-fade-in">
-                                                    <div className="flex items-center justify-between px-2">
-                                                        <p className="text-brand-400 font-black text-[10px] uppercase tracking-widest flex items-center gap-2">
-                                                            <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-ping"></span>
-                                                            {phoneMatches.length} Records Detected / වාර්තා හමු විය
-                                                        </p>
-                                                    </div>
-                                                    <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                                                        {phoneMatches.map(d => (
-                                                            <div key={d.id} className="p-5 bg-slate-900/60 rounded-3xl border border-white/5 flex justify-between items-center group hover:bg-white/5 hover:border-brand-500/30 transition-all">
-                                                                <div className="space-y-1">
-                                                                    <div className="text-[10px] text-slate-500 font-black uppercase tracking-tighter">{formatDate(d.date)}</div>
-                                                                    <div className="text-white font-black tracking-tight">{d.donation_type === 'Cash' ? formatCurrency(d.amount) : d.item_description}</div>
-                                                                </div>
-                                                                {d.status !== 'Promised' && (
-                                                                    <button onClick={() => { setReceiptModal(d); setVerifyStatus(null); setVerifyPhone(''); setReceiptCanvas(null); }} className="w-12 h-12 rounded-2xl bg-brand-500/10 text-brand-400 flex items-center justify-center hover:bg-brand-500 hover:text-white transition-all shadow-lg group-hover:scale-110">
-                                                                        <MaterialIcon name="arrow_forward" />
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
+                                             {phoneSearchResult === 'found' && (
+                                                 <div className="space-y-4 animate-fade-in">
+                                                     <div className="flex items-center justify-between px-2">
+                                                         <p className="text-brand-400 font-black text-[10px] uppercase tracking-widest flex items-center gap-2">
+                                                             <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-ping"></span>
+                                                             {phoneMatches.length} Records Detected / වාර්තා හමු විය
+                                                         </p>
+                                                     </div>
+                                                     <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                                         {phoneMatches.map(d => (
+                                                             <div key={d.id} className="p-5 bg-slate-900/60 rounded-3xl border border-white/5 flex justify-between items-center group hover:bg-white/5 hover:border-brand-500/30 transition-all">
+                                                                 <div className="space-y-1">
+                                                                     <div className="text-[10px] text-slate-500 font-black uppercase tracking-tighter">{formatDate(d.date)}</div>
+                                                                     <div className="text-white font-black tracking-tight">{d.donation_type === 'Cash' ? formatCurrency(d.amount) : d.item_description}</div>
+                                                                 </div>
+                                                                 {d.status !== 'Promised' && (
+                                                                     <button onClick={() => { setReceiptModal(d); setVerifyStatus(null); setVerifyPhone(''); setReceiptCanvas(null); }} className="w-12 h-12 rounded-2xl bg-brand-500/10 text-brand-400 flex items-center justify-center hover:bg-brand-500 hover:text-white transition-all shadow-lg group-hover:scale-110">
+                                                                         <MaterialIcon name="arrow_forward" />
+                                                                     </button>
+                                                                 )}
+                                                             </div>
+                                                         ))}
+                                                     </div>
+                                                 </div>
+                                             )}
+                                         </div>
+                                     </div>
 
-                                    {/* Info Card */}
-                                    <div className="p-8 bg-indigo-500/5 rounded-[2.5rem] border border-indigo-500/10">
-                                        <h4 className="text-indigo-300 font-black text-xs uppercase tracking-[0.2em] mb-4">Security Note / ආරක්ෂිත සටහන</h4>
-                                        <p className="text-indigo-200/60 text-xs leading-relaxed">
-                                            Your privacy is important. Each receipt access requires phone number verification to ensure that only the donor can download their official contribution statement.
-                                        </p>
-                                        <p className="text-indigo-400/40 text-[9px] font-bold mt-2 leading-relaxed">
-                                            ඔබගේ පෞද්ගලිකත්වය අපට ඉතා වැදගත් වේ. පරිත්‍යාගශීලියාට පමණක් තම නිල රිසිට්පත බාගත කළ හැකි බව සහතික කිරීම සඳහා සෑම රිසිට්පතකටම දුරකථන අංකය මගින් තහවුරු කිරීම අවශ්‍ය වේ.
-                                        </p>
-                                    </div>
-                                </div>
+                                     {/* Info Card */}
+                                     <div className="p-8 bg-indigo-500/5 rounded-[2.5rem] border border-indigo-500/10">
+                                         <h4 className="text-indigo-300 font-black text-xs uppercase tracking-[0.2em] mb-4">Security Note / ආරක්ෂිත සටහන</h4>
+                                         <p className="text-indigo-200/60 text-xs leading-relaxed">
+                                             Your privacy is important. Each receipt access requires phone number verification to ensure that only the donor can download their official contribution statement.
+                                         </p>
+                                         <p className="text-indigo-400/40 text-[9px] font-bold mt-2 leading-relaxed">
+                                             ඔබගේ පෞද්ගලිකත්වය අපට ඉතා වැදගත් වේ. පරිත්‍යාගශීලියාට පමණක් තම නිල රිසිට්පත බාගත කළ හැකි බව සහතික කිරීම සඳහා සෑම රිසිට්පතකටම දුරකථන අංකය මගින් තහවුරු කිරීම අවශ්‍ය වේ.
+                                         </p>
+                                     </div>
+                                 </div>
 
                                  {/* List Section */}
                                  <div className="lg:col-span-7 space-y-6 animate-fade-in delay-300">
@@ -1099,7 +1097,7 @@
                                                 <tbody className="divide-y divide-white/5">
                                                     {filtered.map(d => {
                                                         const cs = getCatStyle(d);
-                                                        const borderCol = d.status === 'Promised' ? '#eab308' : (d.donation_type === 'Goods' ? '#a855f7' : '#22c55e');
+                                                        const borderCol = d.status === 'Promised' ? '#eab308' : (d.donation_type === 'Goods' ? '#a855f7' : '#f59e0b');
                                                         return (
                                                             <tr key={d.id} className={`hover:bg-white/5 transition-all group border-l-4 ${cs.row}`} style={{ '--border-color': borderCol }}>
                                                                 <td className="px-8 py-6 md:table-cell hidden mob-icon-cell">
@@ -1144,9 +1142,9 @@
                                                 </tbody>
                                             </table>
                                         </div>
-                                    </div>
-                                </div>
-                            </>
+                                     </div>
+                                 </div>
+                             </>
                         )}
                     </div>
 
@@ -1156,8 +1154,8 @@
                             <p className="text-[8px] text-slate-700 font-bold uppercase tracking-widest">ඩිජිටල් විනිවිදභාවය තහවුරු කිරීමේ පද්ධතිය</p>
                         </div>
                         <div className="flex justify-center gap-6">
-                            <img src="logo.png" className="w-6 h-6 grayscale opacity-20" />
-                            <img src="ve1rify.png" className="w-6 h-6 grayscale opacity-20" />
+                            <img src="../poson_logo.png" className="w-6 h-6 grayscale opacity-20" />
+                            <img src="../ve1rify.png" className="w-6 h-6 grayscale opacity-20" />
                         </div>
                     </footer>
                 </div>
@@ -1176,7 +1174,7 @@
 
                         <div className="relative inline-block">
                             <div className="w-48 h-48 rounded-[3rem] bg-slate-900/50 border border-white/10 flex items-center justify-center maintenance-icon shadow-2xl backdrop-blur-3xl">
-                                <img src="logo.png" className="w-32 h-32 object-contain filter drop-shadow-[0_0_15px_rgba(34,197,94,0.4)]" alt="Logo" />
+                                <img src="../poson_logo.png" className="w-32 h-32 object-contain filter drop-shadow-[0_0_15px_rgba(245,158,11,0.4)]" alt="Logo" />
                                 <div className="absolute -top-4 -right-4 w-16 h-16 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 backdrop-blur-xl flex items-center justify-center gear-spin shadow-lg">
                                     <MaterialIcon name="settings" className="text-3xl text-indigo-400" />
                                 </div>
@@ -1200,7 +1198,7 @@
 
                         <div className="pt-8 flex flex-col items-center gap-6">
                             <div className="w-24 h-1 bg-gradient-to-r from-transparent via-brand-500/50 to-transparent rounded-full"></div>
-                            <p className="text-[10px] text-slate-600 font-black uppercase tracking-[0.5em]">Vesak Finance System • Offline State</p>
+                            <p className="text-[10px] text-slate-600 font-black uppercase tracking-[0.5em]">Poson Finance System • Offline State</p>
                         </div>
                     </div>
                 </div>
@@ -1218,7 +1216,7 @@
                         <div className="relative">
                             <div className="loader-ring">
                                 <div className="loader-inner">
-                                    <img src="logo.png" className="w-10 h-10 object-contain loader-logo-pulse" alt="Logo" />
+                                    <img src="../poson_logo.png" className="w-10 h-10 object-contain loader-logo-pulse" alt="Logo" />
                                 </div>
                             </div>
                             <div className="absolute -inset-4 border border-white/5 rounded-full"></div>
@@ -1227,7 +1225,7 @@
                         {/* Text Content */}
                         <div className="text-center space-y-4">
                             <div className="space-y-1">
-                                <h2 className="text-white text-2xl font-black tracking-tighter uppercase animate-fade-in">Vesak Finance</h2>
+                                <h2 className="text-white text-2xl font-black tracking-tighter uppercase animate-fade-in">Poson Finance</h2>
                                 <p className="text-brand-500 font-black text-[10px] tracking-[0.5em] uppercase animate-fade-in delay-100">Public Portal</p>
                             </div>
                             
@@ -1241,7 +1239,7 @@
 
                         {/* Bottom Branding */}
                         <div className="absolute bottom-[-100px] flex items-center gap-4 opacity-20">
-                            <img src="ve1rify.png" className="w-8 h-8 grayscale" />
+                            <img src="../ve1rify.png" className="w-8 h-8 grayscale" />
                             <div className="h-4 w-px bg-white/20"></div>
                             <p className="text-[8px] text-white font-black uppercase tracking-[0.3em]">BEYOND VERIFIED</p>
                         </div>
@@ -1262,7 +1260,7 @@
             const fetchInitialData = async () => {
                 try {
                     const [incRes, setRes] = await Promise.all([
-                        supabase.from('incomes').select('*').or('event_type.eq.vesak,event_type.is.null').order('created_at', { ascending: false }),
+                        supabase.from('incomes').select('*').eq('event_type', 'poson').order('created_at', { ascending: false }),
                         supabase.from('project_settings').select('*').maybeSingle()
                     ]);
 
@@ -1282,7 +1280,7 @@
                         <div className="flex flex-col items-center gap-8 animate-pulse">
                             <div className="w-16 h-16 border-[6px] border-brand-500/10 border-t-brand-500 rounded-full animate-spin shadow-2xl shadow-brand-500/20"></div>
                             <div className="space-y-2 text-center">
-                                <p className="text-white font-black uppercase tracking-[0.4em] text-xs">Vesak Finance System</p>
+                                <p className="text-white font-black uppercase tracking-[0.4em] text-xs">Poson Finance System</p>
                                 <p className="text-brand-500/60 font-bold uppercase tracking-[0.2em] text-[9px]">Initializing Public Portal...</p>
                             </div>
                         </div>

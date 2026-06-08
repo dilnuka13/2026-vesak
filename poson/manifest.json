@@ -1,0 +1,23 @@
+{
+  "name": "Poson Festival Finance",
+  "short_name": "Poson Finance",
+  "description": "Financial Management Dashboard for Poson Festival",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "icons": [
+    {
+      "src": "../poson_logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../poson_logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

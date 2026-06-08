@@ -174,10 +174,10 @@
       backdrop-filter: blur(40px) saturate(200%);
       -webkit-backdrop-filter: blur(40px) saturate(200%);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 
-        0 30px 60px rgba(0,0,0,0.4),
-        inset 0 1px 0 rgba(255,255,255,0.15),
-        inset 0 0 20px rgba(255,255,255,0.03);
+      box-shadow:
+        0 30px 60px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15),
+        inset 0 0 20px rgba(255, 255, 255, 0.03);
     }
 
     /* Tonal Palette Surfaces */
@@ -245,12 +245,12 @@
     .m3-button-filled {
       background: linear-gradient(135deg, var(--brand-400), var(--brand-600));
       color: #022c15;
-      box-shadow: 0 4px 14px rgba(34,197,94,0.3), inset 0 1px 0 rgba(255,255,255,0.3);
+      box-shadow: 0 4px 14px rgba(34, 197, 94, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
       border: none;
     }
 
     .m3-button-filled:hover {
-      box-shadow: 0 8px 24px rgba(34,197,94,0.5), 0 0 30px rgba(34,197,94,0.3), inset 0 1px 0 rgba(255,255,255,0.4);
+      box-shadow: 0 8px 24px rgba(34, 197, 94, 0.5), 0 0 30px rgba(34, 197, 94, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4);
       transform: translateY(-2px) scale(1.03);
     }
 
@@ -263,13 +263,13 @@
       background: rgba(15, 23, 42, 0.8);
       backdrop-filter: blur(20px);
       color: var(--brand-400);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.06);
     }
 
     .m3-button-elevated:hover {
       background: rgba(30, 41, 59, 0.9);
-      box-shadow: 0 8px 24px rgba(34,197,94,0.15), inset 0 1px 0 rgba(255,255,255,0.1);
+      box-shadow: 0 8px 24px rgba(34, 197, 94, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
       transform: translateY(-2px) scale(1.02);
     }
 
@@ -296,7 +296,7 @@
       -webkit-backdrop-filter: blur(30px) saturate(180%);
       border-radius: 28px;
       border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
       transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       transform-style: preserve-3d;
     }
@@ -304,10 +304,10 @@
     .m3-card-elevated:hover {
       background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.6));
       transform: translateY(-8px) scale(1.02) rotateX(2deg) rotateY(-2deg);
-      box-shadow: 
-        0 20px 40px rgba(0,0,0,0.5), 
-        0 0 60px rgba(34,197,94,0.1), 
-        inset 0 1px 0 rgba(255,255,255,0.15);
+      box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.5),
+        0 0 60px rgba(34, 197, 94, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
       border-color: rgba(34, 197, 94, 0.3);
     }
 
@@ -317,40 +317,98 @@
     }
 
     @keyframes fade-in {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     @keyframes scale-in {
-      from { opacity: 0; transform: scale(0.9); }
-      to { opacity: 1; transform: scale(1); }
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
     }
 
     @keyframes slide-right {
-      from { opacity: 0; transform: translateX(-30px); }
-      to { opacity: 1; transform: translateX(0); }
+      from {
+        opacity: 0;
+        transform: translateX(-30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
     }
 
     @keyframes slide-up {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     @keyframes shimmer-sweep {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(100%); }
+      0% {
+        transform: translateX(-100%);
+      }
+
+      100% {
+        transform: translateX(100%);
+      }
     }
 
-    .animate-fade-in { animation: fade-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-    .animate-scale-in { animation: scale-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-    .animate-slide-right { animation: slide-right 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-    .animate-slide-up { animation: slide-up 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+    .animate-fade-in {
+      animation: fade-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    }
 
-    .delay-100 { animation-delay: 100ms; }
-    .delay-200 { animation-delay: 200ms; }
-    .delay-300 { animation-delay: 300ms; }
-    .delay-500 { animation-delay: 500ms; }
-    .delay-700 { animation-delay: 700ms; }
+    .animate-scale-in {
+      animation: scale-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    }
+
+    .animate-slide-right {
+      animation: slide-right 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    }
+
+    .animate-slide-up {
+      animation: slide-up 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    }
+
+    .delay-100 {
+      animation-delay: 100ms;
+    }
+
+    .delay-200 {
+      animation-delay: 200ms;
+    }
+
+    .delay-300 {
+      animation-delay: 300ms;
+    }
+
+    .delay-500 {
+      animation-delay: 500ms;
+    }
+
+    .delay-700 {
+      animation-delay: 700ms;
+    }
 
     /* Premium Loader */
     .loader-ring {
@@ -383,8 +441,13 @@
     }
 
     @keyframes rotate {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     .loader-logo-pulse {
@@ -392,8 +455,17 @@
     }
 
     @keyframes logo-pulse {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.1); opacity: 0.8; }
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+      }
     }
 
     .luminous::before {
@@ -504,7 +576,9 @@
 <body
   class="min-h-screen text-slate-200 antialiased overflow-x-hidden selection:bg-m3-primary/30 selection:text-m3-onPrimaryContainer relative">
   <div class="neural-flow"></div>
-  <div class="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-500/10 blur-[150px] animate-pulse" style="animation-duration: 12s;"></div>
+  <div
+    class="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-500/10 blur-[150px] animate-pulse"
+    style="animation-duration: 12s;"></div>
 
   <div id="root"></div>
 
@@ -853,7 +927,7 @@
         body: dataRows,
         theme: 'grid',
         styles: { font: 'helvetica', fontSize: 9 },
-          headStyles: { fillColor: [34, 197, 94] }
+        headStyles: { fillColor: [34, 197, 94] }
       });
       doc.save(filename + ".pdf");
     };
@@ -904,7 +978,7 @@
           const logo = new Image();
           logo.crossOrigin = "anonymous";
           logo.src = 'logo.png';
-          
+
           const verify = new Image();
           verify.crossOrigin = "anonymous";
           verify.src = 've1rify.png';
@@ -928,7 +1002,7 @@
           // ========== WATERMARK (Subtle Lotus inspired) ==========
           ctx.save();
           ctx.globalAlpha = 0.04;
-          ctx.translate(width/2, height/2);
+          ctx.translate(width / 2, height / 2);
           for (let i = 0; i < 8; i++) {
             ctx.rotate(Math.PI / 4);
             ctx.beginPath();
@@ -950,20 +1024,20 @@
           ctx.strokeStyle = theme.accent;
           ctx.lineWidth = 2;
           ctx.strokeRect(25, 25, width - 50, height - 50);
-          
+
           roundedRect(35, 35, width - 70, height - 70, 16);
           ctx.strokeStyle = theme.primary;
           ctx.lineWidth = 3;
           ctx.stroke();
-          
+
           // Corner Dharma Wheels (Inside Frame)
           if (dcImg) {
             const dcSize = 45;
             const offset = 70;
-            ctx.drawImage(dcImg, offset - dcSize/2, offset - dcSize/2, dcSize, dcSize); // Top Left
-            ctx.drawImage(dcImg, width - offset - dcSize/2, offset - dcSize/2, dcSize, dcSize); // Top Right
-            ctx.drawImage(dcImg, offset - dcSize/2, height - offset - dcSize/2, dcSize, dcSize); // Bottom Left
-            ctx.drawImage(dcImg, width - offset - dcSize/2, height - offset - dcSize/2, dcSize, dcSize); // Bottom Right
+            ctx.drawImage(dcImg, offset - dcSize / 2, offset - dcSize / 2, dcSize, dcSize); // Top Left
+            ctx.drawImage(dcImg, width - offset - dcSize / 2, offset - dcSize / 2, dcSize, dcSize); // Top Right
+            ctx.drawImage(dcImg, offset - dcSize / 2, height - offset - dcSize / 2, dcSize, dcSize); // Bottom Left
+            ctx.drawImage(dcImg, width - offset - dcSize / 2, height - offset - dcSize / 2, dcSize, dcSize); // Bottom Right
           } else {
             // Fallback corner ornaments if dc.png fails
             const drawCornerOrnament = (x, y, rotation) => {
@@ -988,30 +1062,30 @@
 
           // ========== HEADER SECTION ==========
           ctx.beginPath();
-          ctx.arc(width/2, 110, 55, 0, Math.PI * 2);
+          ctx.arc(width / 2, 110, 55, 0, Math.PI * 2);
           ctx.fillStyle = theme.surface;
           ctx.fill();
           ctx.strokeStyle = theme.border;
           ctx.lineWidth = 1;
           ctx.stroke();
-          
+
           if (logoImg) {
             const logoSize = 80;
-            ctx.drawImage(logoImg, width/2 - logoSize/2, 70, logoSize, logoSize);
+            ctx.drawImage(logoImg, width / 2 - logoSize / 2, 70, logoSize, logoSize);
           }
-          
+
           ctx.textAlign = "center";
           ctx.font = `bold 28px sans-serif`;
           ctx.fillStyle = theme.primary;
-          ctx.fillText("VESAK LANTERN PROJECT 2026", width/2, 175);
-          
+          ctx.fillText("VESAK LANTERN PROJECT 2026", width / 2, 175);
+
           ctx.font = `500 14px sans-serif`;
           ctx.fillStyle = theme.textSecondary;
-          ctx.fillText("මහා වෙසක් කූඩු ව්‍යාපෘතිය - දික්හේනපුර", width/2, 200);
-          
+          ctx.fillText("මහා වෙසක් කූඩු ව්‍යාපෘතිය - දික්හේනපුර", width / 2, 200);
+
           ctx.beginPath();
-          ctx.moveTo(width/2 - 150, 215);
-          ctx.lineTo(width/2 + 150, 215);
+          ctx.moveTo(width / 2 - 150, 215);
+          ctx.lineTo(width / 2 + 150, 215);
           ctx.strokeStyle = theme.accent;
           ctx.lineWidth = 1.5;
           ctx.stroke();
@@ -1019,16 +1093,16 @@
           // ========== RECEIPT TITLE ==========
           ctx.font = `bold 32px sans-serif`;
           ctx.fillStyle = theme.primary;
-          ctx.fillText("OFFICIAL RECEIPT OF DONATION", width/2, 275);
-          
+          ctx.fillText("OFFICIAL RECEIPT OF DONATION", width / 2, 275);
+
           ctx.font = `500 13px monospace`;
           ctx.fillStyle = theme.textMuted;
-          ctx.fillText("බුදු සරණයි !", width/2, 300);
+          ctx.fillText("බුදු සරණයි !", width / 2, 300);
 
           // ========== RECEIPT ID & DATE ==========
           const id = getReceiptShortId(donation);
-          const dateStr = new Date(donation.date || Date.now()).toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' });
-          
+          const dateStr = new Date(donation.date || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+
           ctx.font = `bold 13px monospace`;
           ctx.fillStyle = theme.textSecondary;
           ctx.textAlign = "left";
@@ -1050,21 +1124,21 @@
           ctx.fill();
           ctx.strokeStyle = theme.border;
           ctx.stroke();
-          
+
           ctx.font = `bold 12px sans-serif`;
           ctx.fillStyle = theme.textMuted;
           ctx.textAlign = "left";
           ctx.fillText("DONOR INFORMATION", 70, 415);
-          
+
           ctx.font = `bold 22px sans-serif`;
           ctx.fillStyle = theme.textPrimary;
           ctx.fillText(donation.name || "Anonymous Donor", 70, 445);
-          
+
           ctx.font = `500 13px sans-serif`;
           ctx.fillStyle = theme.textSecondary;
           if (donation.phone_number) ctx.fillText(`Contact: ${donation.phone_number}`, 70, 475);
           ctx.fillText(`Reported By: ${donation.reported_by || '-'}`, 70, 495);
-          
+
           if (verifyImg) {
             const vSize = 30;
             ctx.drawImage(verifyImg, width - 180, 400, vSize, vSize);
@@ -1082,41 +1156,41 @@
           ctx.strokeStyle = theme.border;
           ctx.stroke();
           ctx.shadowColor = "transparent";
-          
+
           ctx.font = `bold 12px sans-serif`;
           ctx.fillStyle = theme.textMuted;
           ctx.fillText("CONTRIBUTION DETAILS", 70, 575);
-          
+
           let yOffset = 600;
           ctx.font = `bold 14px sans-serif`;
           ctx.fillStyle = theme.textSecondary;
           ctx.fillText("Description", 70, yOffset);
           ctx.fillText("Value / Amount", width - 200, yOffset);
-          
+
           ctx.beginPath();
           ctx.moveTo(70, yOffset + 12);
           ctx.lineTo(width - 70, yOffset + 12);
           ctx.strokeStyle = theme.border;
           ctx.stroke();
-          
+
           yOffset += 35;
           ctx.font = `bold 18px sans-serif`;
           ctx.fillStyle = theme.textPrimary;
           const desc = donation.donation_type === 'Cash' ? (donation.donor_category || 'Cash Contribution') : `${donation.item_description} (x${donation.quantity})`;
           ctx.fillText(desc, 70, yOffset);
-          
+
           ctx.font = `bold 22px sans-serif`;
           ctx.fillStyle = theme.primary;
           const amount = donation.donation_type === 'Cash' ? `LKR ${(Number(donation.amount) || 0).toLocaleString('en-LK')}` : 'GOODS';
           ctx.textAlign = "right";
           ctx.fillText(amount, width - 70, yOffset);
           ctx.textAlign = "left";
-          
+
           yOffset += 45;
           ctx.font = `500 12px sans-serif`;
           ctx.fillStyle = theme.textMuted;
           ctx.fillText(`Payment Method: ${donation.donation_type === 'Cash' ? 'Cash Payment' : 'Goods / In-kind'}`, 70, yOffset);
-          
+
           ctx.beginPath();
           roundedRect(width - 170, yOffset - 8, 100, 24, 12);
           ctx.fillStyle = theme.successLight;
@@ -1126,14 +1200,14 @@
           ctx.textAlign = "center";
           ctx.fillText("✓ RECEIVED", width - 120, yOffset + 8);
           ctx.textAlign = "left";
-          
+
           yOffset += 40;
           ctx.beginPath();
           ctx.moveTo(70, yOffset);
           ctx.lineTo(width - 70, yOffset);
           ctx.strokeStyle = theme.border;
           ctx.stroke();
-          
+
           yOffset += 25;
           ctx.font = `bold 14px sans-serif`;
           ctx.fillStyle = theme.textPrimary;
@@ -1166,38 +1240,38 @@
           ctx.fillStyle = theme.textMuted;
           ctx.fillText("OFFICIAL SEAL", 0, 28);
           ctx.restore();
-          
+
           // ========== FOOTER SECTION ==========
           ctx.font = `italic 14px serif`;
           ctx.fillStyle = theme.textSecondary;
-          ctx.fillText("“May the blessings of the Triple Gem be upon you.”", width/2, height - 230);
-          
+          ctx.fillText("“May the blessings of the Triple Gem be upon you.”", width / 2, height - 230);
+
           ctx.font = `bold 11px sans-serif`;
           ctx.fillStyle = theme.textMuted;
-          ctx.fillText("This Dana is offered for the success of the Vesak Lantern Project and the happiness of all beings.", width/2, height - 205);
-          
+          ctx.fillText("This Dana is offered for the success of the Vesak Lantern Project and the happiness of all beings.", width / 2, height - 205);
+
           ctx.beginPath();
           ctx.moveTo(50, height - 175);
           ctx.lineTo(width - 50, height - 175);
           ctx.strokeStyle = theme.border;
           ctx.stroke();
-          
+
           // Contact Details
           ctx.font = `bold 11px sans-serif`;
           ctx.fillStyle = theme.textSecondary;
-          ctx.fillText('071 615 5666 (Isara Dilnuka)  |  071 084 6810 (Imesh Nilhan)', width/2, height - 150);
-          ctx.fillText('isaradilnuka2005@gmail.com  |  imeshnilhan21@gmail.com', width/2, height - 130);
+          ctx.fillText('071 615 5666 (Isara Dilnuka)  |  071 084 6810 (Imesh Nilhan)', width / 2, height - 150);
+          ctx.fillText('isaradilnuka2005@gmail.com  |  imeshnilhan21@gmail.com', width / 2, height - 130);
           ctx.font = `500 10px sans-serif`;
-          ctx.fillText('Near New Temple, Dikhenapura · Vesak Lantern Project 2026', width/2, height - 110);
-          ctx.fillText('This is a computer-generated receipt and requires no signature.', width/2, height - 90);
-          
+          ctx.fillText('Near New Temple, Dikhenapura · Vesak Lantern Project 2026', width / 2, height - 110);
+          ctx.fillText('This is a computer-generated receipt and requires no signature.', width / 2, height - 90);
+
           ctx.font = `bold 10px monospace`;
           ctx.fillStyle = theme.textMuted;
           ctx.textAlign = "left";
           ctx.fillText(`TXN REF: ${id}`, 55, height - 45);
           ctx.textAlign = "right";
           ctx.fillText(`Generated: ${new Date().toLocaleTimeString()}`, width - 55, height - 45);
-          
+
           resolve(canvas);
         });
       });
@@ -2138,12 +2212,12 @@
       const [showDevices, setShowDevices] = useState(false);
       const [showSecurity, setShowSecurity] = useState(false);
 
-      const [pwdState, setPwdState] = useState({ 
+      const [pwdState, setPwdState] = useState({
         view: 'idle', // 'idle', 'verify', 'update'
-        old: '', 
-        new: '', 
-        confirm: '', 
-        loading: false, 
+        old: '',
+        new: '',
+        confirm: '',
+        loading: false,
         error: '',
         showOld: false,
         showNew: false,
@@ -2200,13 +2274,13 @@
         setPwdState(prev => ({ ...prev, loading: true, error: '' }));
         try {
           const hashedNew = await hashPassword(pwdState.new);
-          const { error } = await supabase.from('app_users').update({ 
+          const { error } = await supabase.from('app_users').update({
             password_hash: hashedNew,
-            is_temp_password: false 
+            is_temp_password: false
           }).eq('id', currentUser.id);
 
           if (error) throw error;
-          
+
           alert("Password updated successfully! / මුරපදය සාර්ථකව යාවත්කාලීන විය!");
           setPwdState({ view: 'idle', old: '', new: '', confirm: '', loading: false, error: '', showOld: false, showNew: false, showConfirm: false });
           // Update local storage to keep session valid
@@ -2503,7 +2577,7 @@
                           <span className="text-[10px] text-slate-400">මුරපදය වෙනස් කිරීම</span>
                         </div>
                       </div>
-                      <button 
+                      <button
                         onClick={() => setPwdState(prev => ({ ...prev, view: 'verify' }))}
                         className="px-4 py-2 bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-indigo-600/30 transition"
                       >Change</button>
@@ -2533,11 +2607,11 @@
                                 <p className="text-sm text-slate-300 font-medium">Verify Identity</p>
                                 <p className="text-[11px] text-slate-500">Please enter your current password to continue.</p>
                               </div>
-                              
+
                               <input type="text" name="username" value={currentUser.username} readOnly className="hidden" autoComplete="username" />
-                              
+
                               <div className="relative">
-                                <input 
+                                <input
                                   type={pwdState.showOld ? "text" : "password"}
                                   name="password"
                                   autoComplete="current-password"
@@ -2553,7 +2627,7 @@
                                 </button>
                               </div>
                               {pwdState.error && <p className="text-xs text-red-400 font-bold bg-red-400/10 p-3 rounded-xl border border-red-400/20 text-center">{pwdState.error}</p>}
-                              
+
                               <button type="submit" disabled={pwdState.loading} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-4 rounded-2xl text-xs uppercase tracking-[0.2em] transition shadow-lg shadow-indigo-500/20 disabled:opacity-50">
                                 {pwdState.loading ? 'Verifying...' : 'Continue to Update'}
                               </button>
@@ -2567,10 +2641,10 @@
                             return (
                               <form onSubmit={handleUpdatePassword} className="space-y-6 animate-fade-in">
                                 <input type="text" name="username" value={currentUser.username} readOnly className="hidden" autoComplete="username" />
-                                
+
                                 <div className="space-y-4">
                                   <div className="relative">
-                                    <input 
+                                    <input
                                       type={pwdState.showNew ? "text" : "password"}
                                       name="new-password"
                                       autoComplete="new-password"
@@ -2599,7 +2673,7 @@
                                   </div>
 
                                   <div className="relative">
-                                    <input 
+                                    <input
                                       type={pwdState.showConfirm ? "text" : "password"}
                                       name="confirm-password"
                                       autoComplete="new-password"
@@ -2636,8 +2710,8 @@
 
                                 {pwdState.error && <p className="text-xs text-red-400 font-bold bg-red-400/10 p-3 rounded-xl border border-red-400/20 text-center">{pwdState.error}</p>}
 
-                                <button 
-                                  type="submit" 
+                                <button
+                                  type="submit"
                                   disabled={pwdState.loading || strength < 5 || !checks.match}
                                   className="w-full bg-brand-600 hover:bg-brand-500 text-white font-black py-4 rounded-2xl text-xs uppercase tracking-[0.2em] transition shadow-lg shadow-brand-500/20 disabled:opacity-30"
                                 >
@@ -2784,11 +2858,11 @@
                         <div className="space-y-1.5">
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Phone Number</label>
                           <div className="relative">
-                            <input 
-                              type="text" 
-                              value={profileData.phone_number} 
-                              onChange={e => setProfileData({ ...profileData, phone_number: e.target.value })} 
-                              className="w-full bg-slate-900 border border-slate-700 text-white rounded-2xl p-4 pl-12 outline-none focus:border-brand-500 font-medium transition-all" 
+                            <input
+                              type="text"
+                              value={profileData.phone_number}
+                              onChange={e => setProfileData({ ...profileData, phone_number: e.target.value })}
+                              className="w-full bg-slate-900 border border-slate-700 text-white rounded-2xl p-4 pl-12 outline-none focus:border-brand-500 font-medium transition-all"
                               placeholder="Enter phone number"
                               autoFocus
                             />
@@ -2799,10 +2873,10 @@
                         <div className="space-y-1.5">
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Home Address</label>
                           <div className="relative">
-                            <textarea 
-                              value={profileData.address} 
-                              onChange={e => setProfileData({ ...profileData, address: e.target.value })} 
-                              className="w-full bg-slate-900 border border-slate-700 text-white rounded-2xl p-4 pl-12 outline-none focus:border-brand-500 font-medium transition-all h-32 resize-none leading-relaxed" 
+                            <textarea
+                              value={profileData.address}
+                              onChange={e => setProfileData({ ...profileData, address: e.target.value })}
+                              className="w-full bg-slate-900 border border-slate-700 text-white rounded-2xl p-4 pl-12 outline-none focus:border-brand-500 font-medium transition-all h-32 resize-none leading-relaxed"
                               placeholder="Enter your address"
                             ></textarea>
                             <MaterialIcon name="home" className="absolute left-4 top-6 text-slate-500" />
@@ -3273,13 +3347,13 @@
           {/* Public Portal Link Section */}
           <div className="glass-card rounded-[2.5rem] p-8 border border-white/10 relative overflow-hidden animate-fade-in delay-500 mt-6 group">
             <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/5 blur-[100px] rounded-full group-hover:bg-brand-500/10 transition-colors"></div>
-            
+
             <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
               {/* QR Code */}
               <div className="shrink-0 p-4 bg-white rounded-3xl shadow-2xl rotate-[-3deg] hover:rotate-0 transition-transform duration-500 group/qr relative">
-                <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.origin + window.location.pathname.replace('index.html', '').replace(/\/$/, '') + '/view_income.html')}`} 
-                  alt="QR Code" 
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.origin + window.location.pathname.replace('index.html', '').replace(/\/$/, '') + '/view_income.html')}`}
+                  alt="QR Code"
                   className="w-32 h-32 md:w-40 md:h-40"
                 />
                 <div className="absolute -bottom-2 -right-2 bg-brand-500 text-white p-2 rounded-xl shadow-lg scale-0 group-hover/qr:scale-100 transition-transform">
@@ -3298,16 +3372,16 @@
                 </div>
 
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
-                  <a 
-                    href="view_income.html" 
+                  <a
+                    href="view_income.html"
                     target="_blank"
                     className="px-8 py-4 bg-brand-600 hover:bg-brand-500 text-white font-black text-xs uppercase tracking-widest rounded-2xl transition shadow-xl shadow-brand-500/20 active:scale-95 flex items-center gap-2 group/btn"
                   >
                     <MaterialIcon name="open_in_new" className="text-sm group-hover/btn:rotate-12 transition-transform" />
                     Open Portal
                   </a>
-                  
-                  <button 
+
+                  <button
                     onClick={() => {
                       const url = window.location.origin + window.location.pathname.replace('index.html', '').replace(/\/$/, '') + '/view_income.html';
                       navigator.clipboard.writeText(url);
@@ -3626,7 +3700,7 @@
 
       const validIncomes = incomes.filter(i => {
         if (i.status !== 'Received Today' || i.donation_type !== 'Cash') return false;
-        
+
         const isEvent = ['Kuuduwa Open', 'Exhibition Box - Day 1', 'Exhibition Box - Day 2', 'Exhibition Box - Day 3', 'Exhibition Box - Day 4', 'Exhibition Box - Day 5'].includes(i.donor_category);
         if (eventOnly && !isEvent) return false;
         if (!eventOnly && isEvent) return false;
@@ -4016,7 +4090,8 @@
           const payload = {
             name: formData.name, date: formData.date, donation_type: formData.donation_type, description: formData.description, status: formData.status,
             address: formData.address || null, phone_number: formData.phone_number || null,
-            reported_by: currentUser.username
+            reported_by: currentUser.username,
+            event_type: 'vesak'
           };
           if (formData.donation_type === 'Cash') {
             payload.amount = parseFloat(formData.amount);
@@ -4062,17 +4137,17 @@
       const generateAIDescription = () => {
         const { name, amount, donation_type, item_description, donor_category, quantity } = formData;
         if (!name && !item_description) return;
-        
+
         const prefix = donor_category === 'Main Donor' ? 'ගෞරවනීය ප්‍රධාන ආධාරකරු ' : '';
         const ePrefix = donor_category === 'Main Donor' ? 'Honorable Main Donor ' : '';
         const donorName = name || "Anonymous";
-        
+
         const cashOpenings = [
           { s: `${prefix}${donorName} පින්වතා විසින්`, e: `By ${ePrefix}${donorName},` },
           { s: `ශාසනික අභිවෘද්ධිය පතන ${prefix}${donorName} විසින්`, e: `By ${ePrefix}${donorName}, for the prosperity of Sasana,` },
           { s: `මෙවර වෙසක් උත්සවය වෙනුවෙන් ${prefix}${donorName} පින්වතා විසින්`, e: `For this Vesak festival, by ${ePrefix}${donorName},` }
         ];
-        
+
         const cashBodies = [
           { s: ` රු. ${Number(amount).toLocaleString()} ක ආධාර මුදලක් පූජා කරන ලදී.`, e: ` a donation of Rs. ${Number(amount).toLocaleString()} was offered.` },
           { s: ` රු. ${Number(amount).toLocaleString()} ක මුදලක් වෙසක් කුඩුව සඳහා පරිත්‍යාග කරන ලදී.`, e: ` a sum of Rs. ${Number(amount).toLocaleString()} was donated for the lantern.` },
@@ -4088,26 +4163,26 @@
           { s: ` ${item_description} (x${quantity || 1}) පරිත්‍යාග කරන ලදී.`, e: ` ${item_description} (x${quantity || 1}) were donated.` },
           { s: ` වෙසක් කුඩුව සඳහා ${item_description} (x${quantity || 1}) ලබා දී සහයෝගය දැක්වූහ.`, e: ` provided ${item_description} (x${quantity || 1}) in support of the lantern.` }
         ];
-        
+
         const closings = [
           { s: " පින් අනුමෝදන් වේවා!", e: " May you be blessed!" },
           { s: " මෙම උතුම් පින්කම නිවන් මගට හේතු වේවා!", e: " May this noble deed lead to Nibbana!" },
           { s: " සියලු සම්පත් සම්පූර්ණ වේවා!", e: " May all your wishes be fulfilled!" }
         ];
-        
-        const op = donation_type === 'Cash' 
+
+        const op = donation_type === 'Cash'
           ? cashOpenings[Math.floor(Math.random() * cashOpenings.length)]
           : goodsOpenings[Math.floor(Math.random() * goodsOpenings.length)];
-          
+
         const bd = donation_type === 'Cash'
           ? cashBodies[Math.floor(Math.random() * cashBodies.length)]
           : goodsBodies[Math.floor(Math.random() * goodsBodies.length)];
-          
+
         const cl = closings[Math.floor(Math.random() * closings.length)];
-        
+
         const sText = `${op.s}${bd.s}${cl.s}`;
         const eText = `${op.e}${bd.e}${cl.e}`;
-        
+
         setFormData(prev => ({ ...prev, description: `${sText}\n\n${eText}` }));
       };
 
@@ -4175,12 +4250,12 @@
                 {['Kuuduwa Open', 'Exhibition Box - Day 1', 'Exhibition Box - Day 2', 'Exhibition Box - Day 3', 'Exhibition Box - Day 4', 'Exhibition Box - Day 5'].includes(formData.donor_category) && (
                   <div className="flex flex-col gap-1.5 mb-4 md:col-span-2">
                     <label className="text-sm font-medium text-slate-300">Select Event / උත්සවය තෝරන්න</label>
-                    <select 
+                    <select
                       value={formData.donor_category}
-                      onChange={(e) => setFormData({ 
-                        ...formData, 
-                        donor_category: e.target.value, 
-                        name: e.target.value.includes('Exhibition Box') ? e.target.value : '' 
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        donor_category: e.target.value,
+                        name: e.target.value.includes('Exhibition Box') ? e.target.value : ''
                       })}
                       className="bg-slate-900 border border-slate-700 text-slate-300 text-sm rounded-lg p-2.5 outline-none focus:border-brand-500"
                     >
@@ -4308,8 +4383,8 @@
                 <div className="md:col-span-2 relative group">
                   <div className="flex justify-between items-center mb-1.5">
                     <label className="text-sm font-medium text-slate-300">Notes / Description (සටහන් / විස්තර)</label>
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={generateAIDescription}
                       className="bg-white hover:bg-slate-100 px-4 py-2 rounded-2xl border border-slate-200 transition-all flex items-center justify-center shadow-2xl active:scale-95 group gap-2"
                       title="Generate with Gemini AI"
@@ -4317,9 +4392,9 @@
                       <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Google_Gemini_logo_2025.svg/330px-Google_Gemini_logo_2025.svg.png" className="h-5 object-contain group-hover:scale-105 transition-transform" />
                     </button>
                   </div>
-                  <textarea 
-                    name="description" 
-                    value={formData.description} 
+                  <textarea
+                    name="description"
+                    value={formData.description}
                     onChange={handleChange}
                     placeholder="Enter description or use suggestions below..."
                     className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-4 text-sm focus:border-brand-500 outline-none min-h-[120px] transition-all"
@@ -4409,7 +4484,7 @@
         if (!sessionId) return;
 
         const channel = supabase.channel(`remote-scan-${sessionId}`);
-        
+
         channel.on('broadcast', { event: 'receipt-uploading' }, () => {
           setRemoteUploading(true);
         });
@@ -4479,7 +4554,8 @@
             amount_taken: parseFloat(formData.amount_taken),
             withdrawer_name: finalWithdrawerName,
             receipt_url,
-            reported_by: currentUser?.username
+            reported_by: currentUser?.username,
+            event_type: 'vesak'
           };
 
           const { data: dbData, error: dbErr } = await supabase.from('expenses').insert([payload]).select();
@@ -4623,10 +4699,10 @@
                       <div className="absolute top-0 right-0 -mr-8 -mt-8 w-24 h-24 rounded-full blur-[30px] bg-brand-500/5 transition-all duration-300 group-hover:bg-brand-500/10"></div>
                       <span className="text-xs font-bold text-brand-400 uppercase tracking-wider mb-3 block">Method 1: Direct Upload</span>
                       <p className="text-xs text-slate-400 mb-4 leading-relaxed">Select a file directly from this device / මෙම උපාංගයෙන් ගොනුවක් තෝරන්න.</p>
-                      
-                      <input 
-                        type="file" 
-                        accept="image/*" 
+
+                      <input
+                        type="file"
+                        accept="image/*"
                         id="receipt-file-input"
                         disabled={!!remoteReceiptUrl}
                         onChange={(e) => {
@@ -4634,8 +4710,8 @@
                           if (e.target.files[0]) {
                             setRemoteReceiptUrl(null); // clear remote scan if local file chosen
                           }
-                        }} 
-                        className="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-brand-400 hover:file:bg-slate-700 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" 
+                        }}
+                        className="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-brand-400 hover:file:bg-slate-700 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                       />
                       {receiptFile && (
                         <div className="mt-3 flex items-center gap-2 text-xs text-brand-400 animate-fade-in font-bold">
@@ -4670,9 +4746,9 @@
                               <span>Synced Successfully!</span>
                             </div>
                             <p className="text-[10px] text-slate-400 truncate mt-0.5">රිසිට්පත සාර්ථකව සම්බන්ධ කරන ලදි!</p>
-                            <button 
-                              type="button" 
-                              onClick={() => setRemoteReceiptUrl(null)} 
+                            <button
+                              type="button"
+                              onClick={() => setRemoteReceiptUrl(null)}
                               className="text-[10px] text-red-400 hover:text-red-300 font-bold underline mt-1.5 block cursor-pointer"
                             >
                               Remove / ඉවත් කරන්න
@@ -4682,9 +4758,9 @@
                       ) : (
                         <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
                           <div className="bg-white p-2 rounded-2xl shadow-lg border border-slate-800 shrink-0">
-                            <img 
+                            <img
                               src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(`${window.location.origin}${window.location.pathname}?action=remote-scan&session=${sessionId}`)}`}
-                              alt="Scan to upload" 
+                              alt="Scan to upload"
                               className="w-20 h-20"
                             />
                           </div>
@@ -4750,7 +4826,7 @@
               const canvas = document.createElement('canvas');
               let width = img.width;
               let height = img.height;
-              
+
               const maxDim = 1000;
               if (width > maxDim || height > maxDim) {
                 if (width > height) {
@@ -4761,12 +4837,12 @@
                   height = maxDim;
                 }
               }
-              
+
               canvas.width = width;
               canvas.height = height;
               const ctx = canvas.getContext('2d');
               ctx.drawImage(img, 0, 0, width, height);
-              
+
               canvas.toBlob((blob) => {
                 if (blob) {
                   resolve(new File([blob], file.name || 'receipt.jpg', { type: 'image/jpeg' }));
@@ -4883,7 +4959,7 @@
                     රිසිට්පතෙහි පැහැදිලි ඡායාරූපයක් ගන්න. එය ස්වයංක්‍රීයව පරිගණකයට සම්බන්ධ වේ.
                   </p>
                 </div>
-                
+
                 <label className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 px-6 rounded-2xl transition cursor-pointer shadow-[0_10px_35px_rgba(16,185,129,0.3)] border border-emerald-500/20 active:scale-95 duration-150 text-sm">
                   <span className="material-symbols-rounded">camera_alt</span>
                   <span>Take Photo / ඡායාරූපයක් ගන්න</span>
@@ -4895,20 +4971,20 @@
             {status === 'reviewing' && (
               <div className="glass-card w-full border border-slate-800/80 rounded-3xl p-6 text-center flex flex-col items-center gap-6 animate-fade-in shadow-2xl">
                 <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">Review Captured Photo</span>
-                
+
                 <div className="w-full aspect-[3/4] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 relative shadow-inner">
                   <img src={localPreview} className="w-full h-full object-contain" />
                 </div>
 
                 <div className="flex gap-4 w-full">
-                  <button 
-                    onClick={handleReset} 
+                  <button
+                    onClick={handleReset}
                     className="flex-1 bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold py-3.5 px-4 rounded-xl border border-slate-800 transition active:scale-95 text-xs"
                   >
                     Retake / නැවත ගන්න
                   </button>
-                  <button 
-                    onClick={handleUpload} 
+                  <button
+                    onClick={handleUpload}
                     className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-4 rounded-xl border border-emerald-500/20 shadow-[0_5px_20px_rgba(16,185,129,0.2)] transition active:scale-95 text-xs"
                   >
                     Upload & Sync
@@ -4930,8 +5006,8 @@
                     {compressing ? 'Compressing Image...' : 'Uploading & Syncing...'}
                   </h2>
                   <p className="text-xs text-slate-400 leading-normal">
-                    {compressing 
-                      ? 'Reducing image size for instant transfer / රිසිට්පතෙහි ප්‍රමාණය අඩු කරමින් පවතී...' 
+                    {compressing
+                      ? 'Reducing image size for instant transfer / රිසිට්පතෙහි ප්‍රමාණය අඩු කරමින් පවතී...'
                       : 'Sending secure payload to PC screen / පරිගණකයට රිසිට්පත සම්බන්ධ කරමින් පවතී...'}
                   </p>
                 </div>
@@ -4955,8 +5031,8 @@
 
                 <div className="w-full h-px bg-slate-800"></div>
 
-                <button 
-                  onClick={handleReset} 
+                <button
+                  onClick={handleReset}
                   className="w-full bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white font-bold py-3.5 px-4 rounded-xl border border-slate-800 transition text-xs"
                 >
                   Scan Another Receipt / තවත් රිසිට්පතක්
@@ -4976,8 +5052,8 @@
                     An error occurred while uploading. Please ensure your device has internet access and try again.
                   </p>
                 </div>
-                <button 
-                  onClick={handleReset} 
+                <button
+                  onClick={handleReset}
                   className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3.5 px-4 rounded-xl transition text-xs shadow-lg active:scale-95"
                 >
                   Try Again / නැවත උත්සාහ කරන්න
@@ -5490,21 +5566,21 @@
                   const selectedUser = users.find(u => u.username === username);
                   const hasPasskeys = userPasskeys.length > 0;
 
-                    if (hasPasskeys && !usePasswordFallback) {
-                      return (
-                        <div className="animate-fade-in space-y-4">
-                          <div className="flex justify-center mb-2">
-                            {selectedUser.is_temp_password ? (
-                              <span className="px-3 py-1 bg-amber-500/10 text-amber-500 border border-amber-500/30 rounded-full text-[9px] font-bold uppercase tracking-wider flex items-center gap-1.5">
-                                <MaterialIcon name="warning" className="text-xs" /> Temporary Password
-                              </span>
-                            ) : (
-                              <span className="px-3 py-1 bg-brand-500/10 text-brand-400 border border-brand-500/30 rounded-full text-[9px] font-bold uppercase tracking-wider flex items-center gap-1.5">
-                                <MaterialIcon name="verified_user" className="text-xs" /> Secure Account
-                              </span>
-                            )}
-                          </div>
-                          <button type="button" onClick={handleFaceIdLogin} disabled={loading} className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold py-4 rounded-xl transition border border-slate-600 disabled:opacity-50 m3-button m3-button-tonal">
+                  if (hasPasskeys && !usePasswordFallback) {
+                    return (
+                      <div className="animate-fade-in space-y-4">
+                        <div className="flex justify-center mb-2">
+                          {selectedUser.is_temp_password ? (
+                            <span className="px-3 py-1 bg-amber-500/10 text-amber-500 border border-amber-500/30 rounded-full text-[9px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+                              <MaterialIcon name="warning" className="text-xs" /> Temporary Password
+                            </span>
+                          ) : (
+                            <span className="px-3 py-1 bg-brand-500/10 text-brand-400 border border-brand-500/30 rounded-full text-[9px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+                              <MaterialIcon name="verified_user" className="text-xs" /> Secure Account
+                            </span>
+                          )}
+                        </div>
+                        <button type="button" onClick={handleFaceIdLogin} disabled={loading} className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold py-4 rounded-xl transition border border-slate-600 disabled:opacity-50 m3-button m3-button-tonal">
                           <svg className="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" /></svg>
                           {loading ? 'Verifying...' : `Login with Passkey (${userPasskeys.length})`}
                         </button>
@@ -5529,15 +5605,15 @@
                         )}
                       </div>
                       <input type="text" name="username" value={username} readOnly className="hidden" autoComplete="username" />
-                      <input 
-                        type="password" 
+                      <input
+                        type="password"
                         name="password"
                         autoComplete="current-password"
-                        placeholder={`Password for ${username.split(' ')[0]}`} 
-                        value={password} 
-                        onChange={e => setPassword(e.target.value)} 
-                        className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-4 outline-none focus:border-brand-500 font-medium" 
-                        required 
+                        placeholder={`Password for ${username.split(' ')[0]}`}
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-4 outline-none focus:border-brand-500 font-medium"
+                        required
                       />
                       <button type="submit" disabled={loading} className="w-full bg-brand-600 hover:bg-brand-500 text-white font-black uppercase tracking-widest text-xs py-4 rounded-xl transition shadow-[0_10px_20px_rgba(34,197,94,0.3)] hover:shadow-[0_15px_30px_rgba(34,197,94,0.4)] hover:-translate-y-0.5 disabled:opacity-50 m3-button m3-button-filled magnetic-button">
                         {loading ? 'Logging in...' : 'Secure Login'}
@@ -5560,7 +5636,7 @@
               const strength = getPasswordStrength(newPassword);
               const checks = checkPassword(newPassword, confirmPassword);
               const data = strengthData[strength];
-              
+
               return (
                 <form onSubmit={handleChangePassword} className="space-y-4 text-left animate-fade-in">
                   <div className="text-center mb-4">
@@ -5573,15 +5649,15 @@
                   <div className="space-y-4">
                     {/* New Password */}
                     <div className="relative">
-                      <input 
-                        type={showNewPassword ? "text" : "password"} 
+                      <input
+                        type={showNewPassword ? "text" : "password"}
                         name="new-password"
                         autoComplete="new-password"
-                        placeholder="New Password" 
-                        value={newPassword} 
-                        onChange={e => setNewPassword(e.target.value)} 
-                        className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-4 pr-12 outline-none focus:border-brand-500 font-medium transition-all" 
-                        required 
+                        placeholder="New Password"
+                        value={newPassword}
+                        onChange={e => setNewPassword(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-4 pr-12 outline-none focus:border-brand-500 font-medium transition-all"
+                        required
                       />
                       <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors">
                         <MaterialIcon name={showNewPassword ? "visibility_off" : "visibility"} className="text-xl" />
@@ -5596,8 +5672,8 @@
                       </div>
                       <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden flex gap-1">
                         {[1, 2, 3, 4, 5].map(step => (
-                          <div 
-                            key={step} 
+                          <div
+                            key={step}
                             className={`h-full flex-1 transition-all duration-500 ${step <= strength ? data.color : 'bg-slate-800'}`}
                           ></div>
                         ))}
@@ -5606,15 +5682,15 @@
 
                     {/* Confirm Password */}
                     <div className="relative">
-                      <input 
-                        type={showConfirmPassword ? "text" : "password"} 
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
                         name="confirm-password"
                         autoComplete="new-password"
-                        placeholder="Confirm Password" 
-                        value={confirmPassword} 
-                        onChange={e => setConfirmPassword(e.target.value)} 
-                        className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-4 pr-12 outline-none focus:border-brand-500 font-medium transition-all" 
-                        required 
+                        placeholder="Confirm Password"
+                        value={confirmPassword}
+                        onChange={e => setConfirmPassword(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-4 pr-12 outline-none focus:border-brand-500 font-medium transition-all"
+                        required
                       />
                       <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors">
                         <MaterialIcon name={showConfirmPassword ? "visibility_off" : "visibility"} className="text-xl" />
@@ -5642,9 +5718,9 @@
                     </div>
                   </div>
 
-                  <button 
-                    type="submit" 
-                    disabled={loading || strength < 5 || newPassword !== confirmPassword} 
+                  <button
+                    type="submit"
+                    disabled={loading || strength < 5 || newPassword !== confirmPassword}
                     className="w-full bg-brand-600 hover:bg-brand-500 text-white font-black uppercase tracking-widest text-xs py-4 rounded-xl transition shadow-[0_10px_20px_rgba(34,197,94,0.3)] hover:shadow-[0_15px_30px_rgba(34,197,94,0.4)] hover:-translate-y-0.5 disabled:opacity-30 m3-button m3-button-filled magnetic-button"
                   >
                     {loading ? 'Processing...' : 'Complete Setup'}
@@ -5656,7 +5732,7 @@
             {view === 'forgot_password' && (
               <div className="space-y-6 text-center animate-fade-in">
                 <p className="text-sm text-slate-300">Select your account to request a password reset.</p>
-                
+
                 <div className="max-h-[300px] overflow-y-auto custom-scrollbar px-2 space-y-6">
                   {/* Regular Users */}
                   <div className="flex flex-wrap justify-center gap-5">
@@ -5896,7 +5972,7 @@
       const handlePhoneSearch = () => {
         const q = phoneSearch.trim();
         if (!q) return;
-        const matches = allDonations.filter(d => d.phone_number && d.phone_number.replace(/\s/g,'') === q.replace(/\s/g,''));
+        const matches = allDonations.filter(d => d.phone_number && d.phone_number.replace(/\s/g, '') === q.replace(/\s/g, ''));
         if (matches.length > 0) {
           setPhoneMatches(matches);
           setPhoneSearchResult('found');
@@ -5915,18 +5991,18 @@
 
       const handleVerifyPhone = async () => {
         if (!receiptModal) return;
-        const donorPhone = receiptModal.phone_number ? receiptModal.phone_number.replace(/\s/g,'') : null;
+        const donorPhone = receiptModal.phone_number ? receiptModal.phone_number.replace(/\s/g, '') : null;
         if (!donorPhone) {
           setVerifyStatus('no_phone');
           return;
         }
-        if (verifyPhone.replace(/\s/g,'') === donorPhone) {
+        if (verifyPhone.replace(/\s/g, '') === donorPhone) {
           setVerifyStatus('ok');
           setCanvasLoading(true);
           try {
             const canvas = await generateReceiptCanvas(receiptModal);
             setReceiptCanvas(canvas);
-          } catch(e) {}
+          } catch (e) { }
           setCanvasLoading(false);
         } else {
           setVerifyStatus('fail');
@@ -5945,8 +6021,8 @@
         if (!receiptCanvas || !receiptModal) return;
         const dataUrl = receiptCanvas.toDataURL('image/png', 1.0);
         const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p','px',[800,1100]);
-        pdf.addImage(dataUrl,'PNG',0,0,800,1100);
+        const pdf = new jsPDF('p', 'px', [800, 1100]);
+        pdf.addImage(dataUrl, 'PNG', 0, 0, 800, 1100);
         pdf.save(`Receipt_${getReceiptShortId(receiptModal)}.pdf`);
       };
 
@@ -6046,17 +6122,17 @@
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex gap-2 flex-wrap">
               {[
-                { key:'all', label:'All / සියල්ල', color:'text-slate-300 border-slate-700' },
-                { key:'cash', label:'Cash / මුදල්', color:'text-emerald-400 border-emerald-500/40' },
-                { key:'goods', label:'Goods / ද්‍රව්‍ය', color:'text-purple-400 border-purple-500/40' },
-                { key:'pledge', label:'Pledges / පොරොන්දු', color:'text-yellow-400 border-yellow-500/40' },
+                { key: 'all', label: 'All / සියල්ල', color: 'text-slate-300 border-slate-700' },
+                { key: 'cash', label: 'Cash / මුදල්', color: 'text-emerald-400 border-emerald-500/40' },
+                { key: 'goods', label: 'Goods / ද්‍රව්‍ය', color: 'text-purple-400 border-purple-500/40' },
+                { key: 'pledge', label: 'Pledges / පොරොන්දු', color: 'text-yellow-400 border-yellow-500/40' },
               ].map(c => (
-                <button key={c.key} onClick={() => setFilterCat(c.key)} className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${filterCat===c.key ? 'bg-white/10 '+ c.color : 'bg-transparent text-slate-500 border-slate-800 hover:border-slate-700'}`}>
+                <button key={c.key} onClick={() => setFilterCat(c.key)} className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${filterCat === c.key ? 'bg-white/10 ' + c.color : 'bg-transparent text-slate-500 border-slate-800 hover:border-slate-700'}`}>
                   {c.label}
                 </button>
               ))}
             </div>
-            <input type="text" value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} placeholder="Search name / phone..." className="ml-auto bg-slate-900 border border-slate-700 text-white text-xs rounded-xl px-4 py-2 outline-none focus:border-brand-500 w-full sm:w-56" />
+            <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search name / phone..." className="ml-auto bg-slate-900 border border-slate-700 text-white text-xs rounded-xl px-4 py-2 outline-none focus:border-brand-500 w-full sm:w-56" />
           </div>
 
           {/* Color Legend */}
@@ -6076,12 +6152,12 @@
               <table className="w-full text-sm text-slate-300 min-w-[750px]">
                 <thead>
                   <tr className="text-xs text-slate-500 uppercase bg-slate-900/70 border-b border-slate-800">
-                    <th className="px-4 py-3 text-left rounded-tl-2xl">Date / Time<br/><span className="text-[9px] text-brand-400 font-normal normal-case">දිනය / වේලාව</span></th>
-                    <th className="px-4 py-3 text-left">Name<br/><span className="text-[9px] text-brand-400 font-normal normal-case">නම</span></th>
-                    <th className="px-4 py-3 text-left">Type<br/><span className="text-[9px] text-brand-400 font-normal normal-case">ආකාරය</span></th>
-                    <th className="px-4 py-3 text-center">Status<br/><span className="text-[9px] text-brand-400 font-normal normal-case">තත්ත්වය</span></th>
-                    <th className="px-4 py-3 text-right">Amount / Details<br/><span className="text-[9px] text-brand-400 font-normal normal-case">මුදල / විස්තර</span></th>
-                    <th className="px-4 py-3 text-center rounded-tr-2xl">Action<br/><span className="text-[9px] text-brand-400 font-normal normal-case">ක්‍රියාව</span></th>
+                    <th className="px-4 py-3 text-left rounded-tl-2xl">Date / Time<br /><span className="text-[9px] text-brand-400 font-normal normal-case">දිනය / වේලාව</span></th>
+                    <th className="px-4 py-3 text-left">Name<br /><span className="text-[9px] text-brand-400 font-normal normal-case">නම</span></th>
+                    <th className="px-4 py-3 text-left">Type<br /><span className="text-[9px] text-brand-400 font-normal normal-case">ආකාරය</span></th>
+                    <th className="px-4 py-3 text-center">Status<br /><span className="text-[9px] text-brand-400 font-normal normal-case">තත්ත්වය</span></th>
+                    <th className="px-4 py-3 text-right">Amount / Details<br /><span className="text-[9px] text-brand-400 font-normal normal-case">මුදල / විස්තර</span></th>
+                    <th className="px-4 py-3 text-center rounded-tr-2xl">Action<br /><span className="text-[9px] text-brand-400 font-normal normal-case">ක්‍රියාව</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -6093,7 +6169,7 @@
                       <tr key={d.id} className={`border-b border-slate-800/60 hover:bg-slate-800/30 transition border-l-2 ${cs.row}`}>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="font-medium text-slate-200 text-xs">{formatDate(d.date)}</div>
-                          <div className="text-[10px] text-slate-500">{d.created_at ? new Date(d.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : ''}</div>
+                          <div className="text-[10px] text-slate-500">{d.created_at ? new Date(d.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</div>
                         </td>
                         <td className="px-4 py-3">
                           <div className="font-semibold text-slate-200 text-sm">{d.name || '—'}</div>
@@ -6155,7 +6231,7 @@
                     <div className="flex justify-between text-xs"><span className="text-slate-400">Type</span><span className="font-bold text-white">{receiptModal.donation_type}</span></div>
                     <div className="flex justify-between text-xs">
                       <span className="text-slate-400">Amount</span>
-                      <span className="font-bold text-emerald-400">{receiptModal.donation_type==='Cash' ? formatCurrency(receiptModal.amount) : `${receiptModal.item_description} ×${receiptModal.quantity}`}</span>
+                      <span className="font-bold text-emerald-400">{receiptModal.donation_type === 'Cash' ? formatCurrency(receiptModal.amount) : `${receiptModal.item_description} ×${receiptModal.quantity}`}</span>
                     </div>
                   </div>
 
@@ -6501,8 +6577,8 @@
         setLoading(true);
         try {
           const [incRes, expRes, usersRes, notifRes, settingsRes] = await Promise.all([
-            supabase.from('incomes').select('*').order('created_at', { ascending: false }),
-            supabase.from('expenses').select('*').order('created_at', { ascending: false }),
+            supabase.from('incomes').select('*').or('event_type.eq.vesak,event_type.is.null').order('created_at', { ascending: false }),
+            supabase.from('expenses').select('*').or('event_type.eq.vesak,event_type.is.null').order('created_at', { ascending: false }),
             supabase.from('app_users').select('*'),
             supabase.from('notifications').select('*').or(`user_id.is.null,user_id.eq.${currentUser?.id}`).order('created_at', { ascending: false }).limit(50),
             supabase.from('project_settings').select('*').maybeSingle()
@@ -6700,8 +6776,8 @@
         <button
           onClick={() => handleTabSwitch(id)}
           className={`flex items-start gap-3 px-5 py-3.5 rounded-2xl transition-all duration-500 w-auto group relative overflow-hidden ${activeTab === id
-              ? 'bg-gradient-to-r from-brand-600/20 to-brand-500/10 text-white shadow-[0_0_20px_rgba(34,197,94,0.15)] border border-brand-500/30'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border border-transparent hover:border-slate-700/50'
+            ? 'bg-gradient-to-r from-brand-600/20 to-brand-500/10 text-white shadow-[0_0_20px_rgba(34,197,94,0.15)] border border-brand-500/30'
+            : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border border-transparent hover:border-slate-700/50'
             }`}
         >
           {activeTab === id && (
@@ -6727,8 +6803,8 @@
         <button
           onClick={() => handleTabSwitch(id)}
           className={`flex flex-col items-center justify-center flex-1 py-2 rounded-2xl transition-all duration-500 relative group overflow-hidden ${activeTab === id
-              ? 'text-brand-400 font-bold bg-brand-500/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] border border-brand-500/20'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+            ? 'text-brand-400 font-bold bg-brand-500/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] border border-brand-500/20'
+            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
             }`}
         >
           <div className={`mb-1 transition-all duration-300 ${activeTab === id ? '-translate-y-0.5 scale-110 drop-shadow-[0_0_10px_rgba(34,197,94,0.6)]' : 'group-hover:scale-110'}`}>
@@ -6964,13 +7040,12 @@
                       setActiveTab(item.id);
                     }
                   }}
-                  className={`w-16 py-2 flex flex-col items-center justify-center rounded-2xl transition-all duration-300 ${
-                    item.isLink 
+                  className={`w-16 py-2 flex flex-col items-center justify-center rounded-2xl transition-all duration-300 ${item.isLink
                       ? 'text-indigo-400 hover:bg-indigo-500/10 border border-indigo-500/20'
-                      : activeTab === item.id 
-                        ? 'bg-m3-secondaryContainer text-m3-onSecondaryContainer' 
+                      : activeTab === item.id
+                        ? 'bg-m3-secondaryContainer text-m3-onSecondaryContainer'
                         : 'text-m3-onSurface hover:bg-white/5'
-                  }`}
+                    }`}
                   title={item.tooltip}
                 >
                   <MaterialIcon name={item.icon} className={activeTab === item.id ? 'FILL' : ''} />
@@ -7119,7 +7194,7 @@
 
               {currentUser?.role === 'admin' && (
                 <div className="text-center mt-12 mb-8 flex justify-center animate-fade-in">
-                  <button 
+                  <button
                     onClick={() => {
                       if (confirm("Are you sure you want to open Admin Panel? / ඇඩ්මින් පැනලය විවෘත කිරීමට ඔබට අවශ්‍ය බව සහතිකද?")) {
                         window.location.href = 'admin.html';
@@ -7142,7 +7217,7 @@
               { id: 'dashboard', icon: 'dashboard', label: 'Home' },
               { id: 'income-page', icon: 'payments', label: 'Income' },
               { id: 'expense-page', icon: 'account_balance_wallet', label: 'Expense' },
-              ...(currentUser?.role === 'admin' 
+              ...(currentUser?.role === 'admin'
                 ? [{ id: 'admin-page', icon: 'shield', label: 'Admin', isLink: true }]
                 : [{ id: 'pledges', icon: 'history', label: 'Pledges' }]),
               { id: 'profile', icon: 'person', label: 'Profile' }
