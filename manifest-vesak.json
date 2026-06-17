@@ -1,0 +1,25 @@
+{
+  "id": "vesak-finance-pwa-v1",
+  "name": "Vesak Lantern Project Finance / වෙසක් මුදල් පාලන පද්ධතිය",
+  "short_name": "Vesak Finance",
+  "description": "Financial Management Dashboard for Vesak Lantern Project",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

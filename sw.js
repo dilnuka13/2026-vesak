@@ -6,12 +6,12 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll([
         OFFLINE_URL, 
-        'index.html', 
-        'admin.html', 
-        'view_income.html', 
-        'logo.png', 
-        'dc.png', 
-        've1rify.png'
+        '/',
+        '/index.html',
+        '/logo.png', 
+        '/poson_logo.png',
+        '/dc.png', 
+        '/ve1rify.png'
       ]);
     })
   );
