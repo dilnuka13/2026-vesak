@@ -6,6 +6,27 @@
     <title>Vesak System</title>
     <link rel="icon" href="./logo.png" type="image/png" />
 
+    <!-- Start Single Page Apps for GitHub Pages -->
+    <script type="text/javascript">
+      // Single Page Apps for GitHub Pages
+      // MIT License
+      // https://github.com/rafgraph/spa-github-pages
+      // This script checks to see if a redirect is present in the query string,
+      // converts it back into the correct url and adds it to the
+      // browser's history using window.history.replaceState(...).
+      (function(l) {
+        if (l.search[1] === '/' ) {
+          var decoded = l.search.slice(1).split('&').map(function(s) {
+            return s.replace(/~and~/g, '&')
+          }).join('?');
+          window.history.replaceState(null, null,
+              l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location));
+    </script>
+    <!-- End Single Page Apps for GitHub Pages -->
+
     <!-- Material Symbols Rounded -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
     <!-- Google Fonts: Outfit, Space Grotesk, Plus Jakarta Sans -->
@@ -14,7 +35,7 @@
 
     <!-- Three.js for 3D background (use r149 UMD build to avoid r150+ deprecation warnings) -->
     <script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
-    <script type="module" crossorigin src="/2026-vesak/assets/index-D-P4CXPh.js"></script>
+    <script type="module" crossorigin src="/2026-vesak/assets/index-DXw9kV3Z.js"></script>
     <link rel="stylesheet" crossorigin href="/2026-vesak/assets/index-Ch6i61B_.css">
   </head>
   <body>
