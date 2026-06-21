@@ -1,0 +1,39 @@
+Build a premium, modern, and interactive double-festival (Vesak & Poson) financial management and public portal web application using HTML, Vanilla CSS, Tailwind CSS, Client-side React (via UMD scripts transpiled by Babel), and Supabase as the backend.
+
+The system must consist of the following pages and folders:
+
+1. Global Assets:
+   - logo.png (Vesak logo, green theme)
+   - poson_logo.png (Poson logo, amber/gold theme)
+   - ve1rify.png (Verification stamp for receipts)
+   - dc.png (Dharma Chakra wheel for corner frame decorations)
+
+2. Core Pages:
+   - index.html: Main landing page with a Three.js particle background, countdown timer, and dynamic welcome sections.
+   - admin.html: Super-admin dashboard. Must use React UMD + Tailwind. Features include dashboard stats, SVG charts (Overall income vs expense, Today's stats, Last 7 days, Daily bar charts), Income/Expense CRUD with event_type (vesak/poson), receipt uploads (Supabase storage), project settings editing (access permissions, maintenance toggle), app users management, active sessions table (allowing log out of other devices), and Google Map/Gallery links configuration.
+   - view_income.html: Public portal for Vesak where users search donations by phone number and download a highly stylized computer-generated PDF receipt drawn dynamically on an HTML5 canvas using 'logo.png', 've1rify.png', and 'dc.png'.
+   - invitation.html: Invitation page with countdown timer (Days, Hours, Minutes, Seconds) utilizing SVG circle stroke dash offsets, tear-off calendar badge list, previous works gallery, Google Map frame, and organizers list.
+   - poson/ (Directory containing duplicated/cloned index.html, view_income.html, maintenance.html, offline.html, and manifest.json but with Amber/Gold styling and database queries configured to fetch event_type = 'poson' and 'poson_invitation' details instead of Vesak).
+   - maintenance.html & offline.html: Status pages matching the premium dark theme.
+
+3. Database Schema (Supabase/PostgreSQL):
+   Provide SQL scripts or configurations for these tables:
+   - app_users (id: uuid pk, username: text, password_hash: text, role: text, phone_number: text, address: text, avatar_url: text, passkey_id: text, fcm_token: text, is_temp_password: bool, two_factor_enabled: bool)
+   - user_sessions (id: uuid pk, user_id: uuid references app_users, session_token: text unique, device_name: text, location: text, ip_address: text, last_active: timestamptz, is_online: bool)
+   - project_settings (id: text pk default 'global', allow_income_entry: bool, allow_expense_entry: bool, allow_pledge_entry: bool, income_access_list: text, expense_access_list: text, pledge_access_list: text)
+   - incomes (id: uuid pk, date: date, name: text, phone_number: text, address: text, donation_type: text, amount: numeric, donor_category: text, item_description: text, quantity: text, status: text, reported_by: text, event_type: text, created_at: timestamptz)
+   - expenses (id: uuid pk, reason: text, withdrawer_name: text, date: date, time: time, amount_taken: numeric, receipt_url: text, reported_by: text, event_type: text, created_at: timestamptz)
+   - vesak_invitation & poson_invitation (id: int pk default 1, anniversary: text, description: text, members: text, map_link: text, dates: text, time_start: text, time_end: text, gallery_links: text, is_published: bool)
+   - notifications (id: uuid pk, record_id: uuid, type: text, message: text, created_at: timestamptz)
+   - user_passkeys (id: uuid pk, user_id: uuid references app_users, passkey_id: text, passkey_name: text)
+
+4. UI Design Aesthetics:
+   - Default dark theme (#020617 background) with neon glows, glassmorphism, responsive cards, material symbols rounded icons, and smooth scale/fade-in transitions.
+   - For Vesak, use green brand accents (#22c55e). For Poson, use amber/gold accents (#f59e0b).
+   - Ensure tables are optimized for mobile using custom card flex layout rules instead of regular tabular columns.
+   
+5. Supabase Connection Credentials:
+   - Supabase URL: https://yqpkgybmjdovdnmekpnw.supabase.co
+   - Supabase Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxcGtneWJtamRvdmRubWVrcG53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjUwMjAsImV4cCI6MjA5MjEwMTAyMH0.7C9jv1_zDRxSMCgs0tWfiNUGXGOkCLz5RE0CCDoc_yA
+   
+Initialize this project exactly in the workspace directory.

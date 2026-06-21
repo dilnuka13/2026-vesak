@@ -1,0 +1,213 @@
+================================================================================
+දික්හේනගම මහා වෙසක් සහ පොසොන් ක්‍රමවේදය - සම්පූර්ණ පද්ධති විශ්ලේෂණය සහ ප්‍රොම්ප්ට් එක
+================================================================================
+
+මෙම ලේඛනය මඟින් වත්මන් ව්‍යාපෘතියේ (2026-vesak-main) සියලුම තාක්ෂණික තොරතුරු, ලිපිගොනු ව්‍යුහය (File Structure), දත්ත ගබඩා වගු (Database Tables), ලොජික් (Logic), සින්ටැක්ස් (Syntax) සහ සැලසුම් අංග (Design Aesthetics) සවිස්තරාත්මකව දක්වයි. 
+
+අවසානයේ මෙම පද්ධතිය නැවත මුල සිටම නිර්මාණය කිරීමට අවශ්‍ය සම්පූර්ණ AI Prompt එක ද ඇතුළත් කර ඇත.
+
+---
+1. ලිපිගොනු ව්‍යුහය (File Structure)
+---
+ව්‍යාපෘතිය ප්‍රධාන උත්සව දෙකක් (වෙසක් සහ පොසොන්) සඳහා වෙන් වෙන් වශයෙන් ක්‍රියාත්මක වන පරිදි සකසා ඇත.
+
+* / (Root Directory - Vesak System)
+  ├── index.html                - ප්‍රධාන පිවිසුම් පිටුව (React, 3D Canvas Background, Countdown Timer)
+  ├── admin.html                - පරිපාලන උපකරණ පුවරුව (Admin Dashboard - React UMD, Supabase integration, CRUD, Analytics, Session Management, PDF/CSV Reports)
+  ├── view_income.html          - පොදු ආදායම් සහ සම්මාදම් සෙවුම් පෝටලය (Dynamic Receipt PDF/Canvas generator)
+  ├── invitation.html           - වෙසක් උත්සව ආරාධනා පත්‍රය (Countdown, Calendar, Google Map)
+  ├── maintenance.html          - නඩත්තු පිටුව (පොදු පිවිසුම අක්‍රීය කර ඇති විට පෙන්වයි)
+  ├── offline.html              - අන්තර්ජාලය නොමැති විට පෙන්වන පිටුව
+  ├── 404.html                  - 404 පිටුව
+  ├── logo.png                  - වෙසක් පද්ධති ලාංඡනය (Vesak System Logo)
+  ├── poson_logo.png            - පොසොන් පද්ධති ලාංඡනය (Poson System Logo)
+  ├── ve1rify.png               - Verified ලකුණ සහිත මුද්‍රාව (Verification Stamp)
+  ├── dc.png                    - ධර්ම චක්‍රය සහිත ලාංඡනය (Dharma Chakra Corner Wheel)
+  ├── favicon.svg               - Favicon අයිකනය
+  ├── icons.svg                 - SVG අයිකන ගොනුව
+  ├── setup_sessions.sql        - පරිශීලක සෙෂන්ස් සැකසුම් SQL
+  ├── Vesak_Backup_2026-05-14.sql - දත්ත සමුදායේ (Database) SQL බැකප් එක (INSERT ප්‍රකාශන)
+  ├── manifest.json             - PWA Manifest ගොනුව
+  ├── js-section-access-control.js - ප්‍රවේශ පාලන Logic (හිස් ලිපිගොනුවක්)
+  │
+  ├── /poson (Poson Directory - පොසොන් පද්ධතිය)
+  │   ├── index.html            - පොසොන් ප්‍රධාන පිවිසුම් පිටුව (Amber/Gold තේමාව සහිතව)
+  │   ├── view_income.html      - පොසොන් පොදු ආදායම් සෙවුම් පෝටලය
+  │   ├── maintenance.html      - පොසොන් නඩත්තු පිටුව
+  │   ├── offline.html          - පොසොන් Offline පිටුව
+  │   ├── sw.js                 - පොසොන් සේවා කේතය (Service Worker)
+  │   └── manifest.json         - පොසොන් PWA Manifest එක
+  │
+  └── /assets (Compiled Build Artifacts - Vite build එකෙන් සෑදුණු JS/CSS ලිපිගොනු)
+
+---
+2. දත්ත සමුදා වගු සහ තීරු (Database Tables & Columns - Supabase / PostgreSQL)
+---
+පද්ධතියේ පසුබිම් දත්ත ගබඩාව (Database backend) ලෙස Supabase (PostgreSQL) භාවිතා වේ. පහත දැක්වෙන්නේ වගු (Tables) සහ ඒවායේ තීරු (Columns) වේ:
+
+1. app_users (පද්ධතියේ පරිශීලකයින්)
+   - id : UUID (PRIMARY KEY)
+   - username : TEXT (පරිශීලක නාමය)
+   - password_hash : TEXT (SHA-256 මුරපද කේතය)
+   - role : TEXT ('admin' හෝ 'user')
+   - is_temp_password : BOOLEAN (තාවකාලික මුරපදයක්ද යන්න)
+   - phone_number : TEXT (දුරකථන අංකය)
+   - address : TEXT (ලිපිනය)
+   - is_contributor : BOOLEAN (දායකයෙක්ද යන්න)
+   - two_factor_enabled : BOOLEAN (2FA සක්‍රීයද යන්න)
+   - fcm_token : TEXT (FCM Push Notifications සඳහා)
+   - avatar_url : TEXT (ඡායාරූපය - Base64 හෝ URL)
+   - passkey_id : TEXT (FaceID / Fingerprint / WebAuthn passkey ID)
+
+2. user_sessions (පරිශීලක පිවිසුම් තොරතුරු)
+   - id : UUID (PRIMARY KEY)
+   - user_id : UUID (FOREIGN KEY -> app_users.id)
+   - session_token : TEXT (UNIQUE)
+   - device_name : TEXT (උපාංගයේ නම)
+   - location : TEXT (පිවිසි ස්ථානය)
+   - ip_address : TEXT (IP ලිපිනය)
+   - last_active : TIMESTAMPTZ (අවසාන සක්‍රීය වේලාව)
+   - is_online : BOOLEAN (සජීවීව පද්ධතියේ සිටීද යන්න)
+   - created_at : TIMESTAMPTZ
+
+3. project_settings (ව්‍යාපෘති සැකසුම්)
+   - id : TEXT (PRIMARY KEY, e.g., 'global')
+   - allow_income_entry : BOOLEAN (ආදායම් ඇතුළත් කිරීමට අවසරය)
+   - allow_expense_entry : BOOLEAN (වියදම් ඇතුළත් කිරීමට අවසරය)
+   - allow_pledge_entry : BOOLEAN (පොරොන්දු සම්මාදම් ඇතුළත් කිරීමට අවසරය)
+   - income_access_list : TEXT (ආදායම් බැලීමට අවසර ඇති පරිශීලකයින්ගේ ලැයිස්තුව)
+   - expense_access_list : TEXT (වියදම් බැලීමට අවසර ඇති පරිශීලකයින්ගේ ලැයිස්තුව)
+   - pledge_access_list : TEXT (පොරොන්දු බැලීමට අවසර ඇති පරිශීලකයින්ගේ ලැයිස්තුව)
+
+4. incomes (ලැබුණු සහ පොරොන්දු වූ ආදායම්/සම්මාදම්)
+   - id : UUID (PRIMARY KEY)
+   - date : DATE (දිනය)
+   - name : TEXT (දායකයාගේ නම)
+   - phone_number : TEXT (දුරකථන අංකය)
+   - address : TEXT (ලිපිනය)
+   - donation_type : TEXT ('Cash' හෝ 'Goods')
+   - amount : NUMERIC (මුදල - donation_type = 'Cash' නම්)
+   - donor_category : TEXT (දායක කාණ්ඩය, e.g., 'Main Donor', 'Regular Donor')
+   - item_description : TEXT (ද්‍රව්‍යමය පරිත්‍යාග පිළිබඳ විස්තරය - donation_type = 'Goods' නම්)
+   - quantity : TEXT (ප්‍රමාණය - donation_type = 'Goods' නම්)
+   - status : TEXT ('Received Today', 'Promised')
+   - reported_by : TEXT (ඇතුළත් කළ පරිශීලකයා)
+   - description : TEXT (අමතර විස්තර)
+   - event_type : TEXT ('vesak' හෝ 'poson')
+   - created_at : TIMESTAMPTZ
+
+5. expenses (සිදුකළ වියදම්)
+   - id : UUID (PRIMARY KEY)
+   - reason : TEXT (වියදම් කිරීමට හේතුව)
+   - withdrawer_name : TEXT (මුදල් ලබාගත් අයගේ නම්)
+   - date : DATE (දිනය)
+   - time : TIME (වේලාව)
+   - amount_taken : NUMERIC (ලබාගත් මුදල)
+   - receipt_url : TEXT (බිල්පතේ රූපය - Supabase Storage RECEIPTS bucket)
+   - reported_by : TEXT (ඇතුළත් කළ පරිශීලකයා)
+   - event_type : TEXT ('vesak' හෝ 'poson')
+   - created_at : TIMESTAMPTZ
+
+6. vesak_invitation / poson_invitation (ආරාධනා පත්‍ර සැකසුම්)
+   - id : INTEGER (PRIMARY KEY, e.g., 1)
+   - anniversary : TEXT (කීවෙනි වසරද යන්න, e.g., '1')
+   - description : TEXT (ආරාධනා විස්තරය)
+   - members : TEXT (නිර්මාණ කණ්ඩායමේ සාමාජිකයින්)
+   - map_link : TEXT (Google Maps Embed Iframe URL)
+   - dates : TEXT (ප්‍රදර්ශන දිනයන් - JSON array string, e.g., '["2026-05-30", "2026-05-31"]')
+   - time_start : TEXT (ආරම්භක වේලාව, e.g., '18:30')
+   - time_end : TEXT (අවසන් වන වේලාව, e.g., '02:00')
+   - gallery_links : TEXT (පෙර නිර්මාණ වීඩියෝ/රූප සබැඳි - JSON string)
+   - is_published : BOOLEAN (ප්‍රසිද්ධ කර තිබේද යන්න)
+
+7. notifications (දැනුම්දීම්)
+   - id : UUID (PRIMARY KEY)
+   - record_id : UUID (අදාළ වාර්තාවේ ID)
+   - type : TEXT (කාණ්ඩය)
+   - message : TEXT (දැනුම්දීමේ පණිවිඩය)
+   - created_at : TIMESTAMPTZ
+
+8. user_passkeys (WebAuthn / FaceID මුරපද රහිත පිවිසුම්)
+   - id : UUID (PRIMARY KEY)
+   - user_id : UUID (FOREIGN KEY -> app_users.id)
+   - passkey_id : TEXT (Passkey ID)
+   - passkey_name : TEXT (උපාංගයේ නම)
+   - created_at : TIMESTAMPTZ
+
+---
+3. පද්ධති අවශ්‍යතා සහ ලොජික් (Requirements & Logic)
+---
+* පරිපාලන පාලනය (Admin Panel - admin.html):
+  - UMD React, Tailwind CSS, Babel භාවිතා කරමින් තනි HTML ලිපිගොනුවක් තුළ සම්පූර්ණ React App එකක් ලෙස ක්‍රියාත්මක වේ.
+  - Supabase Auth මඟින් පරිශීලක පිවිසුම පාලනය කරයි.
+  - Dashboard Stats: සමස්ත ආදායම්, වියදම්, ඉතිරි ශේෂය සහ අද දින සංඛ්‍යාලේඛන.
+  - SVG ක්‍රමයට සකසන ලද සජීවී ප්‍රස්ථාර: Overall Income vs Expenses, Today's stats, Last 7 days, Daily bar charts.
+  - PDF සහ CSV වාර්තා (Reports) බාගත කිරීමේ හැකියාව.
+  - පරිශීලක ගිණුම් කළමනාකරණය, 2FA සහ FaceID/Fingerprint (WebAuthn) සක්‍රීය/අක්‍රීය කිරීම.
+  - සක්‍රීය පරිශීලක සෙෂන්ස් (Active Sessions) බලාගැනීම සහ ඉවත් කිරීම (Sign out devices).
+  - පද්ධති නඩත්තු ප්‍රකාරය (Maintenance Mode) සක්‍රීය/අක්‍රීය කිරීම.
+  - වෙසක්/පොසොන් උත්සව ආරාධනා සැකසුම් (Anniversary, Description, Dates, Google Map Link, Gallery YouTube/Image links) වෙනස් කිරීම.
+
+* පොදු දායකත්ව පෝටලය (Public Portal - view_income.html):
+  - දායකයින්ට තමන්ගේ දුරකථන අංකය මඟින් දායකත්වයන් සෙවිය හැක.
+  - HTML5 Canvas තාක්ෂණයෙන් නිපදවන ලද වෙසක් ලන්තෑරුම් ව්‍යාපෘතියේ නිල ඩිජිටල් රිසිට්පත (Official PDF Receipt) ක්ෂණිකව උත්පාදනය කර බාගත කරගත හැක (ve1rify.png, dc.png, logo.png භාවිතා කරමින්).
+  - ලැබුණු දායකත්වයන් කාණ්ඩ අනුව (මුදල්, ද්‍රව්‍යමය, පොරොන්දු) පෙරීමට (filter) හැකියාව ඇත.
+
+* පොදු ආරාධනා පිටුව (invitation.html):
+  - උත්සවය ආරම්භ වීමට ඉතිරි කාලය පෙන්වන සජීවී ත්‍රිමාණ කවුන්ටරයක් (Circular Countdown Timer) ඇත.
+  - උත්සවයේ දිනයන් පෙන්වන දින දර්ශන කැලැන්ඩර බැජ් (Tear-off Calendar Graphic) පද්ධතිය.
+  - Google Map Embed Frame එක සහ "Google Map ඔස්සේ පැමිණෙන්න" සබැඳිය.
+  - නිර්මාණ කණ්ඩායමේ විස්තර සහ පෙර වසරවල නිර්මාණ ඇතුළත් වීඩියෝ/ඡායාරූප ගැලරිය.
+
+---
+4. සැලසුම් අංග (Design Aesthetics)
+---
+- Dark Mode Default: Liquid Glassmorphism, Neon glow අලංකරණ, සහ සජීවී Micro-animations.
+- ත්‍රිමාණ පසුබිම (3D Background): Three.js මඟින් ධාවනය වන සජීවී තරු (Stars) හෝ අංශු (Particles) පසුබිම.
+- අකුරු රටා (Typography): Google Fonts හි Outfit, Space Grotesk, Plus Jakarta Sans සහ Material Symbols Rounded.
+- වර්ණ සංකලනය (Theme Colors):
+  - වෙසක් තේමාව (Vesak Theme): කොළ / තේලිස් කොළ (Emerald/Teal, e.g., `#22c55e`, `#4ade80`).
+  - පොසොන් තේමාව (Poson Theme): තැඹිලි / රන්වන් තේමාව (Amber/Gold, e.g., `#f59e0b`, `#fbbf24`).
+
+================================================================================
+නව පද්ධතිය සෑදීමට අවශ්‍ය ප්‍රොම්ප්ට් එක (Prompt to Recreate/Build the New Web Page System)
+================================================================================
+
+පහත දක්වා ඇති Prompt එක පිටපත් කර (copy) AI Coding Assistant වෙත ලබා දීමෙන් මෙම පද්ධතියම නැවත නිර්මාණය කරගත හැක:
+
+"Build a premium, modern, and interactive double-festival (Vesak & Poson) financial management and public portal web application using HTML, Vanilla CSS, Tailwind CSS, Client-side React (via UMD scripts transpiled by Babel), and Supabase as the backend.
+
+The system must consist of the following pages and folders:
+
+1. Global Assets:
+   - logo.png (Vesak logo, green theme)
+   - poson_logo.png (Poson logo, amber/gold theme)
+   - ve1rify.png (Verification stamp for receipts)
+   - dc.png (Dharma Chakra wheel for corner frame decorations)
+
+2. Core Pages:
+   - index.html: Main landing page with a Three.js particle background, countdown timer, and dynamic welcome sections.
+   - admin.html: Super-admin dashboard. Must use React UMD + Tailwind. Features include dashboard stats, SVG charts (Overall income vs expense, Today's stats, Last 7 days, Daily bar charts), Income/Expense CRUD with event_type (vesak/poson), receipt uploads (Supabase storage), project settings editing (access permissions, maintenance toggle), app users management, active sessions table (allowing log out of other devices), and Google Map/Gallery links configuration.
+   - view_income.html: Public portal for Vesak where users search donations by phone number and download a highly stylized computer-generated PDF receipt drawn dynamically on an HTML5 canvas using 'logo.png', 've1rify.png', and 'dc.png'.
+   - invitation.html: Invitation page with countdown timer (Days, Hours, Minutes, Seconds) utilizing SVG circle stroke dash offsets, tear-off calendar badge list, previous works gallery, Google Map frame, and organizers list.
+   - poson/ (Directory containing duplicated/cloned index.html, view_income.html, maintenance.html, offline.html, and manifest.json but with Amber/Gold styling and database queries configured to fetch event_type = 'poson' and 'poson_invitation' details instead of Vesak).
+   - maintenance.html & offline.html: Status pages matching the premium dark theme.
+
+3. Database Schema (Supabase/PostgreSQL):
+   Provide SQL scripts or configurations for these tables:
+   - app_users (id: uuid pk, username: text, password_hash: text, role: text, phone_number: text, address: text, avatar_url: text, passkey_id: text, fcm_token: text, is_temp_password: bool, two_factor_enabled: bool)
+   - user_sessions (id: uuid pk, user_id: uuid references app_users, session_token: text unique, device_name: text, location: text, ip_address: text, last_active: timestamptz, is_online: bool)
+   - project_settings (id: text pk default 'global', allow_income_entry: bool, allow_expense_entry: bool, allow_pledge_entry: bool, income_access_list: text, expense_access_list: text, pledge_access_list: text)
+   - incomes (id: uuid pk, date: date, name: text, phone_number: text, address: text, donation_type: text, amount: numeric, donor_category: text, item_description: text, quantity: text, status: text, reported_by: text, event_type: text, created_at: timestamptz)
+   - expenses (id: uuid pk, reason: text, withdrawer_name: text, date: date, time: time, amount_taken: numeric, receipt_url: text, reported_by: text, event_type: text, created_at: timestamptz)
+   - vesak_invitation & poson_invitation (id: int pk default 1, anniversary: text, description: text, members: text, map_link: text, dates: text, time_start: text, time_end: text, gallery_links: text, is_published: bool)
+   - notifications (id: uuid pk, record_id: uuid, type: text, message: text, created_at: timestamptz)
+   - user_passkeys (id: uuid pk, user_id: uuid references app_users, passkey_id: text, passkey_name: text)
+
+4. UI Design Aesthetics:
+   - Default dark theme (#020617 background) with neon glows, glassmorphism, responsive cards, material symbols rounded icons, and smooth scale/fade-in transitions.
+   - For Vesak, use green brand accents (#22c55e). For Poson, use amber/gold accents (#f59e0b).
+   - Ensure tables are optimized for mobile using custom card flex layout rules instead of regular tabular columns.
+   
+Initialize this project exactly in the workspace directory."
+================================================================================
