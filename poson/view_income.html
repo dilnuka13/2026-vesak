@@ -1,215 +1,1303 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poson Donation Portal</title>
-    <link rel="icon" href="../poson_logo.png">
-    <link rel="stylesheet" href="../index.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#020617" />
+    <link rel="apple-touch-icon" href="../poson_logo.png" />
+    <link rel="icon" href="../poson_logo.png" type="image/png" />
+    <title>Poson Festival 2026 - Donation Portal</title>
+
+    <!-- Material Symbols Rounded -->
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <!-- Google Fonts: Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        theme: 'var(--theme-color)',
-                        'theme-hover': 'var(--theme-color-hover)'
+                        brand: {
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                        },
+                        m3: {
+                            primary: '#f59e0b',
+                            onPrimary: '#451a03',
+                            primaryContainer: '#78350f',
+                            onPrimaryContainer: '#fde68a',
+                            surface: '#020617',
+                            onSurface: '#f8fafc',
+                        }
                     }
                 }
             }
         }
     </script>
+
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- PDF Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script type="module">
-        import { supabase } from '../supabase-client.js';
-        
-        window.searchDonation = async function(e) {
-            e.preventDefault();
-            const phone = document.getElementById('phone-input').value;
-            const resultsDiv = document.getElementById('results');
-            resultsDiv.innerHTML = '<p class="text-center text-slate-400">Searching...</p>';
-            
-            const { data, error } = await supabase
-                .from('incomes')
-                .select('*')
-                .eq('phone_number', phone)
-                .eq('event_type', 'poson') // Fetch Poson event type only
-                .order('created_at', { ascending: false });
-                
-            if (error) {
-                resultsDiv.innerHTML = `<p class="text-red-400 text-center">Error: ${error.message}</p>`;
-                return;
+
+    <style>
+        :root {
+            --brand-400: #fbbf24;
+            --brand-500: #f59e0b;
+            --brand-600: #d97706;
+        }
+
+        body {
+            background-color: #020617;
+            color: #f8fafc;
+            font-family: 'Outfit', system-ui, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* Shimmer Effect */
+        @keyframes shimmer {
+            100% {
+                transform: translateX(100%);
             }
-            
-            if (!data || data.length === 0) {
-                resultsDiv.innerHTML = '<p class="text-slate-400 text-center">No donations found for this phone number.</p>';
-                return;
+        }
+
+        .shimmer-bg {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shimmer-bg::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            transform: translateX(-100%);
+            background-image: linear-gradient(90deg,
+                    rgba(255, 255, 255, 0) 0%,
+                    rgba(255, 255, 255, 0.05) 20%,
+                    rgba(255, 255, 255, 0.1) 60%,
+                    rgba(255, 255, 255, 0) 100%);
+            animation: shimmer 3s infinite;
+        }
+
+        .neural-flow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            background: radial-gradient(circle at 50% 50%, #020617 0%, #000000 100%);
+            overflow: hidden;
+        }
+
+        .neural-flow::after {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background-image:
+                radial-gradient(circle at 20% 30%, rgba(245, 158, 11, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 50% 20%, rgba(59, 130, 246, 0.03) 0%, transparent 40%);
+            animation: flow 25s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes flow {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
             }
-            
-            let html = '<div class="space-y-4">';
-            data.forEach(donation => {
-                html += `
-                    <div class="glass-card p-4 flex justify-between items-center fade-in">
-                        <div>
-                            <h4 class="font-bold text-white text-lg">${donation.name}</h4>
-                            <p class="text-slate-400 text-sm">${donation.date} &bull; ${donation.donation_type}</p>
-                            <p class="text-theme font-semibold mt-1">Rs. ${donation.amount || 0}</p>
-                        </div>
-                        <button onclick='generateReceipt(${JSON.stringify(donation)})' class="bg-theme hover:bg-theme-hover text-white px-4 py-2 rounded transition flex items-center gap-2">
-                            <span class="material-symbols-rounded">download</span> PDF
-                        </button>
-                    </div>
-                `;
-            });
-            html += '</div>';
-            resultsDiv.innerHTML = html;
-        };
-        
-        // Expose function globally so the inline onclick can access it
-        window.generateReceipt = async function(donation) {
-            const { jsPDF } = window.jspdf;
-            
-            // Create a canvas to draw the receipt
-            const canvas = document.createElement('canvas');
-            canvas.width = 800;
-            canvas.height = 1000;
-            const ctx = canvas.getContext('2d');
-            
-            // Background
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Pre-load images
-            const loadImage = (src) => new Promise((resolve) => {
-                const img = new Image();
-                img.crossOrigin = 'Anonymous';
-                img.onload = () => resolve(img);
-                img.onerror = () => resolve(null);
-                img.src = src;
-            });
-            
-            const [logo, verify, dc] = await Promise.all([
-                loadImage('../poson_logo.png'),
-                loadImage('../ve1rify.png'),
-                loadImage('../dc.png')
-            ]);
-            
-            // Draw DC corners
-            if(dc) {
-                ctx.drawImage(dc, 20, 20, 80, 80);
-                ctx.drawImage(dc, canvas.width - 100, 20, 80, 80);
-                ctx.drawImage(dc, 20, canvas.height - 100, 80, 80);
-                ctx.drawImage(dc, canvas.width - 100, canvas.height - 100, 80, 80);
+
+            100% {
+                transform: translate(2%, 2%) rotate(3deg);
             }
-            
-            // Draw Logo
-            if(logo) {
-                // center logo
-                ctx.drawImage(logo, (canvas.width - 150) / 2, 40, 150, 150);
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-modal {
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes scale-in {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes slide-right {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes shimmer-sweep {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .animate-fade-in { animation: fade-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .animate-scale-in { animation: scale-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .animate-slide-right { animation: slide-right 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+        .delay-500 { animation-delay: 500ms; }
+
+        .neon-text {
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.5), 0 0 20px rgba(245, 158, 11, 0.3);
+        }
+
+        .shimmer-sweep {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shimmer-sweep::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+            animation: shimmer-sweep 2s infinite;
+        }
+
+        /* Premium Loader */
+        .loader-ring {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            position: relative;
+            padding: 3px;
+            background: conic-gradient(from 0deg, transparent, #f59e0b);
+            animation: rotate 1s linear infinite;
+        }
+
+        .loader-ring::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, transparent, transparent, transparent, #f59e0b);
+            filter: blur(10px);
+        }
+
+        .loader-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: #020617;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .loader-logo-pulse {
+            animation: logo-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes logo-pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        /* Mobile Table Grid Layout */
+        @media (max-width: 768px) {
+            .mobile-card-table thead {
+                display: none;
             }
-            
-            ctx.fillStyle = '#0f172a';
-            ctx.font = 'bold 40px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('Dikhenagama Maha Poson Zone', canvas.width / 2, 230);
-            
-            ctx.font = '24px Arial';
-            ctx.fillStyle = '#64748b';
-            ctx.fillText('Official Donation Receipt', canvas.width / 2, 270);
-            
-            // Draw Separator line
-            ctx.beginPath();
-            ctx.moveTo(100, 310);
-            ctx.lineTo(canvas.width - 100, 310);
-            ctx.strokeStyle = '#e2e8f0';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            
-            // Content
-            ctx.textAlign = 'left';
-            ctx.font = 'bold 20px Arial';
-            ctx.fillStyle = '#334155';
-            
-            const startY = 380;
-            const lineH = 50;
-            
-            ctx.fillText('Receipt ID:', 150, startY);
-            ctx.font = '20px Arial';
-            ctx.fillText(donation.id.split('-')[0], 350, startY);
-            
-            ctx.font = 'bold 20px Arial';
-            ctx.fillText('Date:', 150, startY + lineH);
-            ctx.font = '20px Arial';
-            ctx.fillText(donation.date, 350, startY + lineH);
-            
-            ctx.font = 'bold 20px Arial';
-            ctx.fillText('Donor Name:', 150, startY + lineH * 2);
-            ctx.font = '20px Arial';
-            ctx.fillText(donation.name, 350, startY + lineH * 2);
-            
-            ctx.font = 'bold 20px Arial';
-            ctx.fillText('Phone Number:', 150, startY + lineH * 3);
-            ctx.font = '20px Arial';
-            ctx.fillText(donation.phone_number || 'N/A', 350, startY + lineH * 3);
-            
-            ctx.font = 'bold 20px Arial';
-            ctx.fillText('Amount:', 150, startY + lineH * 4);
-            ctx.font = 'bold 24px Arial';
-            ctx.fillStyle = '#f59e0b'; // Amber for poson
-            ctx.fillText(`Rs. ${donation.amount || 0}`, 350, startY + lineH * 4);
-            
-            // Verification stamp
-            if(verify) {
-                ctx.globalAlpha = 0.8;
-                ctx.drawImage(verify, 500, 600, 150, 150);
-                ctx.globalAlpha = 1.0;
+
+            .mobile-card-table tbody {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 12px;
+                padding: 12px;
             }
-            
-            ctx.fillStyle = '#94a3b8';
-            ctx.font = '16px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('Thank you for your generous contribution!', canvas.width / 2, 850);
-            ctx.fillText('This is a computer generated receipt and does not require a signature.', canvas.width / 2, 880);
-            
-            // Convert to PDF
-            const imgData = canvas.toDataURL('image/jpeg', 1.0);
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'px',
-                format: [canvas.width, canvas.height]
-            });
-            pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
-            pdf.save(`Poson_Receipt_${donation.name.replace(/\s+/g, '_')}_${donation.date}.pdf`);
-        };
-    </script>
+
+            .mobile-card-table tr {
+                display: grid !important;
+                grid-template-areas:
+                    "icon info amount"
+                    "icon info action";
+                grid-template-columns: 48px 1fr auto;
+                padding: 16px !important;
+                background: rgba(15, 23, 42, 0.6) !important;
+                border-radius: 24px !important;
+                border: 1px solid rgba(255, 255, 255, 0.05) !important;
+                border-left: 4px solid var(--border-color, #f59e0b) !important;
+                gap: 4px 12px;
+            }
+
+            .mobile-card-table td {
+                padding: 0 !important;
+                border: none !important;
+                display: block !important;
+            }
+
+            .mob-icon-cell {
+                grid-area: icon;
+                align-self: start;
+                padding-top: 4px;
+            }
+
+            .mob-info-cell {
+                grid-area: info;
+            }
+
+            .mob-amount-cell {
+                grid-area: amount;
+                text-align: right;
+            }
+
+            .mob-action-cell {
+                grid-area: action;
+                text-align: right;
+                margin-top: 4px;
+            }
+        }
+
+        /* Maintenance Mode Styles */
+        .maintenance-container {
+            background: radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.05) 0%, transparent 70%);
+        }
+
+        .maintenance-icon {
+            filter: drop-shadow(0 0 30px rgba(245, 158, 11, 0.3));
+            animation: maintenance-float 4s ease-in-out infinite;
+        }
+
+        @keyframes maintenance-float {
+            0%, 100% {
+                transform: translateY(0) scale(1);
+                filter: drop-shadow(0 0 20px rgba(245, 158, 11, 0.2));
+            }
+
+            50% {
+                transform: translateY(-15px) scale(1.05);
+                filter: drop-shadow(0 0 40px rgba(245, 158, 11, 0.4));
+            }
+        }
+
+        .gear-spin {
+            animation: spin 8s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
 </head>
-<body class="poson-theme min-h-screen flex flex-col items-center bg-[url('../poson_logo.png')] bg-center bg-no-repeat bg-fixed bg-blend-overlay" style="background-size: 50%;">
-    
-    <header class="w-full p-6 flex justify-between items-center max-w-4xl mx-auto relative z-10">
-        <a href="index.html" class="flex items-center gap-3 text-white hover:text-theme transition">
-            <span class="material-symbols-rounded">arrow_back</span> Back
-        </a>
-        <img src="../poson_logo.png" alt="Poson Logo" class="h-10">
-    </header>
 
-    <main class="w-full max-w-2xl px-6 py-10 relative z-10 flex-1">
-        <div class="glass-card p-8 text-center fade-in">
-            <span class="material-symbols-rounded text-theme text-5xl mb-4">search</span>
-            <h1 class="text-3xl font-bold text-white mb-2">Find Your Poson Receipt</h1>
-            <p class="text-slate-400 mb-8">Enter your registered phone number to view and download your official donation receipt.</p>
-            
-            <form onsubmit="window.searchDonation(event)" class="flex gap-2">
-                <input type="tel" id="phone-input" placeholder="e.g. 0712345678" required
-                    class="flex-1 bg-slate-900/60 border border-slate-700 rounded-lg p-4 text-white focus:outline-none focus:border-theme transition" />
-                <button type="submit" class="bg-theme hover:bg-theme-hover text-white px-8 rounded-lg font-semibold transition">
-                    Search
-                </button>
-            </form>
-        </div>
+<body class="antialiased selection:bg-brand-500/30 selection:text-white">
+    <div class="neural-flow"></div>
+    <div id="root"></div>
 
-        <div id="results" class="mt-8"></div>
-    </main>
-    
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        // --- SUPABASE INITIALIZATION ---
+        const supabaseUrl = 'https://yqpkgybmjdovdnmekpnw.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxcGtneWJtamRvdmRubWVrcG53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjUwMjAsImV4cCI6MjA5MjEwMTAyMH0.7C9jv1_zDRxSMCgs0tWfiNUGXGOkCLz5RE0CCDoc_yA';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // --- UTILS ---
+        const formatCurrency = (amount) => {
+            if (!amount) return "LKR. 0";
+            return "LKR. " + Math.round(parseFloat(amount)).toLocaleString('en-US');
+        };
+
+        const formatDate = (dateString) => {
+            if (!dateString) return '';
+            const d = new Date(dateString);
+            return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        };
+
+        const getReceiptShortId = (donation) => {
+            const rawId = donation.id ? String(donation.id) : String(Math.floor(Math.random() * 10000));
+            return rawId.includes('-') ? rawId.split('-')[0].toUpperCase() : rawId.padStart(4, '0');
+        };
+
+        const MaterialIcon = ({ name, className = '' }) => (
+            <span className={`material-symbols-rounded ${className}`} style={{ fontSize: 'inherit', display: 'inline-block', verticalAlign: 'middle' }}>{name}</span>
+        );
+
+        const generateReceiptCanvas = (donation) => {
+            return new Promise((resolve) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const width = 800;
+                const height = 1150;
+                canvas.width = width;
+                canvas.height = height;
+
+                // Modern Premium Theme Palette (Slate with Gold Accents for Poson)
+                const theme = {
+                    background: '#FFFFFF',
+                    surface: '#F8FAFC',
+                    primary: '#451A03',     // Deep Amber/Brown
+                    secondary: '#78350F',   // Amber
+                    accent: '#D97706',      // Gold/Bronze accent
+                    accentLight: '#FEF3C7', // Soft gold tint
+                    textPrimary: '#0F172A', // Slate 900
+                    textSecondary: '#475569', // Slate 600
+                    textMuted: '#94A3B8',   // Slate 400
+                    border: '#E2E8F0',      // Slate 200
+                    success: '#D97706',     // Amber
+                    successLight: '#FEF3C7',
+                    watermark: '#F1F5F9'    
+                };
+
+                // Helper function for rounded rectangles
+                const roundedRect = (x, y, w, h, r) => {
+                    ctx.beginPath();
+                    ctx.moveTo(x + r, y);
+                    ctx.lineTo(x + w - r, y);
+                    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+                    ctx.lineTo(x + w, y + h - r);
+                    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+                    ctx.lineTo(x + r, y + h);
+                    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+                    ctx.lineTo(x, y + r);
+                    ctx.quadraticCurveTo(x, y, x + r, y);
+                    ctx.closePath();
+                    return ctx;
+                };
+
+                const loadImages = () => {
+                    const logo = new Image();
+                    logo.crossOrigin = "anonymous";
+                    logo.src = '../poson_logo.png';
+
+                    const verify = new Image();
+                    verify.crossOrigin = "anonymous";
+                    verify.src = '../ve1rify.png';
+
+                    const dcIcon = new Image();
+                    dcIcon.crossOrigin = "anonymous";
+                    dcIcon.src = '../dc.png';
+
+                    return Promise.all([
+                        new Promise(r => { logo.onload = () => r(logo); logo.onerror = () => r(null); }),
+                        new Promise(r => { verify.onload = () => r(verify); verify.onerror = () => r(null); }),
+                        new Promise(r => { dcIcon.onload = () => r(dcIcon); dcIcon.onerror = () => r(null); })
+                    ]);
+                };
+
+                loadImages().then(([logoImg, verifyImg, dcImg]) => {
+                    // ========== BACKGROUND ==========
+                    ctx.fillStyle = theme.background;
+                    ctx.fillRect(0, 0, width, height);
+
+                    // ========== WATERMARK (Subtle Stupa inspired) ==========
+                    ctx.save();
+                    ctx.globalAlpha = 0.04;
+                    ctx.translate(width / 2, height / 2);
+                    for (let i = 0; i < 8; i++) {
+                        ctx.rotate(Math.PI / 4);
+                        ctx.beginPath();
+                        ctx.moveTo(0, -150);
+                        ctx.quadraticCurveTo(50, -75, 0, -20);
+                        ctx.quadraticCurveTo(-50, -75, 0, -150);
+                        ctx.fillStyle = theme.primary;
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.moveTo(0, -130);
+                        ctx.quadraticCurveTo(35, -65, 0, -30);
+                        ctx.quadraticCurveTo(-35, -65, 0, -130);
+                        ctx.fillStyle = theme.accent;
+                        ctx.fill();
+                    }
+                    ctx.restore();
+
+                    // ========== OUTER DOUBLE BORDER ==========
+                    ctx.strokeStyle = theme.accent;
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(25, 25, width - 50, height - 50);
+
+                    roundedRect(35, 35, width - 70, height - 70, 16);
+                    ctx.strokeStyle = theme.primary;
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+
+                    // Corner Dharma Wheels (Inside Frame)
+                    if (dcImg) {
+                        const dcSize = 45;
+                        const offset = 70;
+                        ctx.drawImage(dcImg, offset - dcSize / 2, offset - dcSize / 2, dcSize, dcSize); // Top Left
+                        ctx.drawImage(dcImg, width - offset - dcSize / 2, offset - dcSize / 2, dcSize, dcSize); // Top Right
+                        ctx.drawImage(dcImg, offset - dcSize / 2, height - offset - dcSize / 2, dcSize, dcSize); // Bottom Left
+                        ctx.drawImage(dcImg, width - offset - dcSize / 2, height - offset - dcSize / 2, dcSize, dcSize); // Bottom Right
+                    }
+
+                    // ========== HEADER SECTION ==========
+                    ctx.beginPath();
+                    ctx.arc(width / 2, 110, 55, 0, Math.PI * 2);
+                    ctx.fillStyle = theme.surface;
+                    ctx.fill();
+                    ctx.strokeStyle = theme.border;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    if (logoImg) {
+                        const logoSize = 80;
+                        ctx.drawImage(logoImg, width / 2 - logoSize / 2, 70, logoSize, logoSize);
+                    }
+
+                    ctx.textAlign = "center";
+                    ctx.font = `bold 28px sans-serif`;
+                    ctx.fillStyle = theme.primary;
+                    ctx.fillText("POSON FESTIVAL 2026", width / 2, 175);
+
+                    ctx.font = `500 14px sans-serif`;
+                    ctx.fillStyle = theme.textSecondary;
+                    ctx.fillText("මහා පොසොන් උත්සවය - දික්හේනපුර", width / 2, 200);
+
+                    ctx.beginPath();
+                    ctx.moveTo(width / 2 - 150, 215);
+                    ctx.lineTo(width / 2 + 150, 215);
+                    ctx.strokeStyle = theme.accent;
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+
+                    // ========== RECEIPT TITLE ==========
+                    ctx.font = `bold 32px sans-serif`;
+                    ctx.fillStyle = theme.primary;
+                    ctx.fillText("OFFICIAL RECEIPT OF DONATION", width / 2, 275);
+
+                    ctx.font = `500 13px monospace`;
+                    ctx.fillStyle = theme.textMuted;
+                    ctx.fillText("බුදු සරණයි !", width / 2, 300);
+
+                    // ========== RECEIPT ID & DATE ==========
+                    const id = getReceiptShortId(donation);
+                    const dateStr = new Date(donation.date || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+
+                    ctx.font = `bold 13px monospace`;
+                    ctx.fillStyle = theme.textSecondary;
+                    ctx.textAlign = "left";
+                    ctx.fillText(`Receipt No: PFP/2026/${id}`, 70, 340);
+                    ctx.textAlign = "right";
+                    ctx.fillText(`Date Issued: ${dateStr}`, width - 70, 340);
+                    ctx.textAlign = "center";
+
+                    ctx.beginPath();
+                    ctx.moveTo(50, 365);
+                    ctx.lineTo(width - 50, 365);
+                    ctx.strokeStyle = theme.border;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    // ========== DONOR CARD ==========
+                    roundedRect(50, 390, width - 100, 130, 12);
+                    ctx.fillStyle = theme.surface;
+                    ctx.fill();
+                    ctx.strokeStyle = theme.border;
+                    ctx.stroke();
+
+                    ctx.font = `bold 12px sans-serif`;
+                    ctx.fillStyle = theme.textMuted;
+                    ctx.textAlign = "left";
+                    ctx.fillText("DONOR INFORMATION", 70, 415);
+
+                    ctx.font = `bold 22px sans-serif`;
+                    ctx.fillStyle = theme.textPrimary;
+                    ctx.fillText(donation.name || "Anonymous Donor", 70, 445);
+
+                    ctx.font = `500 13px sans-serif`;
+                    ctx.fillStyle = theme.textSecondary;
+                    if (donation.phone_number) ctx.fillText(`Contact: ${donation.phone_number}`, 70, 475);
+                    ctx.fillText(`Reported By: ${donation.reported_by || '-'}`, 70, 495);
+
+                    if (verifyImg) {
+                        const vSize = 30;
+                        ctx.drawImage(verifyImg, width - 180, 400, vSize, vSize);
+                        ctx.font = `bold 11px sans-serif`;
+                        ctx.fillStyle = theme.accent;
+                        ctx.fillText("VERIFIED DONOR", width - 145, 420);
+                    }
+
+                    // ========== DONATION DETAILS CARD ==========
+                    roundedRect(50, 545, width - 100, 230, 12);
+                    ctx.fillStyle = "#FFFFFF";
+                    ctx.fill();
+                    ctx.shadowColor = "rgba(0,0,0,0.05)";
+                    ctx.shadowBlur = 8;
+                    ctx.strokeStyle = theme.border;
+                    ctx.stroke();
+                    ctx.shadowColor = "transparent";
+
+                    ctx.font = `bold 12px sans-serif`;
+                    ctx.fillStyle = theme.textMuted;
+                    ctx.fillText("CONTRIBUTION DETAILS", 70, 575);
+
+                    let yOffset = 600;
+                    ctx.font = `bold 14px sans-serif`;
+                    ctx.fillStyle = theme.textSecondary;
+                    ctx.fillText("Description", 70, yOffset);
+                    ctx.fillText("Value / Amount", width - 200, yOffset);
+
+                    ctx.beginPath();
+                    ctx.moveTo(70, yOffset + 12);
+                    ctx.lineTo(width - 70, yOffset + 12);
+                    ctx.strokeStyle = theme.border;
+                    ctx.stroke();
+
+                    yOffset += 35;
+                    ctx.font = `bold 18px sans-serif`;
+                    ctx.fillStyle = theme.textPrimary;
+                    const desc = donation.donation_type === 'Cash' ? (donation.donor_category || 'Cash Contribution') : `${donation.item_description} (x${donation.quantity})`;
+                    ctx.fillText(desc, 70, yOffset);
+
+                    ctx.font = `bold 22px sans-serif`;
+                    ctx.fillStyle = theme.primary;
+                    const amount = donation.donation_type === 'Cash' ? `LKR ${(Number(donation.amount) || 0).toLocaleString('en-LK')}` : 'GOODS';
+                    ctx.textAlign = "right";
+                    ctx.fillText(amount, width - 70, yOffset);
+                    ctx.textAlign = "left";
+
+                    yOffset += 45;
+                    ctx.font = `500 12px sans-serif`;
+                    ctx.fillStyle = theme.textMuted;
+                    ctx.fillText(`Payment Method: ${donation.donation_type === 'Cash' ? 'Cash Payment' : 'Goods / In-kind'}`, 70, yOffset);
+
+                    ctx.beginPath();
+                    roundedRect(width - 170, yOffset - 8, 100, 24, 12);
+                    ctx.fillStyle = theme.successLight;
+                    ctx.fill();
+                    ctx.font = `bold 11px sans-serif`;
+                    ctx.fillStyle = theme.success;
+                    ctx.textAlign = "center";
+                    ctx.fillText("✓ RECEIVED", width - 120, yOffset + 8);
+                    ctx.textAlign = "left";
+
+                    yOffset += 40;
+                    ctx.beginPath();
+                    ctx.moveTo(70, yOffset);
+                    ctx.lineTo(width - 70, yOffset);
+                    ctx.strokeStyle = theme.border;
+                    ctx.stroke();
+
+                    yOffset += 25;
+                    ctx.font = `bold 14px sans-serif`;
+                    ctx.fillStyle = theme.textPrimary;
+                    ctx.fillText("Total Contribution", 70, yOffset);
+                    ctx.font = `bold 24px sans-serif`;
+                    ctx.fillStyle = theme.accent;
+                    ctx.textAlign = "right";
+                    const finalTotal = donation.donation_type === 'Cash' ? `LKR ${(Number(donation.amount) || 0).toLocaleString('en-LK')}.00` : 'GOODS RECEIVED';
+                    ctx.fillText(finalTotal, width - 70, yOffset);
+                    ctx.textAlign = "center";
+
+                    // ========== VERIFICATION STAMP ==========
+                    ctx.save();
+                    ctx.translate(width - 120, height - 320);
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 45, 0, Math.PI * 2);
+                    ctx.strokeStyle = theme.accent;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 38, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.font = `bold 10px sans-serif`;
+                    ctx.fillStyle = theme.accent;
+                    ctx.fillText("VERIFIED", 0, -8);
+                    ctx.font = `bold 18px sans-serif`;
+                    ctx.fillStyle = theme.primary;
+                    ctx.fillText("✓", 0, 12);
+                    ctx.font = `8px sans-serif`;
+                    ctx.fillStyle = theme.textMuted;
+                    ctx.fillText("OFFICIAL SEAL", 0, 28);
+                    ctx.restore();
+
+                    // ========== FOOTER SECTION ==========
+                    ctx.font = `italic 14px serif`;
+                    ctx.fillStyle = theme.textSecondary;
+                    ctx.fillText("“May the blessings of the Triple Gem be upon you.”", width / 2, height - 230);
+
+                    ctx.font = `bold 11px sans-serif`;
+                    ctx.fillStyle = theme.textMuted;
+                    ctx.fillText("This Dana is offered for the success of the Poson Festival and the happiness of all beings.", width / 2, height - 205);
+
+                    ctx.beginPath();
+                    ctx.moveTo(50, height - 175);
+                    ctx.lineTo(width - 50, height - 175);
+                    ctx.strokeStyle = theme.border;
+                    ctx.stroke();
+
+                    // Contact Details
+                    ctx.font = `bold 11px sans-serif`;
+                    ctx.fillStyle = theme.textSecondary;
+                    ctx.fillText('071 615 5666 (Isara Dilnuka)  |  071 084 6810 (Imesh Nilhan)', width / 2, height - 150);
+                    ctx.fillText('isaradilnuka2005@gmail.com  |  imeshnilhan21@gmail.com', width / 2, height - 130);
+                    ctx.font = `500 10px sans-serif`;
+                    ctx.fillText('Near New Temple, Dikhenapura · Poson Festival 2026', width / 2, height - 110);
+                    ctx.fillText('This is a computer-generated receipt and requires no signature.', width / 2, height - 90);
+
+                    ctx.font = `bold 10px monospace`;
+                    ctx.fillStyle = theme.textMuted;
+                    ctx.textAlign = "left";
+                    ctx.fillText(`TXN REF: ${id}`, 55, height - 45);
+                    ctx.textAlign = "right";
+                    ctx.fillText(`Generated: ${new Date().toLocaleTimeString()}`, width - 55, height - 45);
+
+                    resolve(canvas);
+                });
+            });
+        };
+
+        function DonationsView({ incomes }) {
+            const [phoneSearch, setPhoneSearch] = useState('');
+            const [phoneSearchResult, setPhoneSearchResult] = useState(null);
+            const [phoneMatches, setPhoneMatches] = useState([]);
+            const [filterCat, setFilterCat] = useState('all');
+            const [searchTerm, setSearchTerm] = useState('');
+            const [receiptModal, setReceiptModal] = useState(null);
+            const [verifyPhone, setVerifyPhone] = useState('');
+            const [verifyStatus, setVerifyStatus] = useState(null);
+            const [receiptCanvas, setReceiptCanvas] = useState(null);
+            const [canvasLoading, setCanvasLoading] = useState(false);
+
+            const allDonations = useMemo(() => {
+                const eventCats = ['Kuuduwa Open', 'Exhibition Box - Day 1', 'Exhibition Box - Day 2', 'Exhibition Box - Day 3', 'Exhibition Box - Day 4', 'Exhibition Box - Day 5'];
+                return [...incomes]
+                    .filter(d => !eventCats.includes(d.donor_category))
+                    .sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
+            }, [incomes]);
+
+            const filtered = useMemo(() => {
+                return allDonations.filter(d => {
+                    if (filterCat === 'pledge' && d.status !== 'Promised') return false;
+                    if (filterCat === 'cash' && (d.status === 'Promised' || d.donation_type !== 'Cash')) return false;
+                    if (filterCat === 'goods' && (d.status === 'Promised' || d.donation_type !== 'Goods')) return false;
+                    if (searchTerm) {
+                        const l = searchTerm.toLowerCase();
+                        return (d.name?.toLowerCase().includes(l) || d.phone_number?.includes(l) || d.item_description?.toLowerCase().includes(l));
+                    }
+                    return true;
+                });
+            }, [allDonations, filterCat, searchTerm]);
+
+            const handlePhoneSearch = () => {
+                const q = phoneSearch.trim();
+                if (!q) return;
+                const matches = allDonations.filter(d => d.phone_number && d.phone_number.replace(/\s/g, '') === q.replace(/\s/g, ''));
+                if (matches.length > 0) {
+                    setPhoneMatches(matches);
+                    setPhoneSearchResult('found');
+                } else {
+                    setPhoneMatches([]);
+                    setPhoneSearchResult('not_found');
+                }
+            };
+
+            const handleVerifyPhone = async () => {
+                if (!receiptModal) return;
+                const donorPhone = receiptModal.phone_number ? receiptModal.phone_number.replace(/\s/g, '') : null;
+                if (!donorPhone) { setVerifyStatus('no_phone'); return; }
+                if (verifyPhone.replace(/\s/g, '') === donorPhone) {
+                    setVerifyStatus('ok');
+                    setCanvasLoading(true);
+                    try { const canvas = await generateReceiptCanvas(receiptModal); setReceiptCanvas(canvas); } catch (e) { }
+                    setCanvasLoading(false);
+                } else { setVerifyStatus('fail'); }
+            };
+
+            const getCatStyle = (d) => {
+                if (d.status === 'Promised') return { badge: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20', row: 'border-l-yellow-500' };
+                if (d.donation_type === 'Goods') return { badge: 'bg-purple-500/10 text-purple-400 border-purple-500/20', row: 'border-l-purple-500' };
+                return { badge: 'bg-brand-500/10 text-brand-400 border-brand-500/20', row: 'border-l-brand-500' };
+            };
+
+            const getCatLabel = (d) => {
+                if (d.status === 'Promised') return 'Pledge';
+                if (d.donation_type === 'Goods') return 'Goods';
+                return 'Cash';
+            };
+
+            return (
+                <div className="max-w-6xl mx-auto px-4 py-8 md:py-12 space-y-12 animate-fade-in">
+                    <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5">
+                        <div className="flex items-center gap-4">
+                            <div className="w-16 h-16 bg-brand-500/10 rounded-[2rem] flex items-center justify-center p-3 shadow-2xl shadow-brand-500/20">
+                                <img src="../poson_logo.png" className="w-full h-full object-contain" alt="Logo" />
+                            </div>
+                            <div>
+                                <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight neon-text">Public Portal</h1>
+                                <p className="text-brand-400 font-black text-[10px] md:text-xs tracking-[0.4em] uppercase opacity-80">Public Transparency System/විනිවිදභාවය</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 bg-white/5 px-6 py-3 rounded-2xl border border-white/5">
+                            <div className="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></div>
+                            <div className="flex flex-col">
+                                <span className="text-xs font-bold text-slate-200 uppercase tracking-widest leading-none">System Online</span>
+                                <span className="text-[8px] font-bold text-brand-500/80 uppercase tracking-widest mt-1">පද්ධතිය සක්‍රීයයි</span>
+                            </div>
+                        </div>
+                    </header>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                        {receiptModal ? (
+                            /* Receipt Section Page View */
+                            <div className="lg:col-span-12 space-y-8 animate-fade-in">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <button onClick={() => setReceiptModal(null)} className="w-12 h-12 rounded-2xl bg-white/5 text-slate-400 hover:text-brand-400 hover:bg-brand-500/10 transition-all flex items-center justify-center border border-white/5">
+                                        <MaterialIcon name="arrow_back" />
+                                    </button>
+                                    <div>
+                                        <h2 className="text-2xl font-black text-white tracking-tight">Donation Verification</h2>
+                                        <p className="text-[10px] text-brand-400 font-bold uppercase tracking-widest">පරිත්‍යාගය තහවුරු කිරීම / Authentication</p>
+                                    </div>
+                                </div>
+
+                                <div className="glass-card rounded-[3rem] border border-white/10 overflow-hidden shadow-2xl relative">
+                                    <div className="absolute top-0 right-0 w-96 h-96 bg-brand-500/5 blur-[120px] rounded-full"></div>
+
+                                    <div className="relative z-10 p-8 md:p-12">
+                                        <div className="max-w-2xl mx-auto space-y-12">
+                                            <div className="text-center space-y-4">
+                                                <div className="w-24 h-24 rounded-[2.5rem] bg-brand-500/10 text-brand-400 flex items-center justify-center mx-auto shadow-2xl shadow-brand-500/20 border border-brand-500/20">
+                                                    <MaterialIcon name="verified_user" className="text-5xl" />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <h3 className="text-3xl font-black text-white tracking-tight">Unlock Official Receipt</h3>
+                                                    <p className="text-[10px] text-brand-400 font-black uppercase tracking-widest">නිල රිසිට්පත ලබාගන්න / Get Artifact</p>
+                                                </div>
+                                            </div>
+
+                                            {verifyStatus !== 'ok' ? (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                                                    <div className="bg-slate-900/80 rounded-[2.5rem] p-8 border border-white/5 space-y-6 shadow-inner">
+                                                        <div className="space-y-4">
+                                                            <div className="flex justify-between items-center pb-4 border-b border-white/5">
+                                                                <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Donor Name</span>
+                                                                <span className="text-white font-bold">{receiptModal.name}</span>
+                                                            </div>
+                                                            <div className="flex justify-between items-center pb-4 border-b border-white/5">
+                                                                <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Date</span>
+                                                                <span className="text-white font-bold">{formatDate(receiptModal.date)}</span>
+                                                            </div>
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Amount / Details</span>
+                                                                <span className="text-brand-400 font-black">{receiptModal.donation_type === 'Cash' ? formatCurrency(receiptModal.amount) : receiptModal.item_description}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="p-6 bg-indigo-500/5 rounded-3xl border border-indigo-500/10">
+                                                            <p className="text-indigo-200/60 text-[11px] leading-relaxed">
+                                                                <MaterialIcon name="info" className="text-xs mr-1 opacity-50" />
+                                                                Please provide the registered phone number to authenticate and generate the digital contribution artifact.
+                                                            </p>
+                                                            <p className="text-indigo-400/40 text-[9px] mt-1 font-bold">කරුණාකර ඔබ ලියාපදිංචි කළ දුරකථන අංකය ලබා දී රිසිට්පත ලබාගන්න.</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-6">
+                                                        <div className="space-y-4">
+                                                            <div className="relative">
+                                                                <MaterialIcon name="phone_iphone" className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-500" />
+                                                                <input
+                                                                    type="tel"
+                                                                    value={verifyPhone}
+                                                                    onChange={e => { setVerifyPhone(e.target.value); setVerifyStatus(null); }}
+                                                                    onKeyDown={e => e.key === 'Enter' && handleVerifyPhone()}
+                                                                    placeholder="07X XXX XXXX"
+                                                                    className="w-full bg-slate-950 border border-white/10 text-white rounded-[1.5rem] pl-16 pr-6 py-6 outline-none focus:border-brand-500 transition-all font-black text-2xl tracking-[0.2em] shadow-inner"
+                                                                />
+                                                            </div>
+
+                                                            {verifyStatus === 'fail' && (
+                                                                <div className="p-5 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-4 animate-fade-in">
+                                                                    <div className="w-10 h-10 rounded-xl bg-red-500/20 text-red-400 flex items-center justify-center shrink-0">
+                                                                        <MaterialIcon name="lock_reset" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-red-400 text-xs font-black uppercase tracking-tight">Validation Failed / තහවුරු කිරීම අසාර්ථකයි</p>
+                                                                        <p className="text-red-300/40 text-[10px] mt-0.5">The phone number provided does not match our records. / ලබාදුන් අංකය පද්ධතියේ අංකය සමඟ නොගැලපේ.</p>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {verifyStatus === 'no_phone' && (
+                                                                <div className="p-5 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center gap-4 animate-fade-in">
+                                                                    <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                                                                        <MaterialIcon name="contact_support" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-amber-400 text-xs font-black uppercase tracking-tight">Missing Contact Data / දත්ත නොමැත</p>
+                                                                        <p className="text-amber-300/40 text-[10px] mt-0.5">Please contact the finance admin to update your record. / කරුණාකර පරිපාලක සම්බන්ධ කරගන්න.</p>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        <button onClick={handleVerifyPhone} className="w-full py-6 bg-brand-600 hover:bg-brand-500 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl transition active:scale-95 shadow-2xl shadow-brand-500/40 shimmer-bg flex flex-col items-center justify-center gap-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <MaterialIcon name="verified" />
+                                                                Generate Receipt
+                                                            </div>
+                                                            <span className="text-[9px] opacity-70">රිසිට්පත සාදන්න</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-10 animate-fade-in">
+                                                    {canvasLoading ? (
+                                                        <div className="flex flex-col items-center gap-6 py-12">
+                                                            <div className="w-20 h-20 border-[8px] border-brand-500/10 border-t-brand-500 rounded-full animate-spin shadow-2xl shadow-brand-500/20"></div>
+                                                            <div className="space-y-1 text-center">
+                                                                <p className="text-white font-black uppercase tracking-[0.4em] text-xs">Processing Artifact / සකසමින් පවතී</p>
+                                                                <p className="text-brand-500/60 font-bold uppercase tracking-[0.2em] text-[9px]">Rendering High-Fidelity Geometry... / නිමවුම සැකසෙමින් පවතී...</p>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="space-y-10">
+                                                            <div className="max-w-md mx-auto">
+                                                                <div className="rounded-[3rem] overflow-hidden border-[12px] border-white/5 bg-white p-2 shadow-[0_40px_80px_rgba(0,0,0,0.4)] rotate-2 hover:rotate-0 transition-transform duration-700 group">
+                                                                    <img src={receiptCanvas?.toDataURL()} className="w-full" alt="Receipt" />
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+                                                                <button onClick={() => {
+                                                                    const a = document.createElement('a');
+                                                                    a.href = receiptCanvas.toDataURL();
+                                                                    a.download = `Receipt_${getReceiptShortId(receiptModal)}.png`;
+                                                                    a.click();
+                                                                }} className="flex-1 py-6 bg-brand-600 hover:bg-brand-500 text-white font-black uppercase tracking-[0.15em] text-[10px] rounded-2xl transition shadow-2xl shadow-brand-500/20 flex flex-col items-center justify-center gap-1 active:scale-95">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <MaterialIcon name="download" />
+                                                                        Download PNG
+                                                                    </div>
+                                                                    <span className="text-[8px] opacity-70">බාගත කරගන්න</span>
+                                                                </button>
+                                                                <button onClick={() => setReceiptModal(null)} className="py-6 px-8 bg-slate-900 hover:bg-slate-800 text-slate-400 font-black uppercase tracking-[0.15em] text-[10px] rounded-2xl transition border border-white/5 active:scale-95 flex flex-col items-center justify-center gap-1">
+                                                                    <span>Close</span>
+                                                                    <span className="text-[8px] opacity-50">වසන්න</span>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            /* Main Portal View */
+                            <>
+                                 {/* Search Section */}
+                                 <div className="lg:col-span-5 space-y-6 animate-slide-right delay-100">
+                                     <div className="glass-card rounded-[2.5rem] p-8 border border-white/10 relative overflow-hidden group">
+                                         <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/5 blur-[100px] rounded-full group-hover:bg-brand-500/10 transition-colors"></div>
+                                         <div className="relative z-10 space-y-8">
+                                             <div className="space-y-2">
+                                                 <h3 className="text-2xl font-black text-white tracking-tight">Receipt Lookup</h3>
+                                                 <p className="text-[10px] text-brand-400 font-black uppercase tracking-widest opacity-60">පරිත්‍යාග රිසිට්පත් පරීක්ෂාව</p>
+                                                 <p className="text-sm text-slate-400 leading-relaxed pt-1">ඔබ ලබාදුන් පරිත්‍යාග වල විස්තර සහ රිසිට්පත් මෙතැනින් ලබාගත හැක.</p>
+                                             </div>
+
+                                             <div className="space-y-4">
+                                                 <div className="relative">
+                                                     <MaterialIcon name="phone" className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500" />
+                                                     <input
+                                                         type="tel"
+                                                         value={phoneSearch}
+                                                         onChange={e => { setPhoneSearch(e.target.value); setPhoneSearchResult(null); }}
+                                                         onKeyDown={e => e.key === 'Enter' && handlePhoneSearch()}
+                                                         placeholder="Phone Number / දුරකථන අංකය"
+                                                         className="w-full bg-slate-900/50 border border-slate-700/50 text-white rounded-2xl pl-14 pr-6 py-5 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all font-bold tracking-wide"
+                                                     />
+                                                 </div>
+                                                 <button onClick={handlePhoneSearch} className="w-full py-5 bg-brand-600 hover:bg-brand-500 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl transition shadow-xl shadow-brand-500/20 active:scale-95 shimmer-bg flex flex-col items-center justify-center gap-1">
+                                                     <span>Search Records</span>
+                                                     <span className="text-[9px] opacity-70">වාර්තා සොයන්න</span>
+                                                 </button>
+                                             </div>
+
+                                             {phoneSearchResult === 'not_found' && (
+                                                 <div className="p-5 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-start gap-4 animate-fade-in">
+                                                     <div className="w-10 h-10 rounded-xl bg-red-500/20 text-red-400 flex items-center justify-center shrink-0">
+                                                         <MaterialIcon name="error" />
+                                                     </div>
+                                                     <div>
+                                                         <p className="text-red-400 text-sm font-black uppercase tracking-tight">No Records Found / වාර්තා හමු නොවීය</p>
+                                                         <p className="text-red-300/60 text-xs mt-1">මෙම අංකය සඳහා කිසිදු වාර්තාවක් හමු නොවීය. කරුණාකර අංකය පරීක්ෂා කරන්න.</p>
+                                                     </div>
+                                                 </div>
+                                             )}
+
+                                             {phoneSearchResult === 'found' && (
+                                                 <div className="space-y-4 animate-fade-in">
+                                                     <div className="flex items-center justify-between px-2">
+                                                         <p className="text-brand-400 font-black text-[10px] uppercase tracking-widest flex items-center gap-2">
+                                                             <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-ping"></span>
+                                                             {phoneMatches.length} Records Detected / වාර්තා හමු විය
+                                                         </p>
+                                                     </div>
+                                                     <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                                         {phoneMatches.map(d => (
+                                                             <div key={d.id} className="p-5 bg-slate-900/60 rounded-3xl border border-white/5 flex justify-between items-center group hover:bg-white/5 hover:border-brand-500/30 transition-all">
+                                                                 <div className="space-y-1">
+                                                                     <div className="text-[10px] text-slate-500 font-black uppercase tracking-tighter">{formatDate(d.date)}</div>
+                                                                     <div className="text-white font-black tracking-tight">{d.donation_type === 'Cash' ? formatCurrency(d.amount) : d.item_description}</div>
+                                                                 </div>
+                                                                 {d.status !== 'Promised' && (
+                                                                     <button onClick={() => { setReceiptModal(d); setVerifyStatus(null); setVerifyPhone(''); setReceiptCanvas(null); }} className="w-12 h-12 rounded-2xl bg-brand-500/10 text-brand-400 flex items-center justify-center hover:bg-brand-500 hover:text-white transition-all shadow-lg group-hover:scale-110">
+                                                                         <MaterialIcon name="arrow_forward" />
+                                                                     </button>
+                                                                 )}
+                                                             </div>
+                                                         ))}
+                                                     </div>
+                                                 </div>
+                                             )}
+                                         </div>
+                                     </div>
+
+                                     {/* Info Card */}
+                                     <div className="p-8 bg-indigo-500/5 rounded-[2.5rem] border border-indigo-500/10">
+                                         <h4 className="text-indigo-300 font-black text-xs uppercase tracking-[0.2em] mb-4">Security Note / ආරක්ෂිත සටහන</h4>
+                                         <p className="text-indigo-200/60 text-xs leading-relaxed">
+                                             Your privacy is important. Each receipt access requires phone number verification to ensure that only the donor can download their official contribution statement.
+                                         </p>
+                                         <p className="text-indigo-400/40 text-[9px] font-bold mt-2 leading-relaxed">
+                                             ඔබගේ පෞද්ගලිකත්වය අපට ඉතා වැදගත් වේ. පරිත්‍යාගශීලියාට පමණක් තම නිල රිසිට්පත බාගත කළ හැකි බව සහතික කිරීම සඳහා සෑම රිසිට්පතකටම දුරකථන අංකය මගින් තහවුරු කිරීම අවශ්‍ය වේ.
+                                         </p>
+                                     </div>
+                                 </div>
+
+                                 {/* List Section */}
+                                 <div className="lg:col-span-7 space-y-6 animate-fade-in delay-300">
+                                     <div className="space-y-4">
+                                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2">
+                                             <div className="space-y-1">
+                                                 <h3 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
+                                                     <MaterialIcon name="analytics" className="text-brand-400" />
+                                                     <div className="flex flex-col">
+                                                         <span>Latest Activity</span>
+                                                         <span className="text-[10px] text-brand-400/60 font-bold uppercase tracking-widest">නවතම ක්‍රියාකාරකම්</span>
+                                                     </div>
+                                                 </h3>
+                                                 <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest flex items-center gap-2">
+                                                     නවතම ක්‍රියාකාරකම් <span className="opacity-30">•</span> Real-time contribution stream
+                                                 </p>
+                                             </div>
+                                             <div className="flex gap-2 bg-slate-900/50 p-1.5 rounded-2xl border border-white/5 overflow-x-auto custom-scrollbar h-fit">
+                                                 {['all', 'cash', 'goods', 'pledge'].map(c => (
+                                                     <button key={c} onClick={() => setFilterCat(c)} className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap flex flex-col items-center gap-0.5 ${filterCat === c ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}>
+                                                         <span>{c}</span>
+                                                         <span className="text-[7px] opacity-60">
+                                                             {c === 'all' && 'සියල්ල'}
+                                                             {c === 'cash' && 'මුදල්'}
+                                                             {c === 'goods' && 'ද්‍රව්‍ය'}
+                                                             {c === 'pledge' && 'පොරොන්දු'}
+                                                         </span>
+                                                     </button>
+                                                 ))}
+                                             </div>
+                                         </div>
+
+                                         <div className="px-2">
+                                             <div className="relative group">
+                                                 <MaterialIcon name="search" className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-brand-400 transition-colors" />
+                                                 <input
+                                                     type="text"
+                                                     value={searchTerm}
+                                                     onChange={e => setSearchTerm(e.target.value)}
+                                                     placeholder="Search by name or items... / නම හෝ ද්‍රව්‍ය සෙවීමට..."
+                                                     className="w-full bg-slate-900/50 border border-white/5 text-white rounded-2xl pl-14 pr-6 py-4 text-xs outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/5 transition-all shadow-inner"
+                                                 />
+                                             </div>
+                                         </div>
+                                     </div>
+
+                                     <div className="glass-card rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl animate-scale-in delay-500">
+                                        <div className="overflow-x-auto custom-scrollbar">
+                                            <table className="w-full text-left border-collapse mobile-card-table">
+                                                <thead>
+                                                    <tr className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] bg-white/5 border-b border-white/5">
+                                                        <th className="px-8 py-5">
+                                                            <div>Event Date</div>
+                                                            <div className="text-[8px] opacity-50">දිනය</div>
+                                                        </th>
+                                                        <th className="px-8 py-5">
+                                                            <div>Donor</div>
+                                                            <div className="text-[8px] opacity-50">පරිත්‍යාගශීලියා</div>
+                                                        </th>
+                                                        <th className="px-8 py-5 text-right">
+                                                            <div>Value</div>
+                                                            <div className="text-[8px] opacity-50">වටිනාකම</div>
+                                                        </th>
+                                                        <th className="px-8 py-5 text-center">
+                                                            <div>Receipt</div>
+                                                            <div className="text-[8px] opacity-50">රිසිට්පත</div>
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-white/5">
+                                                    {filtered.map(d => {
+                                                        const cs = getCatStyle(d);
+                                                        const borderCol = d.status === 'Promised' ? '#eab308' : (d.donation_type === 'Goods' ? '#a855f7' : '#f59e0b');
+                                                        return (
+                                                            <tr key={d.id} className={`hover:bg-white/5 transition-all group border-l-4 ${cs.row}`} style={{ '--border-color': borderCol }}>
+                                                                <td className="px-8 py-6 md:table-cell hidden mob-icon-cell">
+                                                                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white/5 text-slate-400">
+                                                                        <MaterialIcon name={d.donation_type === 'Goods' ? 'inventory_2' : 'payments'} />
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-8 py-6 mob-info-cell">
+                                                                    <div className="md:hidden flex items-center gap-2 mb-2">
+                                                                        <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 text-slate-400 shrink-0">
+                                                                            <MaterialIcon name={d.donation_type === 'Goods' ? 'inventory_2' : 'payments'} className="text-sm" />
+                                                                        </div>
+                                                                        <div className="text-[10px] text-slate-500 font-black uppercase tracking-tighter">{formatDate(d.date)}</div>
+                                                                    </div>
+                                                                    <div className="md:block hidden">
+                                                                        <div className="text-white font-black tracking-tight">{formatDate(d.date)}</div>
+                                                                        <div className="text-[10px] text-slate-500 font-black uppercase mt-0.5">{d.created_at ? new Date(d.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Verified'}</div>
+                                                                    </div>
+                                                                    <div className="text-slate-200 font-bold mt-1 md:mt-0">{d.name || 'Anonymous'}</div>
+                                                                    <div className={`mt-2 inline-flex px-2 py-0.5 rounded text-[8px] font-black uppercase border tracking-[0.1em] ${cs.badge}`}>{getCatLabel(d)}</div>
+                                                                </td>
+                                                                <td className="px-8 py-6 mob-amount-cell text-right">
+                                                                    <div className="font-black text-slate-200 tracking-tight">
+                                                                        {d.donation_type === 'Cash' ? formatCurrency(d.amount) : `${d.item_description} x${d.quantity}`}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-8 py-6 mob-action-cell text-center">
+                                                                    {d.status !== 'Promised' ? (
+                                                                        <button onClick={() => { setReceiptModal(d); setVerifyStatus(null); setVerifyPhone(''); setReceiptCanvas(null); }} className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-400 hover:bg-brand-500 hover:text-white transition-all shadow-md group-hover:scale-110">
+                                                                            <MaterialIcon name="receipt_long" />
+                                                                        </button>
+                                                                    ) : (
+                                                                        <div className="flex flex-col items-center">
+                                                                            <div className="text-[9px] text-slate-600 font-black uppercase tracking-widest border border-slate-800 px-3 py-1.5 rounded-lg inline-block">Pending</div>
+                                                                            <span className="text-[7px] text-slate-700 font-bold mt-1">පොරොන්දුවක්</span>
+                                                                        </div>
+                                                                    )}
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                     </div>
+                                 </div>
+                             </>
+                        )}
+                    </div>
+
+                    <footer className="pt-12 pb-8 border-t border-white/5 text-center space-y-4">
+                        <div className="flex flex-col items-center gap-1">
+                            <p className="text-[10px] text-slate-600 font-black uppercase tracking-[0.5em]">Digital Transparency System</p>
+                            <p className="text-[8px] text-slate-700 font-bold uppercase tracking-widest">ඩිජිටල් විනිවිදභාවය තහවුරු කිරීමේ පද්ධතිය</p>
+                        </div>
+                        <div className="flex justify-center gap-6">
+                            <img src="../poson_logo.png" className="w-6 h-6 grayscale opacity-20" />
+                            <img src="../ve1rify.png" className="w-6 h-6 grayscale opacity-20" />
+                        </div>
+                    </footer>
+                </div>
+            );
+        }
+
+        function MaintenanceView() {
+            return (
+                <div className="min-h-screen flex items-center justify-center p-6 maintenance-container overflow-hidden">
+                    <div className="max-w-xl w-full text-center space-y-12 relative animate-fade-in">
+                        {/* Background Ornaments */}
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] h-[200%] opacity-20 pointer-events-none">
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1 h-full bg-gradient-to-b from-transparent via-brand-500/20 to-transparent"></div>
+                            <div className="absolute top-1/2 left-0 -translate-y-1/2 h-1 w-full bg-gradient-to-r from-transparent via-brand-500/20 to-transparent"></div>
+                        </div>
+
+                        <div className="relative inline-block">
+                            <div className="w-48 h-48 rounded-[3rem] bg-slate-900/50 border border-white/10 flex items-center justify-center maintenance-icon shadow-2xl backdrop-blur-3xl">
+                                <img src="../poson_logo.png" className="w-32 h-32 object-contain filter drop-shadow-[0_0_15px_rgba(245,158,11,0.4)]" alt="Logo" />
+                                <div className="absolute -top-4 -right-4 w-16 h-16 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 backdrop-blur-xl flex items-center justify-center gear-spin shadow-lg">
+                                    <MaterialIcon name="settings" className="text-3xl text-indigo-400" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-6 relative z-10">
+                            <div className="space-y-3">
+                                <p className="text-brand-500 font-black uppercase tracking-[0.6em] text-xs">Public Access Suspended</p>
+                                <h1 className="text-5xl md:text-6xl font-black text-white tracking-tighter leading-none">
+                                    Portal Under <br />
+                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-emerald-600">Maintenance</span>
+                                </h1>
+                            </div>
+                            <p className="text-slate-400 text-sm md:text-base leading-relaxed max-w-md mx-auto font-medium">
+                                The public donation verification portal is currently undergoing scheduled maintenance or has been disabled by the administrator. Please try again later.
+                                <br /><br />
+                                <span className="text-[11px] text-slate-500 uppercase tracking-widest font-black">පද්ධතිය දැනට නඩත්තු කටයුතු සඳහා තාවකාලිකව නවතා ඇත. පසුව උත්සාහ කරන්න.</span>
+                            </p>
+                        </div>
+
+                        <div className="pt-8 flex flex-col items-center gap-6">
+                            <div className="w-24 h-1 bg-gradient-to-r from-transparent via-brand-500/50 to-transparent rounded-full"></div>
+                            <p className="text-[10px] text-slate-600 font-black uppercase tracking-[0.5em]">Poson Finance System • Offline State</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function LoadingScreen() {
+            return (
+                <div className="fixed inset-0 z-[100] bg-[#020617] flex flex-col items-center justify-center p-8 overflow-hidden">
+                    {/* Background Accents */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand-500/10 blur-[120px] rounded-full animate-pulse"></div>
+                    
+                    <div className="relative space-y-12 flex flex-col items-center">
+                        {/* Logo and Ring */}
+                        <div className="relative">
+                            <div className="loader-ring">
+                                <div className="loader-inner">
+                                    <img src="../poson_logo.png" className="w-10 h-10 object-contain loader-logo-pulse" alt="Logo" />
+                                </div>
+                            </div>
+                            <div className="absolute -inset-4 border border-white/5 rounded-full"></div>
+                        </div>
+
+                        {/* Text Content */}
+                        <div className="text-center space-y-4">
+                            <div className="space-y-1">
+                                <h2 className="text-white text-2xl font-black tracking-tighter uppercase animate-fade-in">Poson Finance</h2>
+                                <p className="text-brand-500 font-black text-[10px] tracking-[0.5em] uppercase animate-fade-in delay-100">Public Portal</p>
+                            </div>
+                            
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="w-48 h-1 bg-white/5 rounded-full overflow-hidden">
+                                    <div className="h-full bg-brand-500 w-1/3 animate-[shimmer-sweep_1.5s_infinite]"></div>
+                                </div>
+                                <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest animate-pulse">Initializing Secure Connection...</p>
+                            </div>
+                        </div>
+
+                        {/* Bottom Branding */}
+                        <div className="absolute bottom-[-100px] flex items-center gap-4 opacity-20">
+                            <img src="../ve1rify.png" className="w-8 h-8 grayscale" />
+                            <div className="h-4 w-px bg-white/20"></div>
+                            <p className="text-[8px] text-white font-black uppercase tracking-[0.3em]">BEYOND VERIFIED</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function App() {
+            const [incomes, setIncomes] = useState([]);
+            const [settings, setSettings] = useState(null);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                fetchInitialData();
+            }, []);
+
+            const fetchInitialData = async () => {
+                try {
+                    const [incRes, setRes] = await Promise.all([
+                        supabase.from('incomes').select('*').eq('event_type', 'poson').order('created_at', { ascending: false }),
+                        supabase.from('project_settings').select('*').maybeSingle()
+                    ]);
+
+                    if (incRes.error) throw incRes.error;
+                    setIncomes(incRes.data || []);
+                    setSettings(setRes.data || { public_portal_enabled: true });
+                } catch (err) {
+                    console.error("Fetch error:", err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            if (loading) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-8 animate-pulse">
+                            <div className="w-16 h-16 border-[6px] border-brand-500/10 border-t-brand-500 rounded-full animate-spin shadow-2xl shadow-brand-500/20"></div>
+                            <div className="space-y-2 text-center">
+                                <p className="text-white font-black uppercase tracking-[0.4em] text-xs">Poson Finance System</p>
+                                <p className="text-brand-500/60 font-bold uppercase tracking-[0.2em] text-[9px]">Initializing Public Portal...</p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (settings?.public_portal_enabled === false) {
+                return <MaintenanceView />;
+            }
+
+            return <DonationsView incomes={incomes} />;
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
-</html>
 
+</html>
