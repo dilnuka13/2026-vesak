@@ -1007,6 +1007,8 @@
       const [error, setError] = useState('');
       const [authLoading, setAuthLoading] = useState(false);
       const [showBackupNotice, setShowBackupNotice] = useState(false);
+      const [restoreFileJson, setRestoreFileJson] = useState(null);
+      const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
       const ADMIN_TABS = [
         { id: 'dashboard', label: 'Dashboard', color: 'brand' },
@@ -1876,6 +1878,112 @@
         }
       };
 
+      const generateJSONBackup = async () => {
+        setLoading(true);
+        try {
+          const [usersRes, settingsRes, incomesRes, expensesRes, vesakRes, posonRes] = await Promise.all([
+            supabase.from('app_users').select('*'),
+            supabase.from('project_settings').select('*'),
+            supabase.from('incomes').select('*'),
+            supabase.from('expenses').select('*'),
+            supabase.from('vesak_invitation').select('*'),
+            supabase.from('poson_invitation').select('*')
+          ]);
+
+          const backupData = {
+            version: '2026.1',
+            timestamp: new Date().toISOString(),
+            app_users: usersRes.data || [],
+            project_settings: settingsRes.data || [],
+            incomes: incomesRes.data || [],
+            expenses: expensesRes.data || [],
+            vesak_invitation: vesakRes.data || [],
+            poson_invitation: posonRes.data || []
+          };
+
+          const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `Vesak_System_Backup_${new Date().toISOString().split('T')[0]}.json`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.showToast("JSON Backup file generated successfully!", "success");
+        } catch (error) {
+          console.error("Backup failed:", error);
+          window.showToast("Backup generation failed: " + error.message, "error");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const restoreFromJSON = async (backupData) => {
+        if (!backupData || typeof backupData !== 'object') {
+          window.showToast("Invalid backup file format.", "error");
+          return;
+        }
+        
+        setLoading(true);
+        try {
+          // 1. Delete existing records in dependency order
+          if (backupData.incomes) {
+            await supabase.from('incomes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          }
+          if (backupData.expenses) {
+            await supabase.from('expenses').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          }
+          if (backupData.app_users) {
+            await supabase.from('user_sessions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            await supabase.from('user_passkeys').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            await supabase.from('app_users').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          }
+          if (backupData.project_settings) {
+            await supabase.from('project_settings').delete().neq('id', 'dummy');
+          }
+          if (backupData.vesak_invitation) {
+            await supabase.from('vesak_invitation').delete().neq('id', 0);
+          }
+          if (backupData.poson_invitation) {
+            await supabase.from('poson_invitation').delete().neq('id', 0);
+          }
+
+          // 2. Insert backup records in order
+          if (backupData.app_users && backupData.app_users.length > 0) {
+            const { error } = await supabase.from('app_users').insert(backupData.app_users);
+            if (error) throw error;
+          }
+          if (backupData.project_settings && backupData.project_settings.length > 0) {
+            const { error } = await supabase.from('project_settings').insert(backupData.project_settings);
+            if (error) throw error;
+          }
+          if (backupData.incomes && backupData.incomes.length > 0) {
+            const { error } = await supabase.from('incomes').insert(backupData.incomes);
+            if (error) throw error;
+          }
+          if (backupData.expenses && backupData.expenses.length > 0) {
+            const { error } = await supabase.from('expenses').insert(backupData.expenses);
+            if (error) throw error;
+          }
+          if (backupData.vesak_invitation && backupData.vesak_invitation.length > 0) {
+            const { error } = await supabase.from('vesak_invitation').insert(backupData.vesak_invitation);
+            if (error) throw error;
+          }
+          if (backupData.poson_invitation && backupData.poson_invitation.length > 0) {
+            const { error } = await supabase.from('poson_invitation').insert(backupData.poson_invitation);
+            if (error) throw error;
+          }
+
+          window.showToast("Database successfully restored from JSON backup!", "success");
+          fetchData();
+        } catch (error) {
+          console.error("Restore failed:", error);
+          window.showToast("Database restore failed: " + error.message, "error");
+        } finally {
+          setLoading(false);
+        }
+      };
+
       if (!loggedIn || authMode === 'reset') {
         return (
           <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
@@ -1982,18 +2090,25 @@
               <MaterialIcon name="logout" />
             </button>
           </aside>
-
           <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 relative z-10 overflow-y-auto h-screen print:h-auto print:overflow-visible print:p-0 print:m-0 print:bg-white" style={{ paddingTop: 'max(env(safe-area-inset-top), 1rem)' }}>
             <header className="flex flex-col md:flex-row justify-between items-center mb-8 gap-6 surface-container p-6 rounded-m3-xl border border-white/5 shadow-xl print:hidden">
-               <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-m3-primaryContainer rounded-2xl flex items-center justify-center text-m3-onPrimaryContainer shadow-md">
-                     <MaterialIcon name="admin_panel_settings" className="text-2xl" />
-                  </div>
+               <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
+                  <div className="flex items-center gap-4">
+                     <button 
+                       onClick={() => setMobileMenuOpen(true)} 
+                       className="lg:hidden w-10 h-10 rounded-xl bg-slate-900/60 border border-white/5 flex items-center justify-center hover:bg-slate-800 transition text-slate-300 hover:text-white shrink-0 animate-fade-in"
+                     >
+                        <MaterialIcon name="menu" />
+                     </button>
+                     <div className="w-12 h-12 bg-m3-primaryContainer rounded-2xl flex items-center justify-center text-m3-onPrimaryContainer shadow-md shrink-0">
+                        <MaterialIcon name="admin_panel_settings" className="text-2xl" />
+                     </div>
                   <div>
                      <h1 className="text-2xl font-black text-white">Admin Dashboard</h1>
                      <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Control & Statistics</p>
                   </div>
                </div>
+            </div>
                <div className="flex items-center gap-2 sm:gap-3 relative flex-wrap justify-end">
                   <a href="index.html" className="hidden sm:flex items-center gap-2 m3-button m3-button-tonal !h-10 !px-3 text-xs !rounded-xl border border-brand-500/20 text-brand-300 hover:text-white">
                     <SafeImage src="logo.png" alt="" className="w-5 h-5 object-contain" iconClassName="text-xs" />
@@ -2638,129 +2753,214 @@
                     <h2 className="text-2xl md:text-3xl font-black uppercase tracking-widest text-black">Financial Report</h2>
                     <p className="text-lg font-bold mt-1 text-slate-800">අය වැය වාර්තාව</p>
                   </div>
-                  
-                  {/* Summary */}
-                  <div className="grid grid-cols-3 gap-4 mb-8 text-center">
-                    <div className="p-4 border-2 border-slate-200 rounded-xl">
-                      <h3 className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Total Income</h3>
-                      <div className="text-lg md:text-xl font-black text-green-700">Rs. {Math.round(totalCashIncome).toLocaleString()}</div>
-                    </div>
-                    <div className="p-4 border-2 border-slate-200 rounded-xl">
-                      <h3 className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Total Expenses</h3>
-                      <div className="text-lg md:text-xl font-black text-red-700">Rs. {Math.round(totalExpense).toLocaleString()}</div>
-                    </div>
-                    <div className={`p-4 border-2 rounded-xl ${totalCashIncome - totalExpense >= 0 ? 'border-blue-200 bg-blue-50' : 'border-red-200 bg-red-50'}`}>
-                      <h3 className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Balance</h3>
-                      <div className={`text-lg md:text-xl font-black ${totalCashIncome - totalExpense >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
-                        Rs. {Math.round(totalCashIncome - totalExpense).toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                    {/* Income Breakdown */}
-                    <div>
-                      <h3 className="text-lg font-black text-black mb-4 border-b border-slate-300 pb-2">අය (Income Breakdown)</h3>
-                      <div className="space-y-4">
-                        {(() => {
-                          const incomeGroups = {
-                            'ආධාර පෙට්ටි (Exhibition Boxes)': [],
-                            'ඕපනින් (Opening)': [],
-                            'මේන් ඩෝනර් (Main Donors)': [],
-                            'රෙගියුලර් ඩෝනර් (Regular Donors)': [],
-                            'වෙනත් (Other)': []
-                          };
-                          incomes.filter(i => i.status === 'Received Today' && i.donation_type === 'Cash').forEach(curr => {
-                            let cat = curr.donor_category || 'Other';
-                            if (cat.includes('Exhibition Box')) cat = 'ආධාර පෙට්ටි (Exhibition Boxes)';
-                            else if (cat === 'Kuuduwa Open') cat = 'ඕපනින් (Opening)';
-                            else if (cat === 'Main Donor') cat = 'මේන් ඩෝනර් (Main Donors)';
-                            else if (cat === 'Regular Donor') cat = 'රෙගියුලර් ඩෝනර් (Regular Donors)';
-                            else cat = 'වෙනත් (Other)';
-                            incomeGroups[cat].push(curr);
-                          });
+                  {(() => {
+                    const renderBreakdown = (eventIncomes, eventExpenses) => {
+                      const incomeGroups = {
+                        'ආධාර පෙට්ටි (Exhibition Boxes)': [],
+                        'ඕපනින් (Opening)': [],
+                        'මේන් ඩෝනර් (Main Donors)': [],
+                        'රෙගියුලර් ඩෝනර් (Regular Donors)': [],
+                        'වෙනත් (Other)': []
+                      };
+                      eventIncomes.filter(i => i.status === 'Received Today' && i.donation_type === 'Cash').forEach(curr => {
+                        let cat = curr.donor_category || 'Other';
+                        if (cat.includes('Exhibition Box')) cat = 'ආධාර පෙට්ටි (Exhibition Boxes)';
+                        else if (cat === 'Kuuduwa Open') cat = 'ඕපනින් (Opening)';
+                        else if (cat === 'Main Donor') cat = 'මේන් ඩෝනර් (Main Donors)';
+                        else if (cat === 'Regular Donor') cat = 'රෙගියුලර් ඩෝනර් (Regular Donors)';
+                        else cat = 'වෙනත් (Other)';
+                        incomeGroups[cat].push(curr);
+                      });
+
+                      const expenseGroups = {};
+                      eventExpenses.forEach(curr => {
+                        const reason = curr.reason || 'Other';
+                        if (!expenseGroups[reason]) expenseGroups[reason] = [];
+                        expenseGroups[reason].push(curr);
+                      });
+
+                      return (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                          {/* Income */}
+                          <div>
+                            <h4 className="text-sm font-black text-slate-800 mb-2 border-b border-slate-300 pb-1">අය (Income Breakdown)</h4>
+                            <div className="space-y-2">
+                              {Object.entries(incomeGroups).map(([catName, items]) => {
+                                const catTotal = items.reduce((sum, i) => sum + Number(i.amount || 0), 0);
+                                const groupedByName = {};
+                                items.forEach(i => {
+                                  const name = i.name || 'Anonymous';
+                                  groupedByName[name] = (groupedByName[name] || 0) + Number(i.amount || 0);
+                                });
+                                if (catTotal === 0) return null;
+                                return (
+                                  <div key={catName} className="break-inside-avoid">
+                                    <div className="flex justify-between font-bold text-xs bg-slate-100 p-1.5 rounded">
+                                      <span>{catName}</span>
+                                      <span>Rs. {Math.round(catTotal).toLocaleString()}</span>
+                                    </div>
+                                    <ul className="mt-1 space-y-0.5 pl-2 mb-1">
+                                      {Object.entries(groupedByName).map(([name, amount], idx) => (
+                                        <li key={idx} className="flex justify-between text-[11px] text-slate-600 border-b border-slate-50 pb-0.5">
+                                          <span className="truncate pr-2">{name}</span>
+                                          <span className="whitespace-nowrap">{Math.round(amount).toLocaleString()}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                );
+                              })}
+                              {eventIncomes.filter(i => i.status === 'Received Today' && i.donation_type === 'Cash').length === 0 && (
+                                <div className="text-slate-500 text-xs">No cash income data</div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Expense */}
+                          <div>
+                            <h4 className="text-sm font-black text-slate-800 mb-2 border-b border-slate-300 pb-1">වැය (Expense Breakdown)</h4>
+                            <div className="space-y-2">
+                              {Object.entries(expenseGroups).map(([reasonName, items]) => {
+                                const reasonTotal = items.reduce((sum, i) => sum + Number(i.amount_taken || 0), 0);
+                                if (reasonTotal === 0) return null;
+                                return (
+                                  <div key={reasonName} className="break-inside-avoid">
+                                    <div className="flex justify-between font-bold text-xs bg-slate-100 p-1.5 rounded">
+                                      <span>{reasonName}</span>
+                                      <span>Rs. {Math.round(reasonTotal).toLocaleString()}</span>
+                                    </div>
+                                    <ul className="mt-1 space-y-0.5 pl-2 mb-1">
+                                      {items.map((item, idx) => (
+                                        <li key={idx} className="flex justify-between text-[11px] text-slate-600 border-b border-slate-50 pb-0.5">
+                                          <span className="truncate pr-2">{item.withdrawer_name || 'Unknown'}</span>
+                                          <span className="whitespace-nowrap">{Math.round(item.amount_taken).toLocaleString()}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                );
+                              })}
+                              {eventExpenses.length === 0 && (
+                                <div className="text-slate-500 text-xs">No expense data</div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    };
+
+                    const vesakIncomesList = incomes.filter(i => normalizeEventType(i) === 'vesak');
+                    const posonIncomesList = incomes.filter(i => normalizeEventType(i) === 'poson');
+                    const vesakExpensesList = expenses.filter(e => normalizeEventType(e) === 'vesak');
+                    const posonExpensesList = expenses.filter(e => normalizeEventType(e) === 'poson');
+
+                    const vesakIncomeTotal = vesakIncomesList.filter(i => i.status === 'Received Today' && i.donation_type === 'Cash').reduce((sum, item) => sum + Number(item.amount || 0), 0);
+                    const vesakExpenseTotal = vesakExpensesList.reduce((sum, item) => sum + Number(item.amount_taken || 0), 0);
+                    const vesakBalanceVal = vesakIncomeTotal - vesakExpenseTotal;
+
+                    const posonIncomeTotal = posonIncomesList.filter(i => i.status === 'Received Today' && i.donation_type === 'Cash').reduce((sum, item) => sum + Number(item.amount || 0), 0);
+                    const posonExpenseTotal = posonExpensesList.reduce((sum, item) => sum + Number(item.amount_taken || 0), 0);
+                    
+                    const vesakSurplus = vesakBalanceVal > 0 ? vesakBalanceVal : 0;
+                    const posonTotalAvailable = posonIncomeTotal + vesakSurplus;
+                    const posonBalanceVal = posonTotalAvailable - posonExpenseTotal;
+
+                    const combinedIncome = vesakIncomeTotal + posonIncomeTotal;
+                    const combinedExpense = vesakExpenseTotal + posonExpenseTotal;
+                    const combinedBalance = combinedIncome - combinedExpense;
+
+                    return (
+                      <div>
+                        {/* 1. Vesak Festival Section */}
+                        <div className="mb-10 pb-6 border-b border-dashed border-slate-300 break-inside-avoid">
+                          <h3 className="text-md font-extrabold uppercase tracking-wide text-green-800 mb-4 flex items-center justify-between bg-green-50 p-2.5 rounded-lg border border-green-200">
+                            <span>1. වෙසක් කලාපය (Vesak Festival)</span>
+                            <span className="text-xs normal-case font-normal text-slate-500">2026 වෙසක් සමය</span>
+                          </h3>
                           
-                          return Object.entries(incomeGroups).map(([catName, items]) => {
-                            const catTotal = items.reduce((sum, i) => sum + Number(i.amount || 0), 0);
-                            
-                            // Group items by name
-                            const groupedByName = {};
-                            items.forEach(i => {
-                              const name = i.name || 'Anonymous';
-                              groupedByName[name] = (groupedByName[name] || 0) + Number(i.amount || 0);
-                            });
-
-                            return (
-                              <div key={catName} className="break-inside-avoid">
-                                <div className="flex justify-between font-bold text-sm bg-slate-100 p-2 rounded">
-                                  <span>{catName}</span>
-                                  <span>Rs. {Math.round(catTotal).toLocaleString()}</span>
-                                </div>
-                                {Object.keys(groupedByName).length > 0 && (
-                                  <ul className="mt-1 space-y-1 pl-2 mb-2">
-                                    {Object.entries(groupedByName).map(([name, amount], idx) => (
-                                      <li key={idx} className="flex justify-between text-xs text-slate-600 border-b border-slate-50 pb-1">
-                                        <span className="truncate pr-2">{name}</span>
-                                        <span className="whitespace-nowrap">{Math.round(amount).toLocaleString()}</span>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                )}
+                          {/* Vesak Summary Grid */}
+                          <div className="grid grid-cols-3 gap-3 mb-6 text-center">
+                            <div className="p-2.5 border border-slate-200 rounded-lg bg-slate-50">
+                              <h4 className="text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-0.5">Total Income</h4>
+                              <div className="text-sm font-black text-green-700">Rs. {Math.round(vesakIncomeTotal).toLocaleString()}</div>
+                            </div>
+                            <div className="p-2.5 border border-slate-200 rounded-lg bg-slate-50">
+                              <h4 className="text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-0.5">Total Expenses</h4>
+                              <div className="text-sm font-black text-red-700">Rs. {Math.round(vesakExpenseTotal).toLocaleString()}</div>
+                            </div>
+                            <div className={`p-2.5 border rounded-lg ${vesakBalanceVal >= 0 ? 'border-green-200 bg-green-50/50' : 'border-red-200 bg-red-50/50'}`}>
+                              <h4 className="text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-0.5">Vesak Balance</h4>
+                              <div className={`text-sm font-black ${vesakBalanceVal >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                                Rs. {Math.round(vesakBalanceVal).toLocaleString()}
                               </div>
-                            );
-                          });
-                        })()}
-                      </div>
-                    </div>
+                            </div>
+                          </div>
 
-                    {/* Expense Breakdown */}
-                    <div>
-                      <h3 className="text-lg font-black text-black mb-4 border-b border-slate-300 pb-2">වැය (Expense Breakdown)</h3>
-                      <div className="space-y-4">
-                        {(() => {
-                          const expenseGroups = {};
-                          expenses.forEach(curr => {
-                            const reason = curr.reason || 'Other';
-                            if (!expenseGroups[reason]) expenseGroups[reason] = [];
-                            expenseGroups[reason].push(curr);
-                          });
+                          {/* Vesak Breakdown */}
+                          {renderBreakdown(vesakIncomesList, vesakExpensesList)}
+                        </div>
 
-                          return Object.entries(expenseGroups).map(([reasonName, items]) => {
-                            const reasonTotal = items.reduce((sum, i) => sum + Number(i.amount_taken || 0), 0);
-                            
-                            // Group items by name
-                            const groupedByName = {};
-                            items.forEach(i => {
-                              const name = i.name || 'Unknown';
-                              groupedByName[name] = (groupedByName[name] || 0) + Number(i.amount_taken || 0);
-                            });
-
-                            return (
-                              <div key={reasonName} className="break-inside-avoid">
-                                <div className="flex justify-between font-bold text-sm bg-slate-100 p-2 rounded">
-                                  <span>{reasonName}</span>
-                                  <span>Rs. {Math.round(reasonTotal).toLocaleString()}</span>
-                                </div>
-                                {Object.keys(groupedByName).length > 0 && (
-                                  <ul className="mt-1 space-y-1 pl-2 mb-2">
-                                    {Object.entries(groupedByName).map(([name, amount], idx) => (
-                                      <li key={idx} className="flex justify-between text-xs text-slate-600 border-b border-slate-50 pb-1">
-                                        <span className="truncate pr-2">{name}</span>
-                                        <span className="whitespace-nowrap">{Math.round(amount).toLocaleString()}</span>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                )}
+                        {/* 2. Poson Festival Section */}
+                        <div className="mb-10 pb-6 border-b border-dashed border-slate-300 break-inside-avoid">
+                          <h3 className="text-md font-extrabold uppercase tracking-wide text-amber-800 mb-4 flex items-center justify-between bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+                            <span>2. පොසොන් කලාපය (Poson Festival)</span>
+                            <span className="text-xs normal-case font-normal text-slate-500">2026 පොසොන් සමය</span>
+                          </h3>
+                          
+                          {/* Poson Summary Grid */}
+                          <div className="grid grid-cols-4 gap-2.5 mb-6 text-center">
+                            <div className="p-2 border border-slate-200 rounded-lg bg-slate-50">
+                              <h4 className="text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-0.5">Poson Income</h4>
+                              <div className="text-xs font-black text-green-700">Rs. {Math.round(posonIncomeTotal).toLocaleString()}</div>
+                            </div>
+                            <div className="p-2 border border-blue-200 bg-blue-50/40 rounded-lg">
+                              <h4 className="text-[9px] font-bold uppercase tracking-wider text-slate-600 mb-0.5">From Vesak (ඉතුරු මුදල්)</h4>
+                              <div className="text-xs font-black text-blue-700">Rs. {Math.round(vesakSurplus).toLocaleString()}</div>
+                            </div>
+                            <div className="p-2 border border-slate-200 rounded-lg bg-slate-50">
+                              <h4 className="text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-0.5">Total Expenses</h4>
+                              <div className="text-xs font-black text-red-700">Rs. {Math.round(posonExpenseTotal).toLocaleString()}</div>
+                            </div>
+                            <div className={`p-2 border rounded-lg ${posonBalanceVal >= 0 ? 'border-amber-200 bg-amber-50/50' : 'border-red-200 bg-red-50/50'}`}>
+                              <h4 className="text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-0.5">Final Balance</h4>
+                              <div className={`text-xs font-black ${posonBalanceVal >= 0 ? 'text-amber-700' : 'text-red-700'}`}>
+                                Rs. {Math.round(posonBalanceVal).toLocaleString()}
                               </div>
-                            );
-                          });
-                        })()}
-                        {expenses.length === 0 && (
-                          <div className="text-slate-500 text-xs">No expense data</div>
-                        )}
+                            </div>
+                          </div>
+
+                          {/* Poson Breakdown */}
+                          {renderBreakdown(posonIncomesList, posonExpensesList)}
+                        </div>
+
+                        {/* 3. Combined Financial Summary */}
+                        <div className="p-6 border-2 border-black rounded-2xl bg-slate-50 break-inside-avoid">
+                          <h3 className="text-md font-black uppercase tracking-wider text-slate-900 mb-4 border-b border-black pb-2 flex items-center justify-between">
+                            <span>3. සමස්ත අය වැය වාර්තාව (Combined Summary)</span>
+                            <span className="text-xs font-bold text-slate-600">Vesak + Poson</span>
+                          </h3>
+                          
+                          <div className="grid grid-cols-3 gap-4 text-center">
+                            <div className="p-4 border-2 border-slate-200 bg-white rounded-xl">
+                              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Combined Income</h4>
+                              <div className="text-base md:text-lg font-black text-green-700">Rs. {Math.round(combinedIncome).toLocaleString()}</div>
+                            </div>
+                            <div className="p-4 border-2 border-slate-200 bg-white rounded-xl">
+                              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Combined Expenses</h4>
+                              <div className="text-base md:text-lg font-black text-red-700">Rs. {Math.round(combinedExpense).toLocaleString()}</div>
+                            </div>
+                            <div className={`p-4 border-2 rounded-xl bg-white ${combinedBalance >= 0 ? 'border-green-600 bg-green-50/10' : 'border-red-600 bg-red-50/10'}`}>
+                              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Combined Balance</h4>
+                              <div className={`text-base md:text-lg font-black ${combinedBalance >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                                Rs. {Math.round(combinedBalance).toLocaleString()}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    );
+                  })()}
 
                 </div>
               </div>
@@ -2880,7 +3080,7 @@
                       <MaterialIcon name="backup" className="text-brand-400" />
                       Daily Database Backup / දත්ත උපස්ථය
                     </h4>
-                    <p className="text-xs text-slate-400">එදිනෙදා දත්ත වල ආරක්ෂාව සඳහා දත්ත ගොනු (.sql හෝ .xlsx ආකාරයෙන්) බාගත කර සුරක්ෂිතව තබා ගන්න.</p>
+                    <p className="text-xs text-slate-400">එදිනෙදා දත්ත වල ආරක්ෂාව සඳහා දත්ත ගොනු (.sql, .xlsx හෝ .json ආකාරයෙන්) බාගත කර සුරක්ෂිතව තබා ගන්න.</p>
                   </div>
                   
                   <div className="flex flex-col sm:flex-row gap-4">
@@ -2889,15 +3089,63 @@
                       onClick={generateSQLBackup} 
                       className="flex-1 m3-button m3-button-tonal hover:border-brand-500/30 flex items-center justify-center gap-2 !h-12 !rounded-xl text-xs font-bold transition-all"
                     >
-                      <MaterialIcon name="download" /> Download SQL Backup (.sql)
+                      <MaterialIcon name="download" /> Download SQL (.sql)
                     </button>
                     <button 
                       type="button" 
                       onClick={generateXLSXBackup} 
                       className="flex-1 m3-button m3-button-tonal hover:border-emerald-500/30 flex items-center justify-center gap-2 !h-12 !rounded-xl text-xs font-bold transition-all"
                     >
-                      <MaterialIcon name="table_view" /> Download Excel Backup (.xlsx)
+                      <MaterialIcon name="table_view" /> Download Excel (.xlsx)
                     </button>
+                    <button 
+                      type="button" 
+                      onClick={generateJSONBackup} 
+                      className="flex-1 m3-button m3-button-tonal hover:border-purple-500/30 flex items-center justify-center gap-2 !h-12 !rounded-xl text-xs font-bold transition-all"
+                    >
+                      <MaterialIcon name="settings_backup_restore" /> Download JSON (.json)
+                    </button>
+                  </div>
+
+                  <div className="border-t border-white/5 pt-4">
+                    <h5 className="text-xs font-black text-brand-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                      <MaterialIcon name="settings_backup_restore" className="text-brand-400" />
+                      Restore Database from JSON / දත්ත ප්‍රතිස්ථාපනය
+                    </h5>
+                    <p className="text-[10px] text-slate-400 mb-4">කලින් බාගත කරන ලද JSON බැකප් ගොනුවක් තෝරා පද්ධතියේ දත්ත නැවත ප්‍රතිස්ථාපනය කරන්න.</p>
+                    <div className="flex items-center gap-4">
+                      <input 
+                        type="file" 
+                        accept=".json" 
+                        id="json-restore-file"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            try {
+                              const data = JSON.parse(event.target.result);
+                              if (!data.app_users || !data.incomes || !data.expenses) {
+                                window.showToast("Invalid backup file: Missing required tables.", "error");
+                                return;
+                              }
+                              setRestoreFileJson(data);
+                            } catch(err) {
+                              window.showToast("Failed to parse JSON file.", "error");
+                            }
+                          };
+                          reader.readAsText(file);
+                        }}
+                        className="hidden" 
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => document.getElementById('json-restore-file').click()}
+                        className="m3-button m3-button-filled bg-brand-600 hover:bg-brand-500 text-white flex items-center justify-center gap-2 !h-10 !rounded-xl text-xs font-bold transition-all"
+                      >
+                        <MaterialIcon name="upload" /> Select & Restore JSON / බැකප් එක තෝරන්න
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -3099,36 +3347,104 @@
               )}
           </div>
           </main>
-             <footer className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-950/60 backdrop-blur-3xl border-t border-white/5 z-50 flex justify-between items-center px-2 pt-3 pb-[max(env(safe-area-inset-bottom),_1rem)] overflow-x-auto no-scrollbar">
-                {[
-                  { id: 'dashboard', icon: 'dashboard', label: 'Dashboard' },
-                  { id: 'incomes', icon: 'payments', label: 'Incomes' },
-                  { id: 'expenses', icon: 'account_balance_wallet', label: 'Expenses' },
-                  { id: 'reports', icon: 'assessment', label: 'Reports' },
-                  { id: 'users', icon: 'group', label: 'Users' },
-                  { id: 'shares', icon: 'pie_chart', label: 'Shares' },
-                  { id: 'project_settings', icon: 'settings', label: 'Settings' },
-                  { id: 'invitations', icon: 'festival', label: 'Invitations' }
-                ].map(item => {
-                  const isActive = activeTab === item.id || 
-                    (item.id === 'incomes' && ['cash_incomes', 'goods_incomes', 'main_donors', 'regular_donors'].includes(activeTab));
 
-                  return (
-                    <button 
-                      key={item.id}
-                      onClick={() => setActiveTab(item.id)}
-                      className="flex flex-col items-center gap-1 flex-1 py-1 transition-all relative group"
-                    >
-                      <div className="relative w-14 h-8 flex items-center justify-center rounded-full overflow-hidden">
-                        {/* Active indicator pill */}
-                        <div className={`absolute inset-0 bg-brand-500/25 rounded-full transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isActive ? 'scale-100 opacity-100' : 'scale-x-0 opacity-0 group-hover:scale-x-75 group-hover:opacity-50'}`}></div>
-                        <MaterialIcon name={item.icon} className={`relative z-10 text-xl transition-transform duration-300 ${isActive ? 'text-brand-400 scale-110' : 'text-slate-400'}`} />
+          {mobileMenuOpen && (
+            <>
+              {/* Backdrop */}
+              <div 
+                className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[60] lg:hidden animate-fade-in" 
+                onClick={() => setMobileMenuOpen(false)}
+              ></div>
+              
+              {/* Drawer */}
+              <div 
+                className="fixed top-0 left-0 bottom-0 w-[280px] bg-slate-950/95 border-r border-white/5 z-[70] lg:hidden p-6 flex flex-col justify-between shadow-2xl animate-slide-right"
+                style={{ animation: 'slideRight 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}
+              >
+                <style>
+                  {`
+                    @keyframes slideRight {
+                      0% { transform: translateX(-100%); }
+                      100% { transform: translateX(0); }
+                    }
+                  `}
+                </style>
+                
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 bg-brand-500/10 rounded-xl flex items-center justify-center text-brand-400 border border-brand-500/25">
+                        <MaterialIcon name="shield" className="text-md" />
                       </div>
-                      <span className={`text-[9px] font-bold tracking-wider transition-colors duration-300 ${isActive ? 'text-brand-400 font-extrabold' : 'text-slate-500'}`}>{item.label}</span>
+                      <div>
+                        <span className="text-sm font-black text-white block">Admin Panel</span>
+                        <span className="text-[8px] text-slate-500 font-bold uppercase tracking-widest font-extrabold">Navigation / මෙනුව</span>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-slate-400 hover:text-white"
+                    >
+                      &times;
                     </button>
-                  );
-                })}
-             </footer>
+                  </div>
+
+                  <nav className="flex flex-col gap-2">
+                    {[
+                      { id: 'dashboard', icon: 'dashboard', label: 'Dashboard', sub: 'පාලන පැනලය' },
+                      { id: 'incomes', icon: 'payments', label: 'Incomes', sub: 'ආදායම්' },
+                      { id: 'expenses', icon: 'account_balance_wallet', label: 'Expenses', sub: 'වියදම්' },
+                      { id: 'reports', icon: 'assessment', label: 'Reports', sub: 'වාර්තා' },
+                      { id: 'users', icon: 'group', label: 'Users', sub: 'පරිශීලකයින්' },
+                      { id: 'shares', icon: 'pie_chart', label: 'Shares', sub: 'කොටස්' },
+                      { id: 'project_settings', icon: 'settings', label: 'Settings', sub: 'සැකසුම්' },
+                      { id: 'invitations', icon: 'festival', label: 'Invitations', sub: 'ආරාධනා පත්' }
+                    ].map(item => {
+                      const isActive = activeTab === item.id || 
+                        (item.id === 'incomes' && ['cash_incomes', 'goods_incomes', 'main_donors', 'regular_donors'].includes(activeTab));
+                      
+                      return (
+                        <button 
+                          key={item.id}
+                          onClick={() => {
+                            setActiveTab(item.id);
+                            setMobileMenuOpen(false);
+                          }}
+                          className={`w-full px-4 py-3 rounded-xl flex items-center gap-4 transition-all ${isActive ? 'bg-brand-500/10 border border-brand-500/20 text-brand-400 font-extrabold' : 'hover:bg-white/5 border border-transparent text-slate-400'}`}
+                        >
+                          <MaterialIcon name={item.icon} className="text-lg shrink-0" />
+                          <div className="text-left">
+                            <span className="text-xs block">{item.label}</span>
+                            <span className="text-[8px] font-medium opacity-60 block -mt-0.5">{item.sub}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="border-t border-white/5 pt-4 flex flex-col gap-3">
+                  <div className="flex gap-2">
+                    <a href="index.html" className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-slate-900 border border-brand-500/20 text-brand-300 text-[10px] font-bold">
+                      Vesak
+                    </a>
+                    <a href="poson/index.html" className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-slate-900 border border-amber-500/20 text-amber-300 text-[10px] font-bold">
+                      Poson
+                    </a>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      handleLogout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="w-full py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-bold transition-all flex items-center justify-center gap-2"
+                  >
+                    <MaterialIcon name="logout" className="text-sm" /> Logout / ඉවත් වන්න
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         
 
           {/* Edit Income Modal */}
@@ -3460,6 +3776,44 @@
                   <button type="submit" disabled={actionLoading} className="m3-button m3-button-filled magnetic-button w-full sm:w-auto shadow-[0_0_15px_rgba(34,197,94,0.3)]">Create User</button>
                 </div>
               </form>
+            </Modal>
+          )}
+
+          {restoreFileJson && (
+            <Modal title="Restore Database / දත්ත ප්‍රතිස්ථාපනය" onClose={() => setRestoreFileJson(null)}>
+              <div className="space-y-4 text-slate-300 text-sm">
+                <p className="text-red-400 font-bold">
+                  Warning: This action will delete all current database records and replace them with the data from the backup file!
+                </p>
+                <p className="text-red-400 font-bold">
+                  අவධානය: මෙමගින් දැනට පද්ධතියේ ඇති සියලුම දත්ත මකා දමා උපස්ථ ගොනුවේ (backup) ඇති දත්ත ප්‍රතිස්ථාපනය කරනු ඇත!
+                </p>
+                
+                <div className="bg-slate-950/50 p-4 rounded-xl border border-white/5 space-y-2 text-xs">
+                  <div><strong>Backup Date / දිනය:</strong> {new Date(restoreFileJson.timestamp).toLocaleString()}</div>
+                  <div><strong>Users Count / පරිශීලකයින්:</strong> {restoreFileJson.app_users?.length || 0}</div>
+                  <div><strong>Incomes Count / ආදායම්:</strong> {restoreFileJson.incomes?.length || 0}</div>
+                  <div><strong>Expenses Count / වියදම්:</strong> {restoreFileJson.expenses?.length || 0}</div>
+                </div>
+                
+                <div className="flex gap-4 pt-4">
+                  <button 
+                    onClick={() => {
+                      restoreFromJSON(restoreFileJson);
+                      setRestoreFileJson(null);
+                    }}
+                    className="flex-1 m3-button m3-button-filled bg-red-600 hover:bg-red-500 text-white font-black"
+                  >
+                    Confirm Restore / ස්ථිර කරන්න
+                  </button>
+                  <button 
+                    onClick={() => setRestoreFileJson(null)}
+                    className="flex-1 m3-button m3-button-tonal"
+                  >
+                    Cancel / අවලංගු කරන්න
+                  </button>
+                </div>
+              </div>
             </Modal>
           )}
 
